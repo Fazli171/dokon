@@ -636,6 +636,7 @@ let cartDiscount = {type:'none', value:0}; // cart-level (invoice) discount set 
 let discModalTempType = 'percent'; // type currently selected inside the open CHEGIRMA modal (not yet saved)
 let scannerStream = null;
 let scannerRAF = null;
+let scannerVideoEl = null;
 let scannedProduct = null;
 let zxingReader = null;
 let scanEngineActive = false;
@@ -1819,7 +1820,18 @@ function buildZxingHints(){
     return hints;
   }catch(e){ return undefined; }
 }
-async function startScanEngine(videoEl, onDecode, onError){
+// Kamera constraint'lari — eng qat'iydan eng soddasiga qadar zinapoya.
+// Qurilma biror constraint'ni (masalan advanced focusMode) qo'llab-quvvatlamasa,
+// getUserMedia OverconstrainedError tashlaydi — shunda keyingi, soddaroq
+// variantga o'tamiz, scanner butunlay to'xtab qolmaydi.
+const CAMERA_CONSTRAINT_LADDER = [
+  {video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}, advanced:[{focusMode:'continuous'}]}},
+  {video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}},
+  {video:{facingMode:'environment'}},
+  {video:true}
+];
+
+function startScanEngine(videoEl, onDecode, onError){
   if(scanEngineActive) return;
   if(typeof ZXing==='undefined'){
     onError && onError("Skaner kutubxonasi yuklanmadi — internet aloqasini tekshiring");
@@ -1829,66 +1841,99 @@ async function startScanEngine(videoEl, onDecode, onError){
     onError && onError("Bu qurilma/brauzerda kameraga kirish imkoni yo'q");
     return;
   }
-  try{
-    const hints = buildZxingHints();
-    zxingReader = hints ? new ZXing.BrowserMultiFormatReader(hints) : new ZXing.BrowserMultiFormatReader();
-    // Kamerani o'zimiz boshqaramiz (ZXing'ning ichki decodeFromConstraints'iga
-    // tayanmasdan): shunda har bir kadrni skanerlashdan oldin markazdan kesib,
-    // raqamli ravishda kattalashtirish (zoom) imkoni bo'ladi. EAN-13 kabi 1D
-    // shtrix-kodlar butun video kadrga nisbatan kichik bo'lsa, ZXing ko'pincha
-    // ularni umuman ko'rmaydi — kesib-kattalashtirish shu muammoni hal qiladi.
-    scannerStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}, focusMode:{ideal:'continuous'}}
-    });
-    videoEl.srcObject = scannerStream;
-    videoEl.setAttribute('playsinline','true');
-    await videoEl.play().catch(()=>{});
-    await new Promise(res=>{
-      if(videoEl.readyState>=2) return res();
-      videoEl.onloadedmetadata = ()=>res();
-      setTimeout(res,1500);
-    });
-    if(typeof zxingReader.decodeFromCanvas!=='function'){
-      // Kutubxonaning bu versiyasida canvas orqali dekodlash yo'q — eski
-      // to'g'ridan-to'g'ri video oqimidan o'qish usuliga qaytamiz.
+  const hints = buildZxingHints();
+  zxingReader = hints ? new ZXing.BrowserMultiFormatReader(hints) : new ZXing.BrowserMultiFormatReader();
+  scannerVideoEl = videoEl;
+  videoEl.setAttribute('playsinline','true');
+  videoEl.muted = true;
+
+  // Kod topilganda chaqiriladi; "topilmadi" holati (NotFoundException va
+  // shunga o'xshash decode xatolari) har bir kadrda normal — foydalanuvchiga
+  // ko'rsatilmaydi, faqat davom etamiz.
+  const decodeCallback = (result)=>{
+    if(!scanEngineActive) return;
+    if(result) onDecode(result.getText());
+  };
+
+  // 3-bosqich (oxirgi chora): streamni o'zimiz olamiz va to'g'ridan-to'g'ri
+  // butun video kadrdan (kesmasdan) decodeContinuously bilan o'qiymiz.
+  function manualStreamFallback(){
+    (async ()=>{
+      try{
+        let stream=null, lastErr=null;
+        for(const constraints of CAMERA_CONSTRAINT_LADDER){
+          try{ stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
+          catch(e){ lastErr=e; }
+        }
+        if(!stream) throw (lastErr || new Error("Kameraga ulanib bo'lmadi"));
+        scannerStream = stream;
+        videoEl.srcObject = stream;
+        await videoEl.play().catch(()=>{});
+        await new Promise(res=>{
+          if(videoEl.readyState>=2) return res();
+          videoEl.onloadedmetadata = ()=>res();
+          setTimeout(res,1500);
+        });
+        if(typeof zxingReader.decodeContinuously!=='function'){
+          throw new Error("Skaner kutubxonasida mos decode usuli topilmadi");
+        }
+        scanEngineActive = true;
+        zxingReader.decodeContinuously(videoEl, decodeCallback);
+      }catch(err){
+        scanEngineActive = false;
+        onError && onError(err && err.message ? err.message : "Kameraga ulanib bo'lmadi (ruxsat berilmagan bo'lishi mumkin)");
+      }
+    })();
+  }
+
+  // 2-bosqich: ZXing o'zi mos kamerani tanlab olsin (deviceId ko'rsatilmasa,
+  // birinchi mos video qurilmani ishlatadi).
+  function videoDeviceFallback(){
+    if(typeof zxingReader.decodeFromVideoDevice==='function'){
       scanEngineActive = true;
-      zxingReader.decodeContinuously(videoEl, (result)=>{ if(result) onDecode(result.getText()); });
-      return;
+      zxingReader.decodeFromVideoDevice(undefined, videoEl, decodeCallback).catch(()=>{
+        scanEngineActive = false;
+        try{ zxingReader.reset(); }catch(e){}
+        manualStreamFallback();
+      });
+    } else {
+      manualStreamFallback();
     }
+  }
+
+  // 1-bosqich (eng barqaror): ZXing constraint orqali kamerani o'zi ochadi va
+  // butun video kadrdan uzluksiz (continuous) decode qiladi — markaziy kvadrat
+  // crop yo'q, shu sababli uzun gorizontal/vertikal EAN-13 kabi 1D kodlar ham
+  // to'liq kadr ichida qolib, TRY_HARDER bilan har xil burchakda aniqlanadi.
+  function constraintsFallback(index){
+    if(index>=CAMERA_CONSTRAINT_LADDER.length){ videoDeviceFallback(); return; }
     scanEngineActive = true;
-    if(!scanCanvasEl){ scanCanvasEl = document.createElement('canvas'); scanCtxEl = scanCanvasEl.getContext('2d',{willReadFrequently:true}); }
-    let zoomToggle = 0;
-    const loop = ()=>{
-      if(!scanEngineActive) return;
-      const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
-      if(!vw || !vh){ scannerRAF = setTimeout(loop, 150); return; }
-      // Har navbatda kesish nisbatini biroz o'zgartiramiz (0.9 / 0.55) —
-      // shunda ham uzoqroq, ham juda yaqin ushlangan kodlar qamrab olinadi.
-      zoomToggle = 1 - zoomToggle;
-      const cropRatio = zoomToggle ? 0.55 : 0.92;
-      const side = Math.min(vw, vh) * cropRatio;
-      const sx = (vw - side)/2, sy = (vh - side)/2;
-      const outSize = 960;
-      scanCanvasEl.width = outSize; scanCanvasEl.height = outSize;
-      scanCtxEl.drawImage(videoEl, sx, sy, side, side, 0, 0, outSize, outSize);
-      Promise.resolve()
-        .then(()=> zxingReader.decodeFromCanvas(scanCanvasEl))
-        .then(result=>{ if(result) onDecode(result.getText()); })
-        .catch(()=>{ /* NotFoundException — bu kadrda kod topilmadi, davom etamiz */ })
-        .then(()=>{ scannerRAF = setTimeout(loop, 130); });
-    };
-    loop();
-  }catch(err){
-    scanEngineActive = false;
-    onError && onError(err && err.message ? err.message : "Kameraga ulanib bo'lmadi (ruxsat berilmagan bo'lishi mumkin)");
+    zxingReader.decodeFromConstraints(CAMERA_CONSTRAINT_LADDER[index], videoEl, decodeCallback).catch(()=>{
+      scanEngineActive = false;
+      try{ zxingReader.reset(); }catch(e){}
+      constraintsFallback(index+1);
+    });
+  }
+
+  if(typeof zxingReader.decodeFromConstraints==='function'){
+    constraintsFallback(0);
+  } else {
+    videoDeviceFallback();
   }
 }
-let scanCanvasEl = null, scanCtxEl = null;
+
 function stopScanEngine(){
   scanEngineActive = false;
   if(scannerRAF){ clearTimeout(scannerRAF); scannerRAF = null; }
   if(zxingReader){ try{ zxingReader.reset(); }catch(e){} zxingReader=null; }
   if(scannerStream){ try{ scannerStream.getTracks().forEach(t=>t.stop()); }catch(e){} scannerStream=null; }
+  if(scannerVideoEl){
+    try{
+      if(scannerVideoEl.srcObject){ try{ scannerVideoEl.srcObject.getTracks().forEach(t=>t.stop()); }catch(e){} }
+      scannerVideoEl.srcObject = null;
+    }catch(e){}
+    scannerVideoEl = null;
+  }
 }
 function toggleCamera(){
   if(scanEngineActive){ stopScanEngine(); updateStandaloneCamUI(false); return; }
