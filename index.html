@@ -640,6 +640,22 @@ let scannerVideoEl = null;
 let scannedProduct = null;
 let zxingReader = null;
 let scanEngineActive = false;
+/* --- Professional scanner engine uchun qo'shimcha state (BarcodeDetector + ZXing fallback) --- */
+let scannerDetector = null;      // native window.BarcodeDetector instance
+let scannerEngineType = null;    // 'native' | 'zxing'
+let scannerCanvas = null;        // qayta ishlatiladigan asosiy frame canvas (har frame'da yaratilmaydi)
+let scannerCanvasCtx = null;
+let scannerRotateCanvas = null;  // ZXing fallback uchun rotation (90/180/270) yordamchi canvas
+let scannerRotateCtx = null;
+let scannerLoopTimer = null;     // throttled frame-loop uchun setTimeout handle
+let scannerLoopToken = 0;        // har startScanEngine() chaqiruvida oshadi — eski loop o'z-o'zini to'xtatadi
+let scannerLastCode = null;      // duplicate-protection: oxirgi aniqlangan kod
+let scannerLastTime = 0;         // duplicate-protection: oxirgi aniqlangan vaqt
+const SCAN_INTERVAL_MS = 180;    // frame'lar orasidagi taxminiy interval (100-200ms oralig'ida, CPU tejash uchun)
+const DEBUG_SCANNER = false;     // true qilsangiz konsolda scanner lifecycle loglari chiqadi
+let scannerNativeConsecutiveErrors = 0; // native BarcodeDetector.detect() ketma-ket xatolar hisoblagichi
+const SCANNER_NATIVE_ERROR_THRESHOLD = 4; // shuncha ketma-ket xatodan keyin ZXing fallbackga avtomatik o'tamiz
+function scanDebug(){ if(DEBUG_SCANNER){ try{ console.log.apply(console, ['[scanner]'].concat(Array.prototype.slice.call(arguments))); }catch(e){} } }
 let wedgeBuffer = '';
 let wedgeLastTime = 0;
 
@@ -1831,101 +1847,264 @@ const CAMERA_CONSTRAINT_LADDER = [
   {video:true}
 ];
 
-function startScanEngine(videoEl, onDecode, onError){
-  if(scanEngineActive) return;
-  if(typeof ZXing==='undefined'){
-    onError && onError("Skaner kutubxonasi yuklanmadi — internet aloqasini tekshiring");
+/* Kamera oqimini CAMERA_CONSTRAINT_LADDER bo'yicha, eng qat'iydan eng soddasiga
+   qadar, birinchi muvaffaqiyatli variantgacha sinab olamiz. */
+async function acquireCameraStream(){
+  let stream=null, lastErr=null;
+  for(const constraints of CAMERA_CONSTRAINT_LADDER){
+    try{ stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
+    catch(e){ lastErr=e; }
+  }
+  if(!stream) throw (lastErr || new Error("Kameraga ulanib bo'lmadi"));
+  return stream;
+}
+
+/* Qurilma qo'llasa autofocus/continuous-focus yoqishga urinamiz. Qo'llamasa
+   sekundiga ham error bermaydi — scanner oddiy default fokus bilan davom etadi. */
+function tuneCameraTrack(stream){
+  try{
+    const track = stream.getVideoTracks && stream.getVideoTracks()[0];
+    if(!track || typeof track.getCapabilities!=='function') return;
+    const caps = track.getCapabilities();
+    const advanced=[];
+    if(caps.focusMode && caps.focusMode.includes('continuous')) advanced.push({focusMode:'continuous'});
+    if(advanced.length && typeof track.applyConstraints==='function'){
+      track.applyConstraints({advanced}).then(()=>scanDebug('continuous focus yoqildi')).catch(()=>{});
+    }
+  }catch(e){ scanDebug('capability tuning imkonsiz, o\'tkazib yuborildi', e); }
+}
+
+/* Har frame uchun bitta canvasni qayta ishlatamiz (item 16: performance —
+   canvas har frame'da yaratilmaydi/yo'q qilinmaydi). */
+function ensureScannerCanvases(){
+  if(!scannerCanvas){ scannerCanvas = document.createElement('canvas'); scannerCanvasCtx = scannerCanvas.getContext('2d',{willReadFrequently:true}); }
+  if(!scannerRotateCanvas){ scannerRotateCanvas = document.createElement('canvas'); scannerRotateCtx = scannerRotateCanvas.getContext('2d',{willReadFrequently:true}); }
+}
+
+/* Butun video kadrni (markaziy crop qilmasdan) canvasga chizamiz — shu sababli
+   barcode markazda, chetda, yuqorida, pastda — qayerda bo'lmasin aniqlanadi. */
+function captureScannerFrame(videoEl){
+  const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+  if(!vw || !vh) return null;
+  if(scannerCanvas.width!==vw || scannerCanvas.height!==vh){ scannerCanvas.width=vw; scannerCanvas.height=vh; }
+  scannerCanvasCtx.drawImage(videoEl, 0, 0, vw, vh);
+  return scannerCanvas;
+}
+
+/* ZXing fallback uchun kadrni 90/180/270 gradusga aylantirib beradi — vertikal
+   yoki aylangan holatda turgan 1D barcode'lar (masalan vertikal EAN-13) ham
+   aniqlansin degani shu. */
+function getRotatedScannerCanvas(srcCanvas, angleDeg){
+  if(angleDeg===0) return srcCanvas;
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const rotated = (angleDeg===90 || angleDeg===270);
+  const nw = rotated ? h : w, nh = rotated ? w : h;
+  if(scannerRotateCanvas.width!==nw || scannerRotateCanvas.height!==nh){ scannerRotateCanvas.width=nw; scannerRotateCanvas.height=nh; }
+  const ctx = scannerRotateCtx;
+  ctx.save();
+  ctx.clearRect(0,0,nw,nh);
+  if(angleDeg===90){ ctx.translate(nw,0); ctx.rotate(Math.PI/2); }
+  else if(angleDeg===180){ ctx.translate(nw,nh); ctx.rotate(Math.PI); }
+  else if(angleDeg===270){ ctx.translate(0,nh); ctx.rotate(-Math.PI/2); }
+  ctx.drawImage(srcCanvas, 0, 0, w, h);
+  ctx.restore();
+  return scannerRotateCanvas;
+}
+
+/* Qaysi decode engine ishlatilishini tanlaydi:
+   1) window.BarcodeDetector mavjud bo'lsa — shu (tezroq, native, batareyaga yengil)
+   2) bo'lmasa yoki yaratishda xato bo'lsa — ZXing fallback (canvas orqali) */
+async function pickScannerEngine(){
+  const desiredFormats = ['qr_code','ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf'];
+  // QR va EAN-13 eng muhim formatlar (talab: 7-band) — native detector aynan
+  // shularni real qo'llab-quvvatlamasa, uni primary sifatida ishonib bo'lmaydi.
+  const criticalFormats = ['qr_code','ean_13'];
+  if('BarcodeDetector' in window){
+    try{
+      let supported = [];
+      let supportedKnown = false;
+      if(typeof window.BarcodeDetector.getSupportedFormats==='function'){
+        try{ supported = await window.BarcodeDetector.getSupportedFormats(); supportedKnown = Array.isArray(supported) && supported.length>0; }catch(e){ supported=[]; }
+      }
+      // Agar qurilma/brauzer formatlar ro'yxatini bersa va undagi formatlar
+      // kerakli (QR/EAN-13) formatlarni real qamrab olmasa — native'ni
+      // primary sifatida tanlamaymiz, to'g'ridan-to'g'ri ZXing fallbackga o'tamiz.
+      if(supportedKnown && !criticalFormats.every(f=>supported.includes(f))){
+        scanDebug('native BarcodeDetector kerakli formatlarni (QR/EAN-13) qo\'llamaydi, ZXing fallbackka o\'tildi', supported);
+        scannerDetector = null;
+      } else {
+        const formats = supportedKnown ? desiredFormats.filter(f=>supported.includes(f)) : desiredFormats;
+        scannerDetector = new window.BarcodeDetector({formats: formats.length ? formats : desiredFormats});
+        scanDebug('detector selected: native BarcodeDetector', formats);
+        scannerNativeConsecutiveErrors = 0;
+        return 'native';
+      }
+    }catch(e){
+      scanDebug('native BarcodeDetector ishlatib bo\'lmadi, ZXing fallbackka o\'tildi', e);
+      scannerDetector = null;
+    }
+  }
+  if(!ensureZxingReader()){
+    return null; // hech qanday engine mavjud emas
+  }
+  scanDebug('detector selected: ZXing fallback (canvas frame processing)');
+  return 'zxing';
+}
+
+/* zxingReader mavjud bo'lmasa yaratadi (native ishlab turgan paytda ham
+   keyinchalik runtime'da fallbackga avtomatik o'tish uchun kerak bo'ladi).
+   Muvaffaqiyatli bo'lsa true, ZXing kutubxonasi yuklanmagan bo'lsa false qaytaradi. */
+function ensureZxingReader(){
+  if(zxingReader) return true;
+  if(typeof ZXing==='undefined') return false;
+  try{
+    const hints = buildZxingHints();
+    zxingReader = hints ? new ZXing.BrowserMultiFormatReader(hints) : new ZXing.BrowserMultiFormatReader();
+    return true;
+  }catch(e){
+    scanDebug('ZXing reader yaratib bo\'lmadi', e);
+    zxingReader = null;
+    return false;
+  }
+}
+
+/* Native BarcodeDetector runtime'da ketma-ket bir necha marta xato bersa
+   yoki umuman ishlay olmasa (masalan qurilma buni real qo'llab-quvvatlamasa),
+   scanner to'xtab qolmasligi uchun ZXing fallbackka avtomatik o'tkazadi. */
+function switchToZxingFallback(){
+  if(scannerEngineType==='zxing') return;
+  if(!ensureZxingReader()){
+    scanDebug('ZXing fallbackga o\'tib bo\'lmadi — kutubxona mavjud emas');
     return;
   }
+  scanDebug('native BarcodeDetector ketma-ket xato berdi, ZXing fallbackga avtomatik o\'tildi');
+  scannerEngineType = 'zxing';
+  scannerDetector = null;
+  scannerNativeConsecutiveErrors = 0;
+}
+
+/* Asosiy scanner engine: kamerani ochadi, mos decode motorini tanlaydi va
+   requestAnimationFrame uslubidagi throttled loop orqali (~100-200ms) har
+   frame'ni BarcodeDetector yoki ZXing bilan tekshiradi. Chaqiruvchi funksiyalar
+   (toggleCamera, dkOpenScanModal va h.k.) o'zgarishsiz shu signatura bilan
+   ishlashda davom etadi: startScanEngine(videoEl, onDecode, onError). */
+function startScanEngine(videoEl, onDecode, onError){
+  if(scanEngineActive) return;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     onError && onError("Bu qurilma/brauzerda kameraga kirish imkoni yo'q");
     return;
   }
-  const hints = buildZxingHints();
-  zxingReader = hints ? new ZXing.BrowserMultiFormatReader(hints) : new ZXing.BrowserMultiFormatReader();
+  ensureScannerCanvases();
+  const token = ++scannerLoopToken; // shu ishga tushirishga tegishli "avlod raqami"
   scannerVideoEl = videoEl;
+  scannerLastCode = null;
+  scannerLastTime = 0;
   videoEl.setAttribute('playsinline','true');
   videoEl.muted = true;
 
-  // Kod topilganda chaqiriladi; "topilmadi" holati (NotFoundException va
-  // shunga o'xshash decode xatolari) har bir kadrda normal — foydalanuvchiga
-  // ko'rsatilmaydi, faqat davom etamiz.
-  const decodeCallback = (result)=>{
-    if(!scanEngineActive) return;
-    if(result) onDecode(result.getText());
-  };
+  // Aniqlangan kodni foydalanuvchiga yetkazishdan oldin 1.5 soniyalik
+  // duplicate-protection: bitta barcode kamera oldida uzoq turganda
+  // qayta-qayta (har frame'da) mahsulot qo'shilib ketmasligi uchun.
+  function handleDetected(code){
+    if(!code) return;
+    if(token!==scannerLoopToken || !scanEngineActive) return;
+    const now = Date.now();
+    if(code===scannerLastCode && (now-scannerLastTime)<1500) return;
+    scannerLastCode = code;
+    scannerLastTime = now;
+    scanDebug('barcode detected', code);
+    onDecode(code);
+  }
 
-  // 3-bosqich (oxirgi chora): streamni o'zimiz olamiz va to'g'ridan-to'g'ri
-  // butun video kadrdan (kesmasdan) decodeContinuously bilan o'qiymiz.
-  function manualStreamFallback(){
-    (async ()=>{
+  let rotationIndex = 0;
+  const ZXING_ROTATIONS = [0, 90, 180, 270];
+
+  function runLoop(){
+    if(token!==scannerLoopToken || !scanEngineActive) return;
+    scannerLoopTimer = setTimeout(async ()=>{
+      if(token!==scannerLoopToken || !scanEngineActive) return;
       try{
-        let stream=null, lastErr=null;
-        for(const constraints of CAMERA_CONSTRAINT_LADDER){
-          try{ stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
-          catch(e){ lastErr=e; }
+        const frame = captureScannerFrame(videoEl);
+        if(frame){
+          if(scannerEngineType==='native' && scannerDetector){
+            try{
+              const results = await scannerDetector.detect(frame);
+              if(token!==scannerLoopToken || !scanEngineActive) return;
+              scannerNativeConsecutiveErrors = 0; // muvaffaqiyatli chaqiruv — hisoblagichni tozalaymiz
+              if(results && results.length) handleDetected(results[0].rawValue);
+            }catch(nerr){
+              scanDebug('native detect xatosi (davom etamiz)', nerr);
+              scannerNativeConsecutiveErrors++;
+              // Native detector ketma-ket bir necha marta xato bersa (masalan
+              // qurilma/brauzer uni amalda ishlata olmasa), ZXing fallbackga
+              // avtomatik o'tamiz — scanner bu yerda to'xtab qolmaydi, chunki
+              // pastda runLoop() baribir chaqiriladi va shu yangi engine bilan davom etadi.
+              if(scannerNativeConsecutiveErrors>=SCANNER_NATIVE_ERROR_THRESHOLD){
+                switchToZxingFallback();
+              }
+            }
+          } else if(scannerEngineType==='zxing' && zxingReader){
+            // CPU tejash uchun har loop iteratsiyasida bitta burchak sinaladi,
+            // navbat bilan 0/90/180/270 — shu bilan barcha yo'nalishlar qamrab olinadi.
+            const angle = ZXING_ROTATIONS[rotationIndex % ZXING_ROTATIONS.length];
+            rotationIndex++;
+            try{
+              const rotated = getRotatedScannerCanvas(frame, angle);
+              const result = zxingReader.decodeFromCanvas(rotated);
+              if(result) handleDetected(result.getText());
+            }catch(zerr){
+              // NotFoundException — bu kadrda kod topilmadi, bu normal holat.
+              scanDebug('rotation', angle, 'da kod topilmadi');
+            }
+          }
         }
-        if(!stream) throw (lastErr || new Error("Kameraga ulanib bo'lmadi"));
-        scannerStream = stream;
-        videoEl.srcObject = stream;
-        await videoEl.play().catch(()=>{});
-        await new Promise(res=>{
-          if(videoEl.readyState>=2) return res();
-          videoEl.onloadedmetadata = ()=>res();
-          setTimeout(res,1500);
-        });
-        if(typeof zxingReader.decodeContinuously!=='function'){
-          throw new Error("Skaner kutubxonasida mos decode usuli topilmadi");
-        }
-        scanEngineActive = true;
-        zxingReader.decodeContinuously(videoEl, decodeCallback);
       }catch(err){
-        scanEngineActive = false;
-        onError && onError(err && err.message ? err.message : "Kameraga ulanib bo'lmadi (ruxsat berilmagan bo'lishi mumkin)");
+        scanDebug('frame processing xatosi (davom etamiz)', err);
       }
-    })();
+      runLoop();
+    }, SCAN_INTERVAL_MS);
   }
 
-  // 2-bosqich: ZXing o'zi mos kamerani tanlab olsin (deviceId ko'rsatilmasa,
-  // birinchi mos video qurilmani ishlatadi).
-  function videoDeviceFallback(){
-    if(typeof zxingReader.decodeFromVideoDevice==='function'){
-      scanEngineActive = true;
-      zxingReader.decodeFromVideoDevice(undefined, videoEl, decodeCallback).catch(()=>{
-        scanEngineActive = false;
-        try{ zxingReader.reset(); }catch(e){}
-        manualStreamFallback();
+  (async ()=>{
+    try{
+      const stream = await acquireCameraStream();
+      if(token!==scannerLoopToken){ try{ stream.getTracks().forEach(t=>t.stop()); }catch(e){} return; }
+      scannerStream = stream;
+      videoEl.srcObject = stream;
+      await videoEl.play().catch(()=>{});
+      await new Promise(res=>{
+        if(videoEl.readyState>=2) return res();
+        videoEl.onloadedmetadata = ()=>res();
+        setTimeout(res,1500);
       });
-    } else {
-      manualStreamFallback();
-    }
-  }
+      if(token!==scannerLoopToken) return;
+      tuneCameraTrack(stream);
+      scanDebug('camera started');
 
-  // 1-bosqich (eng barqaror): ZXing constraint orqali kamerani o'zi ochadi va
-  // butun video kadrdan uzluksiz (continuous) decode qiladi — markaziy kvadrat
-  // crop yo'q, shu sababli uzun gorizontal/vertikal EAN-13 kabi 1D kodlar ham
-  // to'liq kadr ichida qolib, TRY_HARDER bilan har xil burchakda aniqlanadi.
-  function constraintsFallback(index){
-    if(index>=CAMERA_CONSTRAINT_LADDER.length){ videoDeviceFallback(); return; }
-    scanEngineActive = true;
-    zxingReader.decodeFromConstraints(CAMERA_CONSTRAINT_LADDER[index], videoEl, decodeCallback).catch(()=>{
+      const engine = await pickScannerEngine();
+      if(token!==scannerLoopToken) return;
+      if(!engine){
+        onError && onError("Skaner kutubxonasi yuklanmadi — internet aloqasini tekshiring");
+        return;
+      }
+      scannerEngineType = engine;
+      scanEngineActive = true;
+      runLoop();
+    }catch(err){
       scanEngineActive = false;
-      try{ zxingReader.reset(); }catch(e){}
-      constraintsFallback(index+1);
-    });
-  }
-
-  if(typeof zxingReader.decodeFromConstraints==='function'){
-    constraintsFallback(0);
-  } else {
-    videoDeviceFallback();
-  }
+      onError && onError(err && err.message ? err.message : "Kameraga ulanib bo'lmadi (ruxsat berilmagan bo'lishi mumkin)");
+    }
+  })();
 }
 
 function stopScanEngine(){
   scanEngineActive = false;
+  scannerLoopToken++; // eski (hozir to'xtayotgan) loop o'zini shu bilan to'xtatadi
+  if(scannerLoopTimer){ clearTimeout(scannerLoopTimer); scannerLoopTimer = null; }
   if(scannerRAF){ clearTimeout(scannerRAF); scannerRAF = null; }
   if(zxingReader){ try{ zxingReader.reset(); }catch(e){} zxingReader=null; }
+  scannerDetector = null;
+  scannerEngineType = null;
   if(scannerStream){ try{ scannerStream.getTracks().forEach(t=>t.stop()); }catch(e){} scannerStream=null; }
   if(scannerVideoEl){
     try{
@@ -1934,6 +2113,9 @@ function stopScanEngine(){
     }catch(e){}
     scannerVideoEl = null;
   }
+  scannerLastCode = null;
+  scannerLastTime = 0;
+  scanDebug('scanner stopped');
 }
 function toggleCamera(){
   if(scanEngineActive){ stopScanEngine(); updateStandaloneCamUI(false); return; }
