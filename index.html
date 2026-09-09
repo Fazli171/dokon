@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -281,13 +282,24 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-box{max-width:420px;margin:0 auto;text-align:center;}
 .scan-frame{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#12241A,#1E3A29);border-radius:var(--radius-l);display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:16px;overflow:hidden;}
 .scan-frame svg{width:44%;height:44%;color:rgba(255,255,255,.35);}
-.scan-corner{position:absolute;width:26px;height:26px;border:3px solid var(--primary);}
-.scan-corner.tl{top:16px;left:16px;border-right:none;border-bottom:none;}
-.scan-corner.tr{top:16px;right:16px;border-left:none;border-bottom:none;}
-.scan-corner.bl{bottom:16px;left:16px;border-right:none;border-top:none;}
-.scan-corner.br{bottom:16px;right:16px;border-left:none;border-top:none;}
-.scan-line{position:absolute;left:8%;right:8%;height:2px;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:scanmove 2.2s ease-in-out infinite;}
-@keyframes scanmove{0%{top:14%}50%{top:84%}100%{top:14%}}
+/* Skanerlash hududi — kamera tasvirining markazidagi "oyna". Bu faqat vizual
+   yo'l-yo'riq: haqiqiy barcode detection ButUN kadr bo'yicha ishlaydi (hech
+   qanday crop qilinmaydi), shuning uchun ramka tashqarisidagi kod ham
+   aniqlanaveradi — foydalanuvchiga faqat markazga mo'ljal ko'rsatiladi. */
+.scan-frame::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:82%;height:60%;border-radius:16px;
+  box-shadow:0 0 0 2000px rgba(6,14,10,.55);
+  pointer-events:none;z-index:2;
+}
+.scan-corner{position:absolute;width:30px;height:30px;border:3.5px solid var(--primary);z-index:3;border-radius:4px;}
+.scan-corner.tl{top:20%;left:9%;border-right:none;border-bottom:none;border-top-left-radius:12px;}
+.scan-corner.tr{top:20%;right:9%;border-left:none;border-bottom:none;border-top-right-radius:12px;}
+.scan-corner.bl{bottom:20%;left:9%;border-right:none;border-top:none;border-bottom-left-radius:12px;}
+.scan-corner.br{bottom:20%;right:9%;border-left:none;border-top:none;border-bottom-right-radius:12px;}
+.scan-line{position:absolute;left:11%;right:11%;height:2px;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:scanmove 2.2s ease-in-out infinite;z-index:3;}
+@keyframes scanmove{0%{top:22%}50%{top:78%}100%{top:22%}}
+.scan-hint{font-size:11.5px;color:var(--text-faint);margin:-6px 0 12px;}
 
 /* Debt status */
 .debt-progress{width:100%;height:6px;background:var(--border);border-radius:6px;overflow:hidden;}
@@ -1424,6 +1436,10 @@ function renderDkCategoriesPage(){
   return `
   <div class="page-head">
     <div><h1>Mahsulotlar</h1><p>${DB.categories.length} ta kategoriya</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline compact-action-btn" onclick="dkDownloadExcelTemplate()">${icon('download')} Excel shablonini yuklab olish</button>
+      <button class="btn btn-primary compact-action-btn" onclick="dkOpenExcelImportModal()">${icon('file-spreadsheet')} Excel orqali import</button>
+    </div>
   </div>
   <div class="dk-search-row dk-search-modern">
     <div class="dk-search-input-wrap">
@@ -1446,7 +1462,14 @@ function dkCategoriesBodyHtml(){
       <div class="dk-prod-grid">${results.map(p=>dkProdCardHtml(p)).join('')}</div>
       ${!results.length? dkSearchEmptyHtml() : ''}`;
   }
+  // Excel orqali import qilingan, hali kategoriyasi tanlanmagan mahsulotlar —
+  // hech qaysi kategoriya kartasida ko'rinmaydi (chunki category bo'sh), shu
+  // sababli darhol ko'rinishi uchun bu yerda alohida bo'lim sifatida chiqariladi.
+  const uncategorized = DB.products.filter(p=>!p.category);
   return `
+  ${uncategorized.length? `
+  <div class="dk-search-count" style="display:flex;align-items:center;gap:6px;">${icon('alert-triangle')} Kategoriyasiz mahsulotlar (${uncategorized.length}) — kategoriyani tahrirlash orqali belgilang</div>
+  <div class="dk-prod-grid" style="margin-bottom:22px;">${uncategorized.map(p=>dkProdCardHtml(p)).join('')}</div>` : ''}
   <div class="dk-cat-grid">
     ${DB.categories.map(name=>`
       <div class="dk-cat-card" onclick="dkOpenCategory('${jsEsc(name)}')">
@@ -1703,6 +1726,190 @@ function dkDeleteProduct(id){
   save(); toast("Mahsulot o'chirildi"); renderPage();
 }
 
+/* ================================================================
+   MAHSULOTLAR — EXCEL ORQALI IMPORT (DEMO)
+   Faqat 2 ustun: Mahsulot nomi + Shtrix-kod. Boshqa barcha maydonlar
+   (rasm, brend, kategoriya, turi, hajm, narxlar, tavsif va h.k.)
+   keyinroq mavjud "Mahsulotni tahrirlash" oynasi orqali to'ldiriladi —
+   bu funksiya ularga TEGMAYDI va mavjud tahrirlash logikasini
+   o'zgartirmaydi. Tasdiqlangunga qadar DB.products'ga hech narsa
+   yozilmaydi (avval tekshiruv/preview ko'rsatiladi).
+   ================================================================ */
+let dkExcelPendingImport = [];
+
+/* "Excel shablonini yuklab olish" — faqat 2 ustunli tayyor .xlsx fayl. */
+function dkDownloadExcelTemplate(){
+  if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
+  const rows = [
+    ['Mahsulot nomi','Shtrix-kod'],
+    ['Coca Cola 1.5L','4780001234567'],
+    ['Sut 450g','4780001234568'],
+    ['Non','4780001234569'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:30},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Shablon');
+  XLSX.writeFile(wb, 'mahsulotlar_shabloni.xlsx');
+}
+
+function dkOpenExcelImportModal(){
+  dkExcelPendingImport = [];
+  openModal(`
+    <div class="modal-head"><h3>${icon('file-spreadsheet')} Excel orqali import</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info">${icon('info')}<span>Excel faylda faqat 2 ta ustun bo'lishi kerak: <strong>Mahsulot nomi</strong> va <strong>Shtrix-kod</strong>. Rasm, brend, kategoriya, turi, hajm va boshqa ma'lumotlar keyinroq mahsulotni tahrirlash orqali kiritiladi.</span></div>
+      <div class="field">
+        <label>Excel fayl (.xlsx)</label>
+        <input type="file" id="dk_excel_file" accept=".xlsx,.xls" onchange="dkHandleExcelFile(this)">
+      </div>
+      <div id="dkExcelImportStatus" style="font-size:12px;color:var(--text-faint);"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+    </div>
+  `, true);
+}
+
+function dkHandleExcelFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('dkExcelImportStatus');
+  if(typeof XLSX==='undefined'){
+    toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true);
+    return;
+  }
+  if(statusEl) statusEl.textContent = "Fayl o'qilmoqda...";
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      dkProcessExcelRows(rows);
+    }catch(err){
+      if(statusEl) statusEl.textContent = '';
+      toast("Excel faylni o'qib bo'lmadi", true);
+    }
+  };
+  reader.onerror = ()=>{ if(statusEl) statusEl.textContent = ''; toast("Faylni o'qishda xatolik", true); };
+  reader.readAsArrayBuffer(file);
+}
+
+/* Excel qatorlarini tekshiradi: nom/shtrix-kod bo'sh, shtrix-kod tizimda
+   allaqachon mavjud, yoki Excel ichida shtrix-kod takrorlangan bo'lsa —
+   shu qator xatolik blokiga tushadi va import qilinmaydi. */
+function dkProcessExcelRows(rows){
+  let dataRows = rows.slice();
+  // Birinchi qator sarlavhaga o'xshasa (masalan "Mahsulot nomi"), uni o'tkazib yuboramiz.
+  if(dataRows.length && typeof dataRows[0][0]==='string' && dataRows[0][0].toLowerCase().indexOf('mahsulot')>=0){
+    dataRows = dataRows.slice(1);
+  }
+  const validRows = [];
+  const errorRows = [];
+  const seenInFile = new Set();
+  dataRows.forEach((row,idx)=>{
+    const rowNum = idx+2; // sarlavha qatori hisobga olingan holda foydalanuvchiga tushunarli qator raqami
+    const name = String(row[0]!=null?row[0]:'').trim();
+    const barcode = String(row[1]!=null?row[1]:'').trim();
+    if(!name && !barcode) return; // to'liq bo'sh qator — e'tiborsiz qoldiriladi
+    let error = '';
+    if(!name) error = "Mahsulot nomi bo'sh";
+    else if(!barcode) error = "Shtrix-kod bo'sh";
+    else if(DB.products.some(p=>p.barcode===barcode)) error = "Shtrix-kod tizimda allaqachon mavjud";
+    else if(seenInFile.has(barcode)) error = "Excel ichida shtrix-kod takrorlangan";
+    if(error){ errorRows.push({rowNum,name,barcode,error}); }
+    else{ seenInFile.add(barcode); validRows.push({rowNum,name,barcode}); }
+  });
+  dkRenderExcelPreview(validRows, errorRows);
+}
+
+/* Tekshiruv oynasi: yuqorida Jami/To'g'ri/Xatolik, pastda xatolikli qatorlar
+   qizil blokda, to'g'ri mahsulotlar yashil blokda (kichik rasm o'rniga
+   placeholder — rasm hali yo'q). Tasdiqlangunga qadar DB.products
+   o'zgarmaydi. */
+function dkRenderExcelPreview(validRows, errorRows){
+  dkExcelPendingImport = validRows;
+  const total = validRows.length + errorRows.length;
+  openModal(`
+    <div class="modal-head"><h3>${icon('file-spreadsheet')} Import — tekshiruv</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <span class="badge badge-gray">Jami: ${total}</span>
+        <span class="badge badge-green">To'g'ri: ${validRows.length}</span>
+        <span class="badge badge-red">Xatolik: ${errorRows.length}</span>
+      </div>
+      ${errorRows.length? `
+      <div class="alert alert-danger" style="flex-direction:column;align-items:stretch;">
+        <div style="font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px;">${icon('x-circle')}<span>Xatoliklar (${errorRows.length}) — import qilinmaydi</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow:auto;">
+          ${errorRows.map(r=>`<div style="font-size:12px;">Qator ${r.rowNum}: <strong>${r.name||'(nomsiz)'}</strong>${r.barcode?' — '+r.barcode:''} — ${r.error}</div>`).join('')}
+        </div>
+      </div>` : ''}
+      ${validRows.length? `
+      <div class="section-title" style="margin-top:14px;">To'g'ri mahsulotlar (${validRows.length})</div>
+      <div class="alert alert-ok" style="flex-direction:column;align-items:stretch;">
+        <div class="dk-prod-grid">
+          ${validRows.map(r=>`
+            <div class="dk-prod-card" style="cursor:default;">
+              <div class="dk-prod-img">${icon('image')}</div>
+              <div class="dk-prod-name">${r.name}</div>
+              <div class="dk-prod-meta cell-mono">${r.barcode}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : `<div class="empty-state">${icon('inbox')}<div>Import qilinadigan to'g'ri qator topilmadi</div></div>`}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      ${validRows.length? `<button class="btn btn-primary" onclick="dkConfirmExcelImport()">${icon('check')} ${validRows.length} ta mahsulotni import qilish</button>` : ''}
+    </div>
+  `, true);
+}
+
+/* Faqat shu bosilgandagina DB.products'ga yoziladi. Har bir yangi mahsulot
+   mavjud yaratish logikasidagi kabi unique ID/SKU/QR-kod oladi (dkUniqueSku/
+   dkUniqueQr — xuddi dkSaveProduct'da ishlatilgani kabi). Kategoriya ATAYLAB
+   bo'sh qoldiriladi (DB.categories[0] majburan tanlanmaydi) — mahsulot
+   keyinchalik tahrirlash orqali kategoriyaga ega bo'ladi. */
+function dkConfirmExcelImport(){
+  const rows = dkExcelPendingImport || [];
+  if(!rows.length){ closeModal(); return; }
+  let count = 0;
+  rows.forEach(r=>{
+    if(DB.products.some(p=>p.barcode===r.barcode)) return; // qo'shimcha xavfsizlik: import paytida takroriylik
+    const sku = dkUniqueSku();
+    DB.products.push({
+      id: uid('p'),
+      sku,
+      barcode: r.barcode,
+      qrCode: dkUniqueQr(sku),
+      name: r.name,
+      brand: '',
+      category: '',
+      emoji: '📦',
+      image: null,
+      packaged: true,
+      size: '',
+      pkgUnit: null,
+      unit: 'dona',
+      desc: '',
+      isForSale: false,
+      qty: 0, cost: 0, price: 0, minQty: 0,
+      batches: [],
+      createdAt: Date.now(), updatedAt: Date.now(),
+    });
+    count++;
+  });
+  save();
+  logActivity(`Excel orqali ${count} ta mahsulot import qildi`);
+  dkExcelPendingImport = [];
+  closeModal();
+  toast(`${count} ta mahsulot import qilindi`);
+  dkView = 'categories'; dkCurrentCatId = null; dkCatSearch = '';
+  renderPage();
+}
+
 /* ---------------- Mahsulot haqida (batafsil) ---------------- */
 function dkOpenProductDetail(id){
   const p = DB.products.find(x=>x.id===id);
@@ -1775,6 +1982,7 @@ function dkOpenScanModal(){
         <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
         <div class="scan-line"></div>
       </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
       <p id="dkScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
       <div id="dkScanResult" style="min-height:20px;margin-bottom:10px;"></div>
       <div class="field" style="display:flex;gap:8px;text-align:left;">
@@ -1795,7 +2003,7 @@ function dkOpenScanModal(){
   },(err)=>{
     const st=document.getElementById('dkScanStatus'); if(st) st.textContent = "Xato: "+err;
   });
-  const st=document.getElementById('dkScanStatus'); if(st) st.textContent = "Kamera faol — kodni ramka ichiga tuting";
+  const st=document.getElementById('dkScanStatus'); if(st) st.textContent = "Kamera faol — shtrix-kodni ramka ichiga joylashtiring";
 }
 function dkCloseScanModal(){ stopScanEngine(); closeModal(); }
 function dkManualLookup(){
@@ -1836,6 +2044,7 @@ function renderScanner(){
       <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
       <div class="scan-line"></div>
     </div>
+    <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
     <p id="scanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:14px;">Kamerani yoqish uchun tugmani bosing</p>
     <div style="margin-bottom:14px;">
       <button class="btn btn-primary" id="camToggleBtn" onclick="toggleCamera()">${icon('camera')} Kamerani yoqish</button>
@@ -2974,6 +3183,7 @@ function openSalesScanModal(){
         <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
         <div class="scan-line"></div>
       </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
       <p id="saleScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
       <div id="saleScanLast" style="min-height:44px;"></div>
       <div style="font-size:11.5px;color:var(--text-faint);margin-top:6px;">Mahsulotni skanerlang. Mahsulot ma'lumotlarini tekshiring, miqdorni kiriting va savatga qo'shing.</div>
@@ -3408,6 +3618,7 @@ function whOpenScanModal(){
         <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
         <div class="scan-line"></div>
       </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
       <p id="whScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
       <div id="whScanResult" style="min-height:20px;margin-bottom:10px;"></div>
       <div class="field" style="display:flex;gap:8px;text-align:left;">
@@ -3556,6 +3767,7 @@ function stockInOpenScan(){
         <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
         <div class="scan-line"></div>
       </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
       <p id="stockInScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
       <div id="stockInScanResult" style="min-height:20px;margin-bottom:10px;"></div>
       <div class="field" style="display:flex;gap:8px;text-align:left;">
@@ -4238,6 +4450,7 @@ function tvOpenScanModal(){
         <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
         <div class="scan-line"></div>
       </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
       <p id="tvScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
       <div class="field" style="display:flex;gap:8px;text-align:left;">
         <input type="text" id="tvManualCode" placeholder="QR / shtrix-kod / SKU qo'lda kiriting" onkeydown="if(event.key==='Enter')tvManualLookup()">
