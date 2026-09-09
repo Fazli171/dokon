@@ -159,6 +159,33 @@ main.content{padding:22px;flex:1;}
 .up{color:var(--primary);}
 .down{color:var(--danger);}
 
+/* Dashboard stat kartochkalari — faqat Dashboard uchun scoped, .grid-4/.grid-3/.grid-2'ga tegmaydi */
+.dashboard-stats{grid-template-columns:repeat(4,1fr);}
+.stat-card{padding:14px;gap:6px;min-width:0;transition:.15s;}
+.stat-card[onclick]:hover{border-color:var(--primary);box-shadow:var(--shadow);}
+.stat-top{min-width:0;}
+.stat-icon{width:32px;height:32px;border-radius:9px;flex-shrink:0;}
+.stat-icon svg.icon{width:16px;height:16px;}
+.stat-label{font-size:11px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-value{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-delta{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(max-width:1180px){
+  .dashboard-stats{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:640px){
+  .dashboard-stats{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stat-card{padding:11px;gap:4px;}
+  .stat-icon{width:28px;height:28px;border-radius:8px;}
+  .stat-icon svg.icon{width:14px;height:14px;}
+  .stat-value{font-size:15.5px;}
+  .stat-label{font-size:9.5px;}
+  .stat-delta{font-size:9px;}
+}
+@media(max-width:380px){
+  .dashboard-stats{gap:8px;}
+  .stat-card{padding:9px;}
+}
+
 .section-title{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
 .chart-wrap{position:relative;height:230px;}
 
@@ -923,7 +950,6 @@ function logActivity(action){
 const MENU = [
   {id:'dashboard',label:'Dashboard',icon:'layout-dashboard'},
   {id:'sales',label:'Savdo',icon:'shopping-cart'},
-  {id:'scanner',label:'QR Skaner',icon:'scan-line'},
   {id:'products',label:'Mahsulotlar',icon:'package'},
   {id:'tovarlar',label:'Tovarlar',icon:'store'},
   {id:'warehouse',label:'Ombor',icon:'warehouse'},
@@ -987,7 +1013,7 @@ function renderMenu(){
     const m = MENU.find(x=>x.id===id);
     const allowed = id==='dashboard' ? true : DB.roleRights[currentRole][id];
     if(id==='scanner'){
-      return allowed?`<div class="mn-item mn-scan" onclick="nav('scanner')">${icon('scan-line')}</div>`:`<div style="flex:1"></div>`;
+      return allowed?`<div class="mn-item mn-scan" onclick="nav('sales')">${icon('scan-line')}</div>`:`<div style="flex:1"></div>`;
     }
     return `<div class="mn-item ${currentPage===id?'active':''} ${allowed?'':'menu-hidden'}" onclick="nav('${id}')">${icon(m.icon)}<span>${m.label}</span></div>`;
   }).join('');
@@ -1066,10 +1092,10 @@ function renderDashboard(){
     <button class="btn btn-primary" onclick="nav('sales')">${icon('plus')} Yangi savdo</button>
   </div>
 
-  <div class="grid grid-4" style="margin-bottom:16px;">
+  <div class="grid dashboard-stats" style="margin-bottom:16px;">
     ${statCard('Bugungi savdo',fmt(st.todayRevenue),'trending-up','var(--primary)','var(--primary-light)','+12% kechagiga nisbatan','up',"nav('sales')")}
     ${statCard('Bugungi foyda',fmt(st.todayProfit),'sprout','var(--primary)','var(--primary-light)','Sof foyda','up')}
-    ${statCard('Sotilgan miqdor',fmtNum(st.soldQty)+' birlik','box','var(--info)','var(--info-light)','Bugun','up')}
+    ${statCard('Sotilgan miqdor',fmtNum(st.soldQty)+' ta','box','var(--info)','var(--info-light)','Bugun','up')}
     ${statCard('Ombor qiymati',fmt(st.warehouseValue),'warehouse','var(--info)','var(--info-light)',lowStock.length+' ta kam qoldi','down',"nav('warehouse')")}
     ${statCard('Jami qarz',fmt(st.totalDebt),'credit-card','var(--danger)','var(--danger-light)',overdue.length+' ta muddati o\'tgan','down',"nav('debts')")}
     ${statCard('Bugungi xarajat',fmt(st.todayExpense),'receipt','var(--warning)','var(--warning-light)','Xarajatlar','down',"nav('expenses')")}
@@ -1077,10 +1103,10 @@ function renderDashboard(){
     ${statCard('Faol mijozlar',fmtNum(DB.customers.length),'users','var(--info)','var(--info-light)',dueSoon.length+' ta muddati yaqin','up',"nav('customers')")}
   </div>
 
-  <div class="grid grid-4" style="margin-bottom:16px;">
+  <div class="grid dashboard-stats" style="margin-bottom:16px;">
     ${statCard('📦 Jami mahsulotlar',fmtNum(st.totalProducts)+' xil','package','var(--info)','var(--info-light)','Bazadagi jami','up',"nav('products')")}
     ${statCard('⬇️ Bugungi kirim',fmtNum(st.todayInMoves.length)+' ta kirim',"arrow-down-to-line",'var(--primary)','var(--primary-light)','Omborga qabul qilingan','up',"nav('warehouse')")}
-    ${statCard('⬆️ Bugungi sotuv',fmtNum(st.soldQty)+' birlik',"arrow-up-from-line",'var(--info)','var(--info-light)',fmt(st.todayRevenue),'up',"nav('sales')")}
+    ${statCard('⬆️ Bugungi sotuv',fmtNum(st.soldQty)+' ta',"arrow-up-from-line",'var(--info)','var(--info-light)',fmt(st.todayRevenue),'up',"nav('sales')")}
     ${statCard('💰 Jami sotuv summasi',fmt(st.allSalesTotal),'banknote','var(--primary)','var(--primary-light)','Barcha davr','up',"openSalesHistoryModal()")}
   </div>
 
@@ -1097,7 +1123,7 @@ function renderDashboard(){
 
   <div class="card" style="margin-bottom:16px;">
     <div class="section-title">Bugungi faoliyat</div>
-    <div class="grid grid-4" style="gap:10px;">
+    <div class="grid dashboard-stats" style="gap:10px;">
       <div class="mobile-stat-box"><span class="msb-label">Bugungi kirimlar</span><span class="msb-val">${fmtNum(st.todayInMoves.length)} ta</span></div>
       <div class="mobile-stat-box"><span class="msb-label">Bugungi sotuvlar</span><span class="msb-val">${fmtNum(st.todaySalesCount)} ta</span></div>
       <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarishlar</span><span class="msb-val">${fmtNum(st.todayReturns.length)} ta</span></div>
@@ -1579,7 +1605,12 @@ function dkOpenProductModal(id, cloneFromId, prefillBarcode){
       </div>
       <div class="field"><label>Mahsulot nomi *</label><input id="dk_p_name" value="${nameVal}" placeholder="Masalan: Coca Cola"></div>
       <div class="field"><label>Brend</label><input id="dk_p_brand" value="${brandVal}" placeholder="Ixtiyoriy"></div>
-      <div class="field"><label>Kategoriya</label><div class="dk-readonly-cat">${catIcon(catName)} ${catName}</div></div>
+      <div class="field"><label>Kategoriya *</label>
+        <select id="dk_p_category">
+          ${!catName?`<option value="" disabled selected>Kategoriyani tanlang</option>`:''}
+          ${DB.categories.map(c=>`<option value="${c}" ${catName===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
       <div class="field">
         <label>Turi</label>
         <div class="pay-types" id="dk_packaged_toggle" style="grid-template-columns:repeat(2,1fr);">
@@ -1619,7 +1650,9 @@ function dkSaveProduct(id){
   } else {
     barcode = existing ? (existing.barcode || dkUniqueBarcode()) : dkUniqueBarcode();
   }
-  const catName = existing ? existing.category : (dkModalCatName || dkCurrentCatId);
+  const catSelect = document.getElementById('dk_p_category');
+  const catName = catSelect ? catSelect.value : (existing ? existing.category : (dkModalCatName || dkCurrentCatId));
+  if(!catName){ toast("Kategoriyani tanlang",true); return; }
   const data = {
     category: catName,
     name,
@@ -2298,10 +2331,15 @@ function posProdCardHtml(p){
    Universal dkSearchProducts() orqali nom/brend/SKU/shtrix-kod/QR bo'yicha real vaqtda qidiradi. */
 function renderPosGrid(){
   const q = dkNormQuery(posSearchQuery);
-  const forSale = DB.products.filter(p=>p.isForSale);
-  const list = q ? dkSearchProducts(q, forSale) : forSale;
   const grid = document.getElementById('posGrid'); if(!grid) return;
-  grid.innerHTML = list.length? list.map(p=>posProdCardHtml(p)).join('') : `<div class="empty-state" style="grid-column:1/-1;">${icon('search-x')}<div>${q?'Topilmadi':"Hali sotuvga chiqarilgan mahsulot yo'q. Tovarlar bo'limidan qo'shing."}</div></div>`;
+  if(!q){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${icon('search')}<div>Mahsulotni qidiring yoki skanerlang</div></div>`;
+    lucide.createIcons();
+    return;
+  }
+  const forSale = DB.products.filter(p=>p.isForSale);
+  const list = dkSearchProducts(q, forSale);
+  grid.innerHTML = list.length? list.map(p=>posProdCardHtml(p)).join('') : `<div class="empty-state" style="grid-column:1/-1;">${icon('search-x')}<div>Topilmadi</div></div>`;
   lucide.createIcons();
 }
 function posSearchEnter(){
@@ -4073,13 +4111,45 @@ function tvMarkForSale(id){
 function tvRemoveFromSale(id){
   const p = DB.products.find(x=>x.id===id);
   if(!p) return;
-  if(!confirm(`"${p.name}" mahsulotini sotuvdan olib tashlaysizmi?\\n(Mahsulot umumiy bazadan o'chirilmaydi, keyinchalik yana SOTUVDA qilish mumkin)`)) return;
+  if(p.qty>0){
+    openModal(`
+      <div class="modal-head"><h3>${icon('alert-triangle')} Mahsulotni sotuvdan olib tashlab bo'lmaydi</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+      <div class="modal-body">
+        <div class="alert alert-warning">${icon('alert-triangle')}<span>Mahsulot qoldig'i 0 bo'lgandan keyin uni sotuvdan olib tashlash mumkin.</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:12.5px;background:var(--surface-2);border-radius:8px;padding:8px 10px;">
+          <span>Mahsulot: <strong>${p.name}</strong></span>
+          <span>Qoldiq: <strong>${fmtQty(p.qty)} ${p.unit}</strong></span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-primary btn-block" onclick="closeModal()">Yopish</button>
+      </div>
+    `);
+    return;
+  }
+  openModal(`
+    <div class="modal-head"><h3>Sotuvdan olib tashlash</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div style="font-weight:800;font-size:14.5px;margin-bottom:6px;">${p.name}</div>
+      <div style="font-size:12.5px;color:var(--text-soft);">Ushbu mahsulotni sotuvdan olib tashlamoqchimisiz?</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="tvConfirmRemoveFromSale('${id}')">Sotuvdan olib tashlash</button>
+    </div>
+  `);
+}
+function tvConfirmRemoveFromSale(id){
+  const p = DB.products.find(x=>x.id===id);
+  if(!p) return;
+  if(p.qty>0){ closeModal(); return; }
   const sellerId = currentSellerId();
   const sp = sellerProductEntry(sellerId, id);
   if(sp) sp.isForSale = false;
   p.isForSale = false;
   logActivity(`${p.name} — Tovarlar bo'limidan olib tashlandi`);
   save();
+  closeModal();
   toast("Sotuvdan olib tashlandi");
   tvRenderGrid();
   tvRenderSearchResults();
