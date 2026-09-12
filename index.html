@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="uz">
-<head> 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DO'KON.UZ — Oziq-ovqat mahsulotlari boshqaruv tizimi</title>
@@ -6225,28 +6225,33 @@ function openShiftDetailModal(id){
       <div class="section-title" style="margin-top:14px;">Kassa qoldig'i</div>
       <div class="ct-row"><span>Boshlang'ich naqd</span><span>${fmt(h.openingCash)}</span></div>
 
-      <div class="section-title" style="margin-top:14px;">Savdo — to'lov turlari bo'yicha</div>
-      <table class="report-table">
-        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
-        <tbody>
-          <tr><td>Naqd</td><td>${fmt(h.naqdSavdo)}</td></tr>
-          <tr><td>Karta</td><td>${fmt(h.kartaSavdo)}</td></tr>
-          <tr><td>Tez to'lov</td><td>${fmt(h.tezTolovSavdo)}</td></tr>
-          <tr><td>Qarz/Nasiya</td><td>${fmt(h.qarzSavdo)}</td></tr>
-          <tr class="report-total"><td>Jami</td><td>${fmt(h.jamiSavdo)}</td></tr>
-        </tbody>
-      </table>
-
-      <div class="section-title" style="margin-top:14px;">Qaytarishlar — to'lov turlari bo'yicha</div>
-      <table class="report-table">
-        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
-        <tbody>
-          <tr class="report-neg"><td>Naqd</td><td>−${fmt(h.naqdQaytarilgan)}</td></tr>
-          <tr class="report-neg"><td>Karta</td><td>−${fmt(h.kartaQaytarilgan)}</td></tr>
-          <tr class="report-neg"><td>Tez to'lov</td><td>−${fmt(h.tezTolovQaytarilgan)}</td></tr>
-          <tr class="report-total report-neg"><td>Jami</td><td>−${fmt(h.qaytarishJami)}</td></tr>
-        </tbody>
-      </table>
+      <div class="grid grid-2" style="align-items:start;margin-top:14px;gap:16px;">
+        <div>
+          <div class="section-title">Savdo — to'lov turlari bo'yicha</div>
+          <table class="report-table">
+            <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+            <tbody>
+              <tr><td>Naqd</td><td>${fmt(h.naqdSavdo)}</td></tr>
+              <tr><td>Karta</td><td>${fmt(h.kartaSavdo)}</td></tr>
+              <tr><td>Tez to'lov</td><td>${fmt(h.tezTolovSavdo)}</td></tr>
+              <tr><td>Qarz/Nasiya</td><td>${fmt(h.qarzSavdo)}</td></tr>
+              <tr class="report-total"><td>Jami</td><td>${fmt(h.jamiSavdo)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="section-title">Qaytarishlar — to'lov turlari bo'yicha</div>
+          <table class="report-table">
+            <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+            <tbody>
+              <tr class="report-neg"><td>Naqd</td><td>−${fmt(h.naqdQaytarilgan)}</td></tr>
+              <tr class="report-neg"><td>Karta</td><td>−${fmt(h.kartaQaytarilgan)}</td></tr>
+              <tr class="report-neg"><td>Tez to'lov</td><td>−${fmt(h.tezTolovQaytarilgan)}</td></tr>
+              <tr class="report-total report-neg"><td>Jami</td><td>−${fmt(h.qaytarishJami)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div class="section-title" style="margin-top:14px;">Jami</div>
       <div class="ct-row"><span>Jami savdo</span><span>${fmt(h.jamiSavdo)}</span></div>
