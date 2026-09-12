@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
@@ -57,6 +57,8 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 button{cursor:pointer;border:none;background:none;}
 a{color:inherit;text-decoration:none;}
 ul{list-style:none;}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px;}
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{outline:none;}
 svg.icon{width:18px;height:18px;stroke-width:2;flex-shrink:0;}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:#D3D8D4;border-radius:8px;}
@@ -187,6 +189,31 @@ main.content{padding:22px;flex:1;}
   .stat-card{padding:9px;}
 }
 
+/* ---------- Dashboard hero KPI band (Square/Shopify/Loyverse style:
+   one prominent "today" number + compact secondary KPIs in one strip,
+   instead of many equal-weight colored cards) ---------- */
+.dash-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:22px 26px;display:flex;align-items:stretch;gap:30px;flex-wrap:wrap;}
+.dash-hero-main{display:flex;flex-direction:column;justify-content:center;min-width:170px;}
+.dash-hero-label{font-size:12.5px;font-weight:700;color:var(--text-soft);margin-bottom:8px;}
+.dash-hero-value{font-size:36px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px;color:var(--text);line-height:1;}
+.dash-hero-trend{font-size:12px;font-weight:700;margin-top:10px;display:inline-flex;align-items:center;gap:4px;width:fit-content;padding:4px 10px;border-radius:20px;}
+.dash-hero-trend.up{background:var(--primary-light);color:var(--primary-dark);}
+.dash-hero-trend.down{background:var(--danger-light);color:#8E2C1F;}
+.dash-hero-secondary{display:flex;flex:1;min-width:260px;}
+.dash-hero-mini{flex:1;padding:0 22px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:6px;}
+.dash-hero-mini:first-child{border-left:none;padding-left:0;}
+.dash-hero-mini-label{font-size:11px;font-weight:700;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-hero-mini-value{font-size:19px;font-weight:800;font-family:var(--mono);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(max-width:900px){
+  .dash-hero{padding:18px;gap:16px;}
+  .dash-hero-secondary{flex-wrap:wrap;row-gap:14px;}
+  .dash-hero-mini{flex:1 1 45%;min-width:45%;border-left:none;border-top:1px solid var(--border);padding:12px 0 0;}
+  .dash-hero-mini:first-child{border-top:none;padding-top:0;}
+}
+@media(max-width:480px){
+  .dash-hero-value{font-size:27px;}
+}
+
 .section-title{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
 .chart-wrap{position:relative;height:230px;}
 
@@ -232,7 +259,7 @@ tbody tr:hover{background:var(--surface-2);}
 .field input,.field select,.field textarea{
   width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface);outline:none;
 }
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,139,76,.12);}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
 /* Toast */
@@ -268,6 +295,15 @@ tbody tr:hover{background:var(--surface-2);}
 .cart-totals{border-top:1px dashed var(--border);padding-top:10px;margin-top:6px;}
 .ct-row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px;color:var(--text-soft);}
 .ct-row.total{font-size:17px;font-weight:800;color:var(--text);margin-top:8px;}
+/* Smena hisoboti — bitta ustunli jadval (Tip / Summa), skrolni kamaytirish uchun */
+.report-table{width:100%;border-collapse:collapse;margin-bottom:2px;}
+.report-table th{text-align:left;font-size:10.5px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;padding:6px 2px;border-bottom:1px solid var(--border);}
+.report-table th:last-child{text-align:right;}
+.report-table td{padding:9px 2px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text);}
+.report-table td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap;}
+.report-table tr:last-child td{border-bottom:none;}
+.report-table tr.report-total td{font-weight:800;border-top:2px solid var(--border);border-bottom:none;padding-top:10px;}
+.report-table tr.report-neg td:last-child{color:var(--danger);}
 .pay-types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
 .pay-type{padding:10px 6px;border:1.5px solid var(--border);border-radius:var(--radius-m);text-align:center;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;}
 .pay-type svg{width:18px;height:18px;}
@@ -470,6 +506,33 @@ tbody tr:hover{background:var(--surface-2);}
   .compact-action-btn svg{width:14px;height:14px;}
 }
 
+/* =====================================================================
+   MOBILE — Qaytarishlar (Returns) va Kassa "qaytarishlar" ro'yxati uchun
+   BIR XIL ixcham qator dizayni. Faqat #returnsTable / #cashReturnsTable
+   o'rnini bosuvchi ro'yxatlarga qat'iy izolyatsiya qilingan — boshqa hech
+   qanday sahifaga, hisob-kitobga yoki JS logikaga ta'sir qilmaydi.
+   Desktopda (>640px) bu klass ko'rinmaydi, asl <table> o'zgarishsiz qoladi.
+   ===================================================================== */
+.compact-op-list{display:none;}
+.compact-op-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+.compact-op-top{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--text-faint);font-weight:700;}
+.compact-op-top .cop-date{white-space:nowrap;}
+.compact-op-top .cop-check{font-family:var(--mono);white-space:nowrap;}
+.compact-op-top .cop-usul{margin-left:auto;flex-shrink:0;}
+.compact-op-top .badge{font-size:9.5px;padding:1px 7px;white-space:nowrap;}
+.compact-op-mid{display:flex;align-items:flex-start;gap:8px;}
+.compact-op-product{font-weight:700;font-size:12.5px;line-height:1.3;flex:1;min-width:0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.compact-op-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;}
+.compact-op-qty{color:var(--text-soft);font-family:var(--mono);white-space:nowrap;}
+.compact-op-amount{font-weight:800;font-family:var(--mono);color:var(--danger);white-space:nowrap;}
+.compact-op-cancel{flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;padding:0;}
+.compact-op-cancel svg{width:14px;height:14px;}
+@media(max-width:640px){
+  #returnsTable,#cashReturnsTable{display:none;}
+  .compact-op-list{display:flex;flex-direction:column;gap:7px;}
+}
+
 /* ================================================================
    DK- (Mahsulotlar bo'limi) — izolyatsiya qilingan uslublar.
    Boshqa bo'limlarga (Savdo, Ombor va h.k.) ta'sir qilmaydi.
@@ -550,6 +613,9 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .dk-barcode-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
 .dk-barcode-row input{flex:1;}
+/* "Mahsulot haqida" — QR-kod va Shtrix-kod bloklari bir xil o'lcham/uslubda ko'rinishi uchun */
+.dk-code-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;min-height:250px;padding:14px;background:#F3F7F4;border-radius:20px;text-align:center;overflow:hidden;box-sizing:border-box;}
+.dk-code-box-svg{width:85%;max-width:420px;height:auto;}
 .dk-img-upload{display:flex;align-items:center;gap:10px;}
 .dk-img-preview{width:56px;height:56px;border-radius:12px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
 .dk-img-preview img{width:100%;height:100%;object-fit:cover;}
@@ -603,6 +669,13 @@ tbody tr:hover{background:var(--surface-2);}
   .tv-name{font-size:10.5px;line-height:1.15;min-height:2.1em;}
   .tv-meta{font-size:8.5px;}
 }
+/* ---------- Inventarizatsiya (ombor tekshiruvi) ---------- */
+.inv-count-input{width:90px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface-2);text-align:right;font-weight:700;}
+.inv-count-input:focus{outline:2px solid var(--primary);background:#fff;}
+.inv-diff-pos{color:var(--primary);font-weight:800;}
+.inv-diff-neg{color:var(--danger);font-weight:800;}
+.inv-diff-zero{color:var(--text-faint);}
+.inv-row-diff{background:var(--warning-light);}
 </style>
 </head>
 <body>
@@ -686,6 +759,11 @@ function genBarcode(){
 function genQr(sku){ return (sku||'QR')+'-'+Math.random().toString(36).slice(2,7).toUpperCase(); }
 function stepFor(unit){ return ['dona','qop','komplekt','rulon','pachka'].includes(unit) ? 1 : 0.1; }
 function activeSales(){ return DB.sales.filter(s=>s.status!=='bekor qilingan'); }
+/* ---------------------------- QAYTARISHLAR — global yordamchilar ---------------------------- */
+/* Faqat TASDIQLANGAN (bekor qilinmagan) qaytarishlar kassa/hisobot/ombor
+   hisob-kitoblariga ta'sir qiladi — shu funksiya orqali BARCHA joyda bir xil filtrlanadi. */
+function confirmedReturns(){ return (DB.returns||[]).filter(r=>r.status==='tasdiqlangan'); }
+function returnAmount(r){ return r.amount!=null ? r.amount : r.price*r.qty; }
 
 /* ---------------------------- QADOQLI / QADOQSIZ (packaged vs bulk) ---------------------------- */
 const PACKAGED_UNITS = ['dona','qop','komplekt','rulon','pachka','banka','butilka']; // sotiladigan butun birliklar
@@ -761,6 +839,23 @@ const PKG_UNITS = ['g','kg','ml','litr','sm','m','m²'];
    (eski mahsulotlar) eski xatti-harakat saqlanadi — p.unit bilan ko'rsatiladi,
    shuning uchun bu funksiya to'liq orqaga moslashuvchan (backward compatible). */
 function pkgLabel(p){ return p.size ? (p.size+' '+(p.pkgUnit||p.unit||'')) : ''; }
+/* ---------------- Ko'p ombor (warehouse) yordamchi funksiyalari ----------------
+   Har bir partiya (batch) warehouseId ga ega. p.qty HAR DOIM barcha omborlar
+   yig'indisi bo'lib qoladi (Savdo/Dashboard/Mahsulot kartasi shu bilan ishlayveradi,
+   hech narsa buzilmaydi) — ombor bo'yicha aniq qoldiq esa productQtyInWh() orqali olinadi. */
+function defaultWarehouseId(){
+  const list = DB.warehouses||[];
+  const d = list.find(w=>w.isDefault);
+  return d ? d.id : (list[0] ? list[0].id : 'wh_main');
+}
+function whName(id){ const w=(DB.warehouses||[]).find(x=>x.id===id); return w ? w.name : "Noma'lum ombor"; }
+function productQtyInWh(p, whId){
+  const target = whId || defaultWarehouseId();
+  return roundQty((p.batches||[]).filter(b=>(b.warehouseId||defaultWarehouseId())===target).reduce((a,b)=>a+b.qty,0));
+}
+function warehouseTotalValue(whId){
+  return whProducts().reduce((a,p)=>a+productQtyInWh(p,whId)*p.cost,0);
+}
 let CATEGORIES = DEFAULT_CATEGORIES.slice();
 
 /* ---------------------------- SEED DEMO DATA ---------------------------- */
@@ -786,12 +881,15 @@ function seedData(){
     sales: [], expenses: [], returns: [], deliveries: [],
     stockMoves: [],
     sellerProducts: [], // {id, sellerId, productId, isForSale, createdAt} — kim (qaysi sotuvchi) qaysi mahsulotni SOTUVDA qilganini alohida yozadi (katalogdan mustaqil)
+    warehouses: [{id:'wh_main', name:'Asosiy ombor', isDefault:true, createdAt:Date.now()}], // ko'p ombor tizimi — har bir partiya (batch) qaysi omborga tegishli ekanini warehouseId orqali biladi
+    transfers: [], // {id, fromWhId, toWhId, productId, productName, qty, unit, date, note, status:'yuborildi'|'qabul_qilindi', createdAt, receivedAt}
+    inventories: [], // {id, date, warehouseId, warehouseName, items:[{productId,name,unit,systemQty,countedQty,diff,cost}], totalDiffValue, user, note, createdAt}
     cash: {history:[]},
     activity: [],
     roleRights: {
-      admin: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:true,customers:true,debts:true,employees:true,cash:true,expenses:true,returns:true,delivery:true,reports:true,settings:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,dashboard:true},
-      sotuvchi: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:false,customers:true,debts:true,employees:false,cash:false,expenses:false,returns:true,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:15,cancelSale:false,dashboard:true},
-      omborchi: {sales:false,scanner:true,products:true,tovarlar:true,warehouse:true,customers:false,debts:false,employees:false,cash:false,expenses:false,returns:false,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:0,cancelSale:false,dashboard:true},
+      admin: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:true,debts:true,employees:true,cash:true,expenses:true,returns:true,delivery:true,reports:true,settings:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,dashboard:true},
+      sotuvchi: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:false,inventory:false,customers:true,debts:true,employees:false,cash:false,expenses:false,returns:true,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:15,cancelSale:false,dashboard:true},
+      omborchi: {sales:false,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:false,debts:false,employees:false,cash:false,expenses:false,returns:false,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:0,cancelSale:false,dashboard:true},
     },
     saleCounter: 0,
     schemaV2Migrated: true,
@@ -837,6 +935,11 @@ function migrateProduct(p){
       ? [{id:uid('lot'),lot:'LEGACY',qty:p.qty,cost:p.cost,price:p.price,expiry:null,supplier:'',note:"Eski tizimdan ko'chirilgan",date:todayISO(),createdAt:Date.now()}]
       : [];
   }
+  /* Ko'p ombor tizimi: eski (ombor tanlanmagan) partiyalar avtomatik ravishda
+     asosiy omborga (defaultWarehouseId()) biriktiriladi — shunda mavjud
+     qoldiqlar yo'qolib qolmaydi va hech narsa buzilmaydi. */
+  (p.batches||[]).forEach(b=>{ if(!b.warehouseId) b.warehouseId = defaultWarehouseId(); });
+  if(p.brakQty==null) p.brakQty = 0; // brak (yaroqsiz) miqdor — sotiladigan qoldiqdan ALOHIDA hisoblanadi
   /* Firma/Brend — ID orqali bog'lanadi (DB.brands). Eski mahsulotlarda faqat
      matn ko'rinishidagi p.brand bo'lgan (yoki umuman yo'q) — shu nom bo'yicha
      mos brend topiladi yoki avtomatik yaratiladi, so'ng p.brandId biriktiriladi.
@@ -930,13 +1033,42 @@ function load(){
     if(!DB.categoryImages) DB.categoryImages = {};
     if(!DB.brands) DB.brands = [];
     if(!DB.deliveries) DB.deliveries = [];
+    if(!DB.warehouses || !DB.warehouses.length) DB.warehouses = [{id:'wh_main', name:'Asosiy ombor', isDefault:true, createdAt:Date.now()}];
+    if(!DB.warehouses.some(w=>w.isDefault)) DB.warehouses[0].isDefault = true;
+    if(!DB.transfers) DB.transfers = [];
+    if(!DB.inventories) DB.inventories = [];
+    if(DB.roleRights){
+      if(DB.roleRights.admin && DB.roleRights.admin.inventory===undefined) DB.roleRights.admin.inventory = true;
+      if(DB.roleRights.omborchi && DB.roleRights.omborchi.inventory===undefined) DB.roleRights.omborchi.inventory = true;
+      if(DB.roleRights.sotuvchi && DB.roleRights.sotuvchi.inventory===undefined) DB.roleRights.sotuvchi.inventory = false;
+    }
     if(!DB.products) DB.products = [];
     DB.products.forEach(migrateProduct);
     if(!DB.sellerProducts) DB.sellerProducts = [];
     if(!DB.customers) DB.customers = [];
     DB.customers.forEach(c=>{ if(c.address===undefined) c.address=''; });
     if(!DB.returns) DB.returns = [];
-    DB.returns.forEach(r=>{ if(r.qty===undefined) r.qty=1; });
+    /* Eski (yangi qaytarish tizimidan oldingi) yozuvlarga standart qiymatlar:
+       ular allaqachon qo'llanilgan deb hisoblanadi (status: tasdiqlangan),
+       itemIndex noma'lum (productId bo'yicha moslashtiriladi), usul sotuvdan
+       kelib chiqib taxmin qilinadi. Hech narsa buzilmaydi — faqat yo'q
+       maydonlar to'ldiriladi. */
+    DB.returns.forEach(r=>{
+      if(r.qty===undefined) r.qty=1;
+      if(r.status===undefined) r.status='tasdiqlangan';
+      if(r.groupId===undefined) r.groupId=r.id;
+      if(r.condition===undefined) r.condition = r.restock===false ? 'brak' : 'yaxshi';
+      if(r.amount===undefined) r.amount = r.price*r.qty;
+      if(r.method===undefined){
+        const s = DB.sales.find(x=>x.id===r.saleId);
+        r.method = (s && (s.paymentType==='naqd'||s.paymentType==='karta')) ? s.paymentType : 'naqd';
+      }
+      if(r.checkNo===undefined){ const s = DB.sales.find(x=>x.id===r.saleId); r.checkNo = s? s.checkNo : ''; }
+      if(r.itemIndex===undefined) r.itemIndex = null;
+      if(r.cost===undefined) r.cost = 0;
+      if(r.batchId===undefined) r.batchId = null;
+      if(r.who===undefined) r.who = '';
+    });
     if(!DB.sales) DB.sales = [];
     if(DB.saleCounter===undefined) DB.saleCounter = 0;
     DB.sales.forEach(s=>{
@@ -1002,6 +1134,9 @@ function load(){
     try{ localStorage.removeItem('dokon_categories_v1'); localStorage.removeItem('dokon_products_v1'); }catch(e){}
     save();
   }
+  if(DB.currentShift===undefined) DB.currentShift = null;
+  if(!DB.closedShifts) DB.closedShifts = [];
+  if(DB.shiftCounter===undefined) DB.shiftCounter = 0;
   CATEGORIES = DB.categories;
 }
 
@@ -1028,11 +1163,13 @@ const MENU = [
   {id:'products',label:'Mahsulotlar',icon:'package'},
   {id:'tovarlar',label:'Tovarlar',icon:'store'},
   {id:'warehouse',label:'Ombor',icon:'warehouse'},
+  {id:'inventory',label:'Inventarizatsiya',icon:'clipboard-check'},
   {id:'customers',label:'Mijozlar',icon:'users'},
   {id:'debts',label:'Qarzlar',icon:'credit-card'},
   {id:'delivery',label:"Yetkazib berish",icon:'truck'},
   {id:'employees',label:'Xodimlar',icon:'user-cog'},
   {id:'cash',label:'Kassa',icon:'wallet'},
+  {id:'shiftHistory',label:'Smena tarixi',icon:'history'},
   {id:'expenses',label:'Xarajatlar',icon:'receipt'},
   {id:'returns',label:'Qaytarishlar',icon:'rotate-ccw'},
   {id:'reports',label:'Hisobotlar',icon:'bar-chart-3'},
@@ -1152,20 +1289,29 @@ document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.targe
 function computeDashboardStats(){
   const todayStr = todayISO();
   const todaySales = activeSales().filter(s=>s.date.slice(0,10)===todayStr);
-  const todayRevenue = todaySales.reduce((a,s)=>a+s.total,0);
-  const todayProfit = todaySales.reduce((a,s)=>a+s.items.reduce((x,it)=>x+(it.price-it.cost)*it.qty,0),0);
+  const grossTodayRevenue = todaySales.reduce((a,s)=>a+s.total,0);
+  const grossTodayProfit = todaySales.reduce((a,s)=>a+s.items.reduce((x,it)=>x+(it.price-it.cost)*it.qty,0),0);
+  /* Qaytarishlar — bugungi TASDIQLANGAN qaytarishlar kunlik savdo/foyda
+     summasidan ayiriladi (5-band: "Kunlik savdo summasi kamaytirilsin"). */
+  const todayReturns = confirmedReturns().filter(r=>r.date && r.date.slice(0,10)===todayStr);
+  const todayReturnedAmount = todayReturns.reduce((a,r)=>a+returnAmount(r),0);
+  const todayReturnedProfit = todayReturns.reduce((a,r)=>a+((r.price-(r.cost||0))*r.qty),0);
+  const todayRevenue = grossTodayRevenue - todayReturnedAmount;
+  const todayProfit = grossTodayProfit - todayReturnedProfit;
   const soldQty = todaySales.reduce((a,s)=>a+s.items.reduce((x,it)=>x+it.qty,0),0);
   const stockQty = DB.products.reduce((a,p)=>a+p.qty,0);
   const totalDebt = DB.customers.reduce((a,c)=>a+c.debtTotal,0);
   const todayExpense = DB.expenses.filter(e=>e.date.slice(0,10)===todayStr).reduce((a,e)=>a+e.amount,0);
-  const cashIn = activeSales().filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.paidNow,0) + activeSales().filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cashPart||0),0);
+  const naqdReturnedAll = confirmedReturns().filter(r=>r.method==='naqd').reduce((a,r)=>a+returnAmount(r),0);
+  const cashIn = activeSales().filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.paidNow,0) + activeSales().filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cashPart||0),0) - naqdReturnedAll;
   const warehouseValue = DB.products.reduce((a,p)=>a+p.qty*p.cost,0);
   /* --------- Qo'shimcha ko'rsatkichlar (Dashboard uchun) --------- */
   const totalProducts = DB.products.length;
   const todayInMoves = DB.stockMoves.filter(m=>m.dir==='in' && m.date.slice(0,10)===todayStr);
   const todayOutMoves = DB.stockMoves.filter(m=>m.dir==='out' && m.date.slice(0,10)===todayStr);
-  const todayReturns = (DB.returns||[]).filter(r=>r.date && r.date.slice(0,10)===todayStr);
   const allSalesTotal = activeSales().reduce((a,s)=>a+s.total,0);
+  const totalReturnedAll = confirmedReturns().reduce((a,r)=>a+returnAmount(r),0);
+  const netSalesAll = allSalesTotal - totalReturnedAll;
   const todaySalesCount = todaySales.length;
   const opsToday = todaySales.length + todayInMoves.length + todayOutMoves.length + todayReturns.length;
   /* Muddati yaqin partiyalar: yaroqlilik muddati 7 kun ichida (o'tib ketmagan) */
@@ -1179,7 +1325,8 @@ function computeDashboardStats(){
   });
   expiringSoon.sort((a,b)=>a.daysLeft-b.daysLeft);
   return {todayRevenue,todayProfit,soldQty,stockQty,totalDebt,todayExpense,cashIn,warehouseValue,
-    totalProducts,todayInMoves,todayOutMoves,todayReturns,allSalesTotal,opsToday,expiringSoon,todaySalesCount};
+    totalProducts,todayInMoves,todayOutMoves,todayReturns,allSalesTotal,opsToday,expiringSoon,todaySalesCount,
+    todayReturnedAmount,totalReturnedAll,netSalesAll};
 }
 
 function renderDashboard(){
@@ -1190,6 +1337,7 @@ function renderDashboard(){
   const recentIn = DB.stockMoves.filter(m=>m.dir==='in').slice(0,5);
   const recentSales = activeSales().slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
   const productsQuick = DB.products.filter(p=>p.isForSale).slice().sort((a,b)=>(a.qty-a.minQty)-(b.qty-b.minQty)).slice(0,6);
+  const avgCheck = st.todaySalesCount>0 ? Math.round(st.todayRevenue/st.todaySalesCount) : 0;
 
   return `
   <div class="page-head">
@@ -1197,25 +1345,20 @@ function renderDashboard(){
     <button class="btn btn-primary" onclick="nav('sales')">${icon('plus')} Yangi savdo</button>
   </div>
 
-  <div class="grid dashboard-stats" style="margin-bottom:16px;">
-    ${statCard('Bugungi savdo',fmt(st.todayRevenue),'trending-up','var(--primary)','var(--primary-light)','+12% kechagiga nisbatan','up',"nav('sales')")}
-    ${statCard('Bugungi foyda',fmt(st.todayProfit),'sprout','var(--primary)','var(--primary-light)','Sof foyda','up')}
-    ${statCard('Sotilgan miqdor',fmtNum(st.soldQty)+' ta','box','var(--info)','var(--info-light)','Bugun','up')}
-    ${statCard('Ombor qiymati',fmt(st.warehouseValue),'warehouse','var(--info)','var(--info-light)',lowStock.length+' ta kam qoldi','down',"nav('warehouse')")}
-    ${statCard('Jami qarz',fmt(st.totalDebt),'credit-card','var(--danger)','var(--danger-light)',overdue.length+' ta muddati o\'tgan','down',"nav('debts')")}
-    ${statCard('Bugungi xarajat',fmt(st.todayExpense),'receipt','var(--warning)','var(--warning-light)','Xarajatlar','down',"nav('expenses')")}
-    ${statCard('Kassadagi pul',fmt(st.cashIn),'wallet','var(--primary)','var(--primary-light)','Naqd tushum','up',"nav('cash')")}
-    ${statCard('Faol mijozlar',fmtNum(DB.customers.length),'users','var(--info)','var(--info-light)',dueSoon.length+' ta muddati yaqin','up',"nav('customers')")}
+  <div class="dash-hero" style="margin-bottom:16px;cursor:pointer;" onclick="nav('sales')">
+    <div class="dash-hero-main">
+      <div class="dash-hero-label">Bugungi savdo</div>
+      <div class="dash-hero-value">${fmt(st.todayRevenue)}</div>
+      <div class="dash-hero-trend up">${icon('trending-up')} +12% kechagiga nisbatan</div>
+    </div>
+    <div class="dash-hero-secondary">
+      <div class="dash-hero-mini"><span class="dash-hero-mini-label">Sof foyda</span><span class="dash-hero-mini-value">${fmt(st.todayProfit)}</span></div>
+      <div class="dash-hero-mini"><span class="dash-hero-mini-label">Cheklar</span><span class="dash-hero-mini-value">${fmtNum(st.todaySalesCount)} ta</span></div>
+      <div class="dash-hero-mini"><span class="dash-hero-mini-label">O'rtacha chek</span><span class="dash-hero-mini-value">${fmtNum(avgCheck)}</span></div>
+    </div>
   </div>
 
-  <div class="grid dashboard-stats" style="margin-bottom:16px;">
-    ${statCard('📦 Jami mahsulotlar',fmtNum(st.totalProducts)+' xil','package','var(--info)','var(--info-light)','Bazadagi jami','up',"nav('products')")}
-    ${statCard('⬇️ Bugungi kirim',fmtNum(st.todayInMoves.length)+' ta kirim',"arrow-down-to-line",'var(--primary)','var(--primary-light)','Omborga qabul qilingan','up',"nav('warehouse')")}
-    ${statCard('⬆️ Bugungi sotuv',fmtNum(st.soldQty)+' ta',"arrow-up-from-line",'var(--info)','var(--info-light)',fmt(st.todayRevenue),'up',"nav('sales')")}
-    ${statCard('💰 Jami sotuv summasi',fmt(st.allSalesTotal),'banknote','var(--primary)','var(--primary-light)','Barcha davr','up',"openSalesHistoryModal()")}
-  </div>
-
-  <div class="grid grid-2" style="margin-bottom:16px;align-items:start;">
+  <div class="grid grid-2" style="margin:16px 0;align-items:start;">
     <div class="card">
       <div class="section-title">Haftalik savdo dinamikasi</div>
       <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
@@ -1223,17 +1366,6 @@ function renderDashboard(){
     <div class="card">
       <div class="section-title">To'lov turlari</div>
       <div class="chart-wrap"><canvas id="chartPayTypes"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom:16px;">
-    <div class="section-title">Bugungi faoliyat</div>
-    <div class="grid dashboard-stats" style="gap:10px;">
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi kirimlar</span><span class="msb-val">${fmtNum(st.todayInMoves.length)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi sotuvlar</span><span class="msb-val">${fmtNum(st.todaySalesCount)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarishlar</span><span class="msb-val">${fmtNum(st.todayReturns.length)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi foyda</span><span class="msb-val">${fmt(st.todayProfit)}</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Operatsiyalar soni</span><span class="msb-val">${fmtNum(st.opsToday)} ta</span></div>
     </div>
   </div>
 
@@ -1290,7 +1422,7 @@ function renderDashboard(){
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-bottom:16px;">
     <div class="section-title">Mahsulotlar bo'yicha (tezkor holat)</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       ${productsQuick.length? productsQuick.map(p=>{
@@ -1300,6 +1432,25 @@ function renderDashboard(){
           <div style="text-align:right;"><div class="cell-strong">${fmtQty(p.qty)} ${p.unit}</div><span class="badge badge-${holat[1]}" style="font-size:9px;">${holat[0]}</span></div>
         </div>`;
       }).join('') : `<div class="empty-state">${icon('inbox')}<div>Sotuvdagi mahsulot yo'q</div></div>`}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Batafsil ko'rsatkichlar</div>
+    <div class="grid dashboard-stats" style="gap:10px;">
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi kirimlar</span><span class="msb-val">${fmtNum(st.todayInMoves.length)} ta</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi sotuvlar</span><span class="msb-val">${fmtNum(st.todaySalesCount)} ta</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarishlar</span><span class="msb-val">${fmtNum(st.todayReturns.length)} ta</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarilgan summa</span><span class="msb-val">${fmt(st.todayReturnedAmount)}</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Operatsiyalar soni</span><span class="msb-val">${fmtNum(st.opsToday)} ta</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('warehouse')"><span class="msb-label">Ombor qiymati</span><span class="msb-val">${fmt(st.warehouseValue)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('debts')"><span class="msb-label">Jami qarz</span><span class="msb-val">${fmt(st.totalDebt)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('expenses')"><span class="msb-label">Bugungi xarajat</span><span class="msb-val">${fmt(st.todayExpense)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('cash')"><span class="msb-label">Kassadagi naqd</span><span class="msb-val">${fmt(st.cashIn)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('customers')"><span class="msb-label">Faol mijozlar</span><span class="msb-val">${fmtNum(DB.customers.length)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('products')"><span class="msb-label">Jami mahsulotlar</span><span class="msb-val">${fmtNum(st.totalProducts)} xil</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="openSalesHistoryModal()"><span class="msb-label">Jami sotuv summasi</span><span class="msb-val">${fmt(st.allSalesTotal)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('returns')"><span class="msb-label">Sof savdo</span><span class="msb-val">${fmt(st.netSalesAll)}</span></div>
     </div>
   </div>
   `;
@@ -1338,9 +1489,10 @@ function drawDashboardCharts(){
     const asales = activeSales();
     const naqd = asales.filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.total,0);
     const karta = asales.filter(s=>s.paymentType==='karta').reduce((a,s)=>a+s.total,0);
+    const tezTolov = asales.filter(s=>s.paymentType==='tezTolov').reduce((a,s)=>a+s.total,0);
     const aralash = asales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+s.total,0);
     const qarz = asales.filter(s=>s.paymentType==='qarz').reduce((a,s)=>a+s.total,0);
-    new Chart(ctx2,{type:'doughnut',data:{labels:['Naqd','Karta','Aralash','Qarz'],datasets:[{data:[naqd,karta,aralash,qarz],backgroundColor:['#0F8B4C','#2563A6','#6B4FA0','#C7861B'],borderWidth:0}]},
+    new Chart(ctx2,{type:'doughnut',data:{labels:['Naqd','Karta',"Tez to'lov",'Aralash','Qarz'],datasets:[{data:[naqd,karta,tezTolov,aralash,qarz],backgroundColor:['#0F8B4C','#2563A6','#C7861B','#6B4FA0','#9C4221'],borderWidth:0}]},
       options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},cutout:'65%'}});
   }
 }
@@ -2325,15 +2477,20 @@ function dkOpenProductDetail(id){
       ${dkVariantsListHtml(p,'dkOpenProductDetail')}
       <div class="field">
         <label>QR-kod</label>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:#F3F7F4;border-radius:12px;">
+        <div class="dk-code-box">
           <div id="dk_detail_qr"></div>
           <div class="cell-mono" style="font-size:11px;">${p.qrCode||'—'}</div>
+          ${p.qrCode?`<button class="btn btn-outline btn-sm" onclick="printProductQr('${p.id}')">${icon('printer')} QR chop etish</button>`:''}
         </div>
       </div>
       <div class="field">
         <label>Shtrix-kod</label>
-        <div style="padding:14px;background:#F3F7F4;border-radius:12px;text-align:center;overflow:hidden;">
-          ${p.barcode?`<svg id="dk_detail_bc" style="max-width:100%;"></svg><div class="cell-mono" style="font-size:11px;margin-top:4px;">${p.barcode}</div>`:`<div style="font-size:12px;color:var(--text-faint);">Shtrix-kod yo'q</div>`}
+        <div class="dk-code-box">
+          ${p.barcode && isValidEAN13(p.barcode) ? `
+            <svg id="dk_detail_bc" class="dk-code-box-svg"></svg>
+            <div class="cell-mono" style="font-size:11px;">${p.barcode}</div>
+            <button class="btn btn-outline btn-sm" onclick="printProductBarcode('${p.id}')">${icon('printer')} Shtrix-kod chop etish</button>
+          `: (p.barcode ? `<div style="font-size:12px;color:var(--text-faint);">EAN-13 barcode noto'g'ri. 13 xonali raqam kiriting.</div>` : `<div style="font-size:12px;color:var(--text-faint);">Shtrix-kod yo'q</div>`)}
         </div>
       </div>
       <div style="text-align:center;">
@@ -2353,7 +2510,7 @@ function dkOpenProductDetail(id){
     try{ new QRCode(qrBox,{text:p.qrCode,width:130,height:130}); }catch(e){}
   }
   const bcEl = document.getElementById('dk_detail_bc');
-  if(bcEl && p.barcode) renderEAN13(bcEl, p.barcode);
+  if(bcEl && p.barcode && isValidEAN13(p.barcode)) renderEAN13(bcEl, p.barcode);
 }
 
 /* ---------------- QR/Shtrix-kod bo'yicha mahsulot qidirish (skaner) ---------------- */
@@ -2895,6 +3052,7 @@ function renderSales(){
           ${DB.customers.map(c=>`<option value="${c.id}">${c.name} (${c.phone})</option>`).join('')}
         </select>
         <div id="saleCustomerInfo"></div>
+        <button type="button" class="btn-ghost btn-sm" style="margin-top:4px;padding-left:2px;" onclick="openQuickAddCustomerModal(false)">${icon('user-plus')} Yangi mijoz qo'shish</button>
       </div>
 
       <div class="cart-items" id="cartItems"></div>
@@ -3255,6 +3413,52 @@ function onSaleCustomerChange(){
   if(phoneEl && !phoneEl.value) phoneEl.value = c.phone||'';
   renderPayExtra();
 }
+/* ---------------- SAVDO: Nasiya uchun tezkor "Yangi mijoz qo'shish" ----------------
+   Savat ichidan chiqmasdan yangi mijoz qo'shish uchun alohida, tezkor forma.
+   Mavjud "Mijozlar" bazasi bilan bir xil obyekt strukturasidan foydalanadi
+   ({id,name,phone,address,debtTotal,paid,history,dueDate}) — xuddi saveCustomer()
+   qanday qo'shsa, shunday. Mavjud openCustomerModal/saveCustomer (Mijozlar sahifasi)
+   funksiyalariga tegilmagan, faqat ularga parallel, Savdo sahifasiga xos qo'shimcha. */
+let quickCustomerReturnToPayment = false;
+function openQuickAddCustomerModal(returnToPayment){
+  quickCustomerReturnToPayment = !!returnToPayment;
+  openModal(`
+    <div class="modal-head"><h3>${icon('user-plus')} Yangi mijoz</h3><button class="btn-ghost" onclick="closeQuickAddCustomerModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="field"><label>F.I.Sh.</label><input id="qc_name" placeholder="Ism familiya"></div>
+      <div class="field"><label>Telefon</label><input id="qc_phone" value="+998 "></div>
+      <div class="field"><label>Izoh (ixtiyoriy)</label><input id="qc_note" placeholder="Manzil yoki izoh"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeQuickAddCustomerModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="saveQuickCustomer()">${icon('check')} Saqlash</button>
+    </div>
+  `);
+}
+function closeQuickAddCustomerModal(){
+  const returnToPayment = quickCustomerReturnToPayment;
+  closeModal();
+  if(returnToPayment) openPaymentModal();
+}
+function saveQuickCustomer(){
+  const name = (document.getElementById('qc_name').value||'').trim();
+  const phone = (document.getElementById('qc_phone').value||'').trim();
+  const address = (document.getElementById('qc_note').value||'').trim();
+  if(!name || !phone){ toast("Ism va telefonni to'ldiring", true); return; }
+  const c = {id:uid('c'), name, phone, address, debtTotal:0, paid:0, history:[], dueDate:null};
+  DB.customers.push(c);
+  logActivity(`Mijoz qo'shildi (Savdo → tezkor): ${name}`);
+  save();
+  const returnToPayment = quickCustomerReturnToPayment;
+  closeModal();
+  if(currentPage==='sales'){
+    renderPage();
+    const sel = document.getElementById('saleCustomer');
+    if(sel){ sel.value = c.id; onSaleCustomerChange(); }
+  }
+  if(returnToPayment) openPaymentModal();
+  toast(`${name} mijoz sifatida qo'shildi va tanlandi`);
+}
 
 /* ---------------- PAYMENT ---------------- */
 /* "TO'LOV" tugmasi bosilgandagina ochiladigan ixcham to'lov oynasi —
@@ -3281,7 +3485,7 @@ function openPaymentModal(){
 }
 function renderPayTypes(){
   const box = document.getElementById('payTypes'); if(!box) return;
-  const types = [['naqd','banknote','Naqd'],['karta','credit-card','Karta'],['aralash','shuffle','Aralash'],['qarz','user-round','Qarz/Nasiya']];
+  const types = [['naqd','banknote','Naqd'],['karta','credit-card','Karta'],['tezTolov','zap',"Tez to'lov"],['aralash','shuffle','Aralash'],['qarz','user-round','Qarz/Nasiya']];
   box.innerHTML = types.map(t=>`
     <div class="pay-type ${selectedPayType===t[0]?'active':''}" onclick="selectedPayType='${t[0]}';renderPayTypes();renderPayExtra()">
       ${icon(t[1])}<span>${t[2]}</span>
@@ -3298,6 +3502,8 @@ function renderPayExtra(){
   } else if(selectedPayType==='karta'){
     box.innerHTML = `<div class="alert alert-info">${icon('credit-card')}<span>To'lov karta orqali qabul qilinadi — ${fmt(grand)}</span></div>
       ${cardReceiptImageHTML()}`;
+  } else if(selectedPayType==='tezTolov'){
+    box.innerHTML = `<div class="alert alert-info">${icon('zap')}<span>To'lov tez to'lov tizimi (Click/Payme) orqali qabul qilinadi — ${fmt(grand)}</span></div>`;
   } else if(selectedPayType==='aralash'){
     box.innerHTML = `
       <div class="field-row">
@@ -3309,7 +3515,8 @@ function renderPayExtra(){
   } else {
     const custId = document.getElementById('saleCustomer')?.value;
     box.innerHTML = `
-      ${!custId?`<div class="alert alert-warning">${icon('alert-triangle')}<span>Qarzga sotish uchun yuqorida mijozni tanlang</span></div>`:''}
+      ${!custId?`<div class="alert alert-warning">${icon('alert-triangle')}<span>Qarzga sotish uchun yuqorida mijozni tanlang</span></div>
+      <button type="button" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;margin-bottom:4px;" onclick="openQuickAddCustomerModal(true)">${icon('user-plus')} Yangi mijoz qo'shish</button>`:''}
       <div class="field"><label>Hozir to'lanadi (ixtiyoriy)</label><input type="number" id="partNow" placeholder="0" oninput="updateDebtPreview()"></div>
       <div class="field-row">
         <div class="field"><label>Muddat</label><input type="date" id="debtDue" value="${new Date(Date.now()+7*86400000).toISOString().slice(0,10)}"></div>
@@ -3457,7 +3664,7 @@ function completeSale(){
   const checkNo = 'A-'+String(DB.saleCounter).padStart(6,'0');
   const sale = {id:uid('s'),checkNo,date:new Date().toISOString(),employee:empName,customerId,items,
     subtotal,discountTotal,deliveryFee:dlvFee,total:grand,paymentType:selectedPayType,paidNow,change:changeAmt,cashPart,cardPart,status:'yakunlangan',
-    cardReceiptImage: needsCardImg ? cardReceiptImage : null};
+    cardReceiptImage: needsCardImg ? cardReceiptImage : null, shiftId: DB.currentShift ? DB.currentShift.id : null};
   DB.sales.push(sale);
 
   if(selectedPayType==='qarz' && customerId){
@@ -3782,7 +3989,7 @@ function calcPacks(pid){
 function buildReceiptHTML(s, isPreview){
   const cust = s.customerId? DB.customers.find(x=>x.id===s.customerId) : null;
   const dlv = isPreview ? null : DB.deliveries.find(d=>d.saleId===s.id);
-  const payLabel = {naqd:'Naqd',karta:'Karta',aralash:'Aralash',qarz:'Qarz/Nasiya'}[s.paymentType]||s.paymentType;
+  const payLabel = {naqd:'Naqd',karta:'Karta',tezTolov:"Tez to'lov",aralash:'Aralash',qarz:'Qarz/Nasiya'}[s.paymentType]||s.paymentType;
   const title = isPreview ? "Chek — oldindan ko'rish" : `Chek #${s.checkNo}`;
   const totalQty = s.items.reduce((a,it)=>a+it.qty,0);
   const body = `
@@ -3818,12 +4025,14 @@ function buildReceiptHTML(s, isPreview){
       ${s.paymentType==='qarz'?`<div class="ct-row"><span>To'langan / Qarz</span><span>${fmtNum(s.paidNow)} / ${fmtNum(s.total-s.paidNow)}</span></div>`:''}
       ${s.cardReceiptImage?`<div class="ct-row" style="align-items:flex-start;"><span>Karta chek rasmi</span><span><img src="${s.cardReceiptImage}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--border);"></span></div>`:''}
     </div>`;
+  const canReturn = !isPreview && s.status!=='bekor qilingan' && (currentRole==='admin' || DB.roleRights[currentRole].returns);
   const footer = isPreview ? `
     <button class="btn btn-outline" onclick="closeModal()">Yopish</button>
     <button class="btn btn-primary" onclick="closeModal();completeSale()">${icon('check-circle2')} Savdoni yakunlash</button>
   ` : `
     <button class="btn btn-outline" onclick="printReceipt()">${icon('printer')} Chop etish</button>
     <button class="btn btn-outline" onclick="downloadReceiptPdf('${s.id}')">${icon('file-text')} PDF</button>
+    ${canReturn? `<button class="btn btn-outline" onclick="closeModal();openReturnModal('${s.id}')">${icon('rotate-ccw')} Qaytarish</button>` : ''}
     <button class="btn btn-outline" onclick="closeModal()">Yopish</button>
     <button class="btn btn-primary" onclick="closeModal();nav('sales')">${icon('plus')} Yangi savdo</button>
   `;
@@ -3925,15 +4134,17 @@ function openSalesHistoryModal(){
     <div class="modal-head"><h3>Savdo tarixi</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
       <div style="max-height:65vh;overflow-y:auto;overflow-x:hidden;"><table style="table-layout:fixed;width:100%;">
-        <thead><tr><th>Chek</th><th>Ko'rish</th><th>Sana</th></tr></thead>
+        <thead><tr><th>Chek</th><th>Ko'rish</th><th>Qaytarish</th><th>Sana</th></tr></thead>
         <tbody>
           ${list.length? list.map(s=>{
+            const canReturn = s.status!=='bekor qilingan' && (currentRole==='admin' || DB.roleRights[currentRole].returns);
             return `<tr>
               <td data-label="Chek" class="cell-mono">${s.checkNo||('#'+s.id.slice(-5))}</td>
               <td data-label="Ko'rish"><button class="btn-ghost" onclick="openReceiptModal('${s.id}')" title="Chekni ko'rish">${icon('eye')} Ko'rish</button></td>
+              <td data-label="Qaytarish">${canReturn?`<button class="btn-ghost" onclick="closeModal();openReturnModal('${s.id}')" title="Qaytarish">${icon('rotate-ccw')} Qaytarish</button>`:'—'}</td>
               <td data-label="Sana">${new Date(s.date).toLocaleString('uz-UZ')}</td>
             </tr>`;
-          }).join('') : emptyRow(3,"Savdo tarixi bo'sh")}
+          }).join('') : emptyRow(4,"Savdo tarixi bo'sh")}
         </tbody>
       </table></div>
     </div>
@@ -3978,22 +4189,33 @@ function cancelSale(id){
    mahsulotlar Omborda umuman ko'rinmaydi va Kirim/Chiqim ro'yxatida
    tanlanmaydi — avval Tovarlarga qo'shilishi shart. */
 function whProducts(){ return DB.products.filter(p=>p.isForSale); }
+let whViewFilter = 'all'; // 'all' — barcha omborlar yig'indisi, aks holda tanlangan ombor ID'si
+function whQtyFor(p){ return whViewFilter==='all' ? p.qty : productQtyInWh(p, whViewFilter); }
 function renderWarehouse(){
   const whList = whProducts();
   const totalItems = whList.length;
-  const costValue = whList.reduce((a,p)=>a+p.qty*p.cost,0);
-  const sellValue = whList.reduce((a,p)=>a+p.qty*p.price,0);
-  const low = whList.filter(p=>p.qty>0&&p.qty<=p.minQty);
-  const out = whList.filter(p=>p.qty===0);
-  const moves = DB.stockMoves.slice(0,15);
+  const costValue = whList.reduce((a,p)=>a+whQtyFor(p)*p.cost,0);
+  const sellValue = whList.reduce((a,p)=>a+whQtyFor(p)*p.price,0);
+  const low = whList.filter(p=>whQtyFor(p)>0&&whQtyFor(p)<=p.minQty);
+  const out = whList.filter(p=>whQtyFor(p)===0);
+  const moves = whViewFilter==='all' ? DB.stockMoves.slice(0,15) : DB.stockMoves.filter(m=>(m.warehouseId||defaultWarehouseId())===whViewFilter).slice(0,15);
   return `
   <div class="page-head">
     <div><h1>Ombor</h1><p>Zaxira holati va harakatlar tarixi</p></div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline compact-action-btn" onclick="openWarehouseManageModal()">${icon('building-2')} Omborlar</button>
+      ${DB.warehouses.length>1 ? `<button class="btn btn-outline compact-action-btn" onclick="openTransferModal()">${icon('arrow-left-right')} Ko'chirish</button>` : ''}
       <button class="btn btn-outline compact-action-btn" onclick="openStockModal('out')">${icon('arrow-up-from-line')} Chiqim</button>
       <button class="btn btn-primary compact-action-btn" onclick="openStockModal('in')">${icon('arrow-down-to-line')} Kirim</button>
     </div>
   </div>
+  ${DB.warehouses.length>1 ? `
+  <div class="dk-search-row" style="margin-bottom:12px;overflow-x:auto;">
+    <div style="display:flex;gap:6px;">
+      <button class="btn ${whViewFilter==='all'?'btn-primary':'btn-outline'}" style="white-space:nowrap;" onclick="whViewFilter='all';renderPage()">Barchasi</button>
+      ${DB.warehouses.map(w=>`<button class="btn ${whViewFilter===w.id?'btn-primary':'btn-outline'}" style="white-space:nowrap;" onclick="whViewFilter='${w.id}';renderPage()">${w.name}</button>`).join('')}
+    </div>
+  </div>` : ''}
   <div class="dk-search-row dk-search-modern">
     <div class="dk-search-input-wrap">
       ${icon('search','dk-search-icon')}
@@ -4022,7 +4244,7 @@ function renderWarehouse(){
       <div class="section-title">Kam qolganlar (${low.length}) / Tugaganlar (${out.length})</div>
       <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;">
         ${out.map(p=>alertRow('danger','package-x',`${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''} — tugagan`)).join('')}
-        ${low.map(p=>alertRow('warning','package-minus',`${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''} — ${fmtQty(p.qty)} ${p.unit} qoldi (min ${fmtQty(p.minQty)})`)).join('')}
+        ${low.map(p=>alertRow('warning','package-minus',`${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''} — ${fmtQty(whQtyFor(p))} ${p.unit} qoldi (min ${fmtQty(p.minQty)})`)).join('')}
         ${(low.length+out.length===0)?emptyAlert():''}
       </div>
     </div>
@@ -4031,27 +4253,48 @@ function renderWarehouse(){
       <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;">
         ${moves.length? moves.map(m=>`
           <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:8px 0;border-bottom:1px solid var(--border);">
-            <div><span class="badge badge-${m.dir==='in'?'green':'red'}">${m.dir==='in'?'Kirim':'Chiqim'}</span> ${m.productName}${m.size?' ('+m.size+' '+(m.pkgUnit||m.unit||'')+')':''} × ${fmtQty(m.qty)} ${m.unit||''}</div>
+            <div><span class="badge badge-${m.dir==='in'?'green':'red'}">${m.dir==='in'?'Kirim':'Chiqim'}</span> ${m.productName}${m.size?' ('+m.size+' '+(m.pkgUnit||m.unit||'')+')':''} × ${fmtQty(m.qty)} ${m.unit||''}${m.warehouseName && DB.warehouses.length>1?' — '+m.warehouseName:''}</div>
             <div style="color:var(--text-faint);">${m.date.slice(0,10)}</div>
           </div>`).join('') : `<div class="empty-state">${icon('inbox')}<div>Harakat yo'q</div></div>`}
       </div>
     </div>
   </div>
+  ${(()=>{ const pending = DB.transfers.filter(t=>t.status==='yuborildi' && (whViewFilter==='all' || t.toWhId===whViewFilter || t.fromWhId===whViewFilter));
+    if(!pending.length) return '';
+    return `<div class="card" style="margin-bottom:16px;">
+      <div class="section-title">${icon('truck')} Yo'ldagi ko'chirishlar (${pending.length})</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${pending.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div><strong>${t.productName}</strong> × ${fmtQty(t.qty)} ${t.unit} — ${whName(t.fromWhId)} → ${whName(t.toWhId)}<div style="color:var(--text-faint);font-size:11px;">${t.date.slice(0,10)} · Yuborildi</div></div>
+          <button class="btn btn-primary" style="flex-shrink:0;padding:6px 12px;font-size:12px;" onclick="receiveTransfer('${t.id}')">${icon('check')} Qabul qilish</button>
+        </div>`).join('')}
+      </div>
+    </div>`; })()}
+  ${(()=>{ const brakList = DB.products.filter(p=>(p.brakQty||0)>0);
+    if(!brakList.length) return '';
+    return `<div class="card" style="margin-bottom:16px;border:1px solid var(--danger-light);">
+      <div class="section-title">${icon('package-x')} BRAK mahsulotlar (${brakList.length} xil) — qaytarishdan brak deb chiqarilgan</div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Mahsulot</th><th>Miqdor</th><th>O'lchov</th></tr></thead>
+        <tbody>${brakList.map(p=>`<tr><td data-label="Mahsulot" class="cell-strong">${p.name}</td><td data-label="Miqdor" class="cell-mono">${fmtQty(p.brakQty)}</td><td data-label="Birlik">${p.unit}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`; })()}
   <div class="table-card">
     <div class="table-toolbar"><div class="section-title" style="margin:0;">Ombordagi barcha tovarlar</div></div>
     <div class="table-scroll"><table id="warehouseStockTable">
       <thead><tr><th>Mahsulot</th><th>Qadoq</th><th>Qoldiq</th><th>O'lchov birligi</th><th>Minimal qoldiq</th><th>Sotib olish narxi</th><th>Ombor qiymati</th><th>Holat</th></tr></thead>
       <tbody>
         ${whList.length? whList.map(p=>{
-          const status = p.qty===0?['Tugagan','red']:(p.qty<=p.minQty?['Kam qoldi','yellow']:['Yetarli','green']);
-          return `<tr>
+          const q = whQtyFor(p);
+          const status = q===0?['Tugagan','red']:(q<=p.minQty?['Kam qoldi','yellow']:['Yetarli','green']);
+          return `<tr onclick="dkOpenProductDetail('${p.id}')" style="cursor:pointer;">
             <td data-label="Mahsulot"><div style="display:flex;align-items:center;gap:10px;"><div class="thumb">${p.emoji}</div><span class="cell-strong">${p.name}</span></div></td>
             <td data-label="Qadoq" class="cell-mono">${pkgLabel(p)||'—'}</td>
-            <td data-label="Qoldiq" class="cell-mono">${fmtQty(p.qty)}</td>
+            <td data-label="Qoldiq" class="cell-mono">${fmtQty(q)}</td>
             <td data-label="Birlik">${p.unit}</td>
             <td data-label="Min" class="cell-mono">${fmtQty(p.minQty)}</td>
             <td data-label="Kelish narxi" class="cell-mono">${fmtNum(p.cost)}</td>
-            <td data-label="Ombor qiymati" class="cell-mono cell-strong">${fmtNum(p.qty*p.cost)}</td>
+            <td data-label="Ombor qiymati" class="cell-mono cell-strong">${fmtNum(q*p.cost)}</td>
             <td data-label="Holat"><span class="badge badge-${status[1]}">${status[0]}</span></td>
           </tr>`;
         }).join('') : emptyRow(8,"Tovarlar bo'limiga hali mahsulot qo'shilmagan")}
@@ -4059,16 +4302,17 @@ function renderWarehouse(){
     </table></div>
     <div class="mobile-stock-list">
       ${whList.length? whList.map(p=>{
-        const status = p.qty===0?['Tugagan','red']:(p.qty<=p.minQty?['Kam qoldi','yellow']:['Yetarli','green']);
-        return `<div class="mobile-stock-card">
+        const q = whQtyFor(p);
+        const status = q===0?['Tugagan','red']:(q<=p.minQty?['Kam qoldi','yellow']:['Yetarli','green']);
+        return `<div class="mobile-stock-card" onclick="dkOpenProductDetail('${p.id}')">
           <div class="mobile-stock-top">
             <div class="thumb">${p.emoji}</div>
             <div class="mobile-stock-name">${p.name}${pkgLabel(p)?` <span style="color:var(--text-faint);font-weight:600;">(${pkgLabel(p)})</span>`:''}</div>
-            <span class="mobile-stock-qty">${fmtQty(p.qty)} ${p.unit}</span>
+            <span class="mobile-stock-qty">${fmtQty(q)} ${p.unit}</span>
           </div>
           <div class="mobile-stock-row2">
             <span>Kelish ${fmtNum(p.cost)}</span>
-            <span>Ombor ${fmtNum(p.qty*p.cost)}</span>
+            <span>Ombor ${fmtNum(q*p.cost)}</span>
             <span class="badge badge-${status[1]}" style="padding:1px 7px;font-size:9px;">${status[0]}</span>
           </div>
         </div>`;
@@ -4160,6 +4404,141 @@ function whHandleScanResult(code){
   whSearchQuery = p.name;
   if(currentPage==='warehouse') renderPage();
 }
+/* ---------------- OMBORLAR RO'YXATI (ko'p ombor boshqaruvi) ----------------
+   Omborlar oddiy nom bilan yaratiladi. Asosiy (isDefault) ombor o'chirilmaydi
+   va nomi o'zgartirilishi mumkin. Ichida hali qoldiq bo'lgan ombor o'chirilmaydi
+   (avval bo'sh ko'chirish shart) — aks holda partiyalar egasiz qolib ketardi. */
+function openWarehouseManageModal(){
+  openModal(`
+    <div class="modal-head"><h3>${icon('building-2')} Omborlar</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body" id="whManageBody">${whManageBodyHtml()}</div>
+    <div class="modal-foot"><button class="btn btn-outline btn-block" onclick="closeModal();renderPage();">Yopish</button></div>`);
+}
+function whManageBodyHtml(){
+  const rows = DB.warehouses.map(w=>{
+    const value = warehouseTotalValue(w.id);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:800;font-size:13.5px;">${w.name}${w.isDefault?' <span class="badge badge-green" style="font-size:9px;">Asosiy</span>':''}</div>
+        <div style="font-size:11.5px;color:var(--text-faint);">Ombor qiymati: ${fmtNum(value)}</div>
+      </div>
+      <button class="btn-ghost" onclick="whRenamePrompt('${w.id}')" title="Nomini o'zgartirish">${icon('pencil')}</button>
+      ${!w.isDefault ? `<button class="btn-ghost" onclick="whDeleteWarehouse('${w.id}')" title="O'chirish">${icon('trash-2')}</button>` : ''}
+    </div>`;
+  }).join('');
+  return `
+    <div style="margin-bottom:14px;">${rows}</div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Yangi ombor nomi</label><input type="text" id="whNewName" placeholder="Masalan: Filial-2 ombori"></div>
+      <button class="btn btn-primary" style="align-self:flex-end;height:42px;" onclick="whAddWarehouse()">${icon('plus')} Qo'shish</button>
+    </div>`;
+}
+function whRefreshManageModal(){ const el=document.getElementById('whManageBody'); if(el){ el.innerHTML = whManageBodyHtml(); lucide.createIcons(); } }
+function whAddWarehouse(){
+  const el = document.getElementById('whNewName');
+  const name = (el?.value||'').trim();
+  if(!name){ toast("Ombor nomini kiriting",true); return; }
+  DB.warehouses.push({id:uid('wh'), name, isDefault:false, createdAt:Date.now()});
+  save(); toast("Ombor qo'shildi"); whRefreshManageModal();
+}
+function whRenamePrompt(id){
+  const w = DB.warehouses.find(x=>x.id===id); if(!w) return;
+  const name = prompt("Ombor nomi:", w.name);
+  if(name===null) return;
+  const trimmed = name.trim();
+  if(!trimmed){ toast("Nom bo'sh bo'lishi mumkin emas",true); return; }
+  w.name = trimmed;
+  DB.stockMoves.forEach(m=>{ if(m.warehouseId===id) m.warehouseName = trimmed; });
+  save(); toast("Saqlandi"); whRefreshManageModal();
+}
+function whDeleteWarehouse(id){
+  const w = DB.warehouses.find(x=>x.id===id); if(!w || w.isDefault) return;
+  const hasStock = DB.products.some(p=>productQtyInWh(p,id)>0);
+  if(hasStock){ toast("Avval bu ombordagi qoldiqni boshqa omborga ko'chiring",true); return; }
+  if(!confirm(`"${w.name}" ombori o'chirilsinmi?`)) return;
+  DB.warehouses = DB.warehouses.filter(x=>x.id!==id);
+  if(whViewFilter===id) whViewFilter='all';
+  save(); toast("Ombor o'chirildi"); whRefreshManageModal();
+}
+/* ---------------- OMBOR KO'CHIRISH (transfer A→B) ----------------
+   Ko'chirish 2 bosqichda: 1) "Yuborish" — manba ombordan miqdor darhol
+   ayiriladi va status='yuborildi' bo'lib qoladi (yo'lda hisoblanadi);
+   2) "Qabul qilish" — qabul qiluvchi ombor tomonidan tasdiqlanganda
+   miqdor destination omborga partiya sifatida qo'shiladi, status='qabul_qilindi'.
+   Har ikki bosqich ham stockMoves tarixiga alohida yoziladi. */
+let transferProductId = null;
+function openTransferModal(){
+  transferProductId = null;
+  openModal(`
+    <div class="modal-head"><h3>${icon('arrow-left-right')} Ombor ko'chirish</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Qaysi ombordan</label><select id="tr_from" onchange="renderTransferProductOptions()">${DB.warehouses.map(w=>`<option value="${w.id}">${w.name}</option>`).join('')}</select></div>
+        <div class="field"><label>Qaysi omborga</label><select id="tr_to">${DB.warehouses.map((w,i)=>`<option value="${w.id}" ${i===1?'selected':''}>${w.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label>Mahsulot</label><select id="tr_product" onchange="renderTransferStockHint()"></select></div>
+      <div id="tr_stock_hint" style="font-size:12px;color:var(--text-faint);margin:-6px 0 10px;"></div>
+      <div class="field"><label>Miqdor</label><input type="number" id="tr_qty" value="1" min="0.01" step="0.01" oninput="renderTransferStockHint()"></div>
+      <div class="field"><label>Izoh</label><textarea id="tr_note" rows="2" placeholder="Ixtiyoriy"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="saveTransfer()">${icon('check')} Yuborish</button>
+    </div>`);
+  renderTransferProductOptions();
+}
+function renderTransferProductOptions(){
+  const fromEl = document.getElementById('tr_from'); const sel = document.getElementById('tr_product');
+  if(!fromEl || !sel) return;
+  const fromId = fromEl.value;
+  const list = whProducts().filter(p=>productQtyInWh(p,fromId)>0);
+  sel.innerHTML = list.length ? list.map(p=>`<option value="${p.id}">${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''}</option>`).join('') : `<option value="">Bu omborda mahsulot yo'q</option>`;
+  renderTransferStockHint();
+}
+function renderTransferStockHint(){
+  const hint = document.getElementById('tr_stock_hint');
+  const fromEl = document.getElementById('tr_from'), pEl = document.getElementById('tr_product');
+  if(!hint || !fromEl || !pEl) return;
+  const p = DB.products.find(x=>x.id===pEl.value);
+  if(!p){ hint.textContent=''; return; }
+  hint.textContent = `${whName(fromEl.value)}dagi qoldiq: ${fmtQty(productQtyInWh(p,fromEl.value))} ${p.unit}`;
+}
+function saveTransfer(){
+  const fromId = document.getElementById('tr_from').value;
+  const toId = document.getElementById('tr_to').value;
+  const pid = document.getElementById('tr_product').value;
+  const qty = roundQty(Number(document.getElementById('tr_qty').value)||0);
+  const note = document.getElementById('tr_note').value.trim();
+  const p = DB.products.find(x=>x.id===pid);
+  if(fromId===toId){ toast("Manba va qabul qiluvchi ombor bir xil bo'lishi mumkin emas",true); return; }
+  if(!p){ toast("Mahsulotni tanlang",true); return; }
+  if(qty<=0){ toast("Miqdorni kiriting",true); return; }
+  if(qty>productQtyInWh(p,fromId)){ toast(`${whName(fromId)}da yetarli qoldiq yo'q`,true); return; }
+  const avgCost = consumeFromBatches(p, qty, fromId);
+  const transfer = {id:uid('tr'), fromWhId:fromId, toWhId:toId, productId:p.id, productName:p.name, qty, unit:p.unit,
+    date:new Date().toISOString(), note, status:'yuborildi', createdAt:Date.now(), cost:avgCost, price:p.price};
+  DB.transfers.unshift(transfer);
+  DB.stockMoves.unshift({dir:'out', productId:p.id, productName:p.name, size:p.size||'', pkgUnit:p.pkgUnit||null, qty, unit:p.unit,
+    date:transfer.date, reason:'Kochirish', supplier:'', note, warehouseId:fromId, warehouseName:whName(fromId), transferId:transfer.id});
+  logActivity(`${p.name} — ${whName(fromId)}dan ${whName(toId)}ga ${fmtQty(qty)} ${p.unit} yuborildi (ko'chirish)`);
+  save(); closeModal(); toast("Yuborildi — qabul qiluvchi omborda tasdiqlanishi kerak"); renderPage();
+}
+function receiveTransfer(trId){
+  const t = DB.transfers.find(x=>x.id===trId);
+  if(!t || t.status==='qabul_qilindi') return;
+  const p = DB.products.find(x=>x.id===t.productId);
+  if(!p){ toast("Mahsulot topilmadi",true); return; }
+  if(!p.batches) p.batches = [];
+  p.batches.push({id:uid('lot'), productId:p.id, lot:'TRANSFER-'+t.id.slice(-5), qty:t.qty, cost:t.cost||p.cost, price:t.price||p.price,
+    expiry:null, supplier:'', note:`Ko'chirish: ${whName(t.fromWhId)} → ${whName(t.toWhId)}`, date:todayISO(), createdAt:Date.now(), warehouseId:t.toWhId});
+  p.qty = roundQty(p.qty + t.qty);
+  t.status = 'qabul_qilindi';
+  t.receivedAt = Date.now();
+  DB.stockMoves.unshift({dir:'in', productId:p.id, productName:p.name, size:p.size||'', pkgUnit:p.pkgUnit||null, qty:t.qty, unit:p.unit,
+    date:new Date().toISOString(), reason:'Kochirish', supplier:'', note:t.note||'', warehouseId:t.toWhId, warehouseName:whName(t.toWhId), transferId:t.id});
+  logActivity(`${p.name} — ${whName(t.toWhId)} ${fmtQty(t.qty)} ${p.unit} qabul qildi (ko'chirish)`);
+  save(); toast("Qabul qilindi"); renderPage();
+}
 /* ---------------- Partiya (LOT) tizimi ----------------
    Har bir Kirim alohida partiya sifatida saqlanadi (miqdor, olingan narx,
    sotish narxi, srok, yetkazib beruvchi, sana). Mahsulotning umumiy
@@ -4180,10 +4559,11 @@ function generateLotCode(){
   });
   return 'LOT-'+ymd+'-'+String(seq).padStart(3,'0');
 }
-function consumeFromBatches(p, qty){
+function consumeFromBatches(p, qty, whId){
+  const targetWh = whId || defaultWarehouseId();
   let remain = roundQty(qty);
   if(!p.batches) p.batches = [];
-  const sorted = p.batches.slice().sort((a,b)=>{
+  const sorted = p.batches.filter(b=>(b.warehouseId||defaultWarehouseId())===targetWh).sort((a,b)=>{
     const ea = a.expiry ? new Date(a.expiry).getTime() : Infinity;
     const eb = b.expiry ? new Date(b.expiry).getTime() : Infinity;
     if(ea!==eb) return ea-eb; // muddati yaqin partiya birinchi chiqadi
@@ -4209,7 +4589,9 @@ function openStockModal(dir){
   openModal(`
     <div class="modal-head"><h3>Ombor chiqimi</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
-      <div class="field"><label>Tovar</label><select id="sm_product">${whProducts().map(p=>`<option value="${p.id}">${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''} — qoldiq: ${fmtQty(p.qty)} ${p.unit}</option>`).join('')}</select></div>
+      ${DB.warehouses.length>1 ? `<div class="field"><label>Qaysi ombordan</label><select id="sm_wh" onchange="smUpdateOutStockHint()">${DB.warehouses.map(w=>`<option value="${w.id}" ${w.id===defaultWarehouseId()?'selected':''}>${w.name}</option>`).join('')}</select></div>` : ''}
+      <div class="field"><label>Tovar</label><select id="sm_product" onchange="smUpdateOutStockHint()">${whProducts().map(p=>`<option value="${p.id}">${p.name}${pkgLabel(p)?' ('+pkgLabel(p)+')':''}</option>`).join('')}</select></div>
+      <div id="sm_out_stock_hint" style="font-size:12px;color:var(--text-faint);margin:-6px 0 10px;"></div>
       <div class="field"><label>Miqdor</label><input type="number" id="sm_qty" value="1" min="0.01" step="0.01"></div>
       <div class="field"><label>Chiqim sababi</label><select id="sm_reason"><option>Sotuv</option><option>Brak</option><option>Yo'qotish</option><option>Boshqa</option></select></div>
     </div>
@@ -4217,6 +4599,16 @@ function openStockModal(dir){
       <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
       <button class="btn btn-primary" onclick="saveStockMove('out')">${icon('check')} Saqlash</button>
     </div>`);
+  setTimeout(smUpdateOutStockHint,0);
+}
+function smUpdateOutStockHint(){
+  const hint = document.getElementById('sm_out_stock_hint');
+  const pEl = document.getElementById('sm_product'), whEl = document.getElementById('sm_wh');
+  if(!hint || !pEl) return;
+  const p = DB.products.find(x=>x.id===pEl.value);
+  if(!p){ hint.textContent=''; return; }
+  const whId = whEl ? whEl.value : defaultWarehouseId();
+  hint.textContent = `${whName(whId)}dagi qoldiq: ${fmtQty(productQtyInWh(p,whId))} ${p.unit}`;
 }
 /* ---------------- KIRIM — avval mahsulot qidirish/skanerlash, keyin forma ----------------
    Talab: bo'sh forma o'rniga avval qidiruv oynasi ochiladi (nom/SKU/shtrix-kod/QR),
@@ -4327,6 +4719,7 @@ function openStockInForm(p){
         <span>Hozirgi qoldiq: <strong>${fmtQty(p.qty)} ${p.unit}</strong></span>
         <span>Hisob birligi: <strong>${p.unit}</strong></span>
       </div>
+      ${DB.warehouses.length>1 ? `<div class="field"><label>Qaysi omborga</label><select id="sm_wh">${DB.warehouses.map(w=>`<option value="${w.id}" ${w.id===defaultWarehouseId()?'selected':''}>${w.name}</option>`).join('')}</select></div>` : ''}
       <div class="field"><label>Kirim miqdori (${p.unit}) *</label><input type="number" id="sm_qty" value="1" min="0.01" step="0.01" oninput="smUpdateTotalWeight('${p.id}')"><div style="font-size:11px;color:var(--text-faint);margin-top:3px;">Diqqat: bu ombordagi soni (${p.unit}) — mahsulotning qadoq/o'lchami (${(pkgLabel(p)||p.unit)}) emas.</div><div id="sm_total_weight" style="font-size:12px;color:var(--primary);font-weight:700;margin-top:5px;"></div></div>
       <div class="field-row">
         <div class="field"><label>Sotib olish narxi</label><input type="number" id="sm_cost" placeholder="Narx" value="${p.cost||''}" oninput="smOnCostOrMarkupInput()"></div>
@@ -4391,7 +4784,9 @@ function saveStockMove(dir){
   if(!p){ toast("Mahsulot topilmadi",true); return; }
   if(qty<=0){ toast("Miqdorni kiriting",true); return; }
   if(!p.isForSale){ toast("Avval mahsulotni Tovarlar bo'limiga \"SOTUVDA\" qiling, keyin kirim/chiqim qiling",true); return; }
-  if(dir==='out' && qty>p.qty){ toast("Omborda yetarli qoldiq yo'q",true); return; }
+  const whSel = document.getElementById('sm_wh');
+  const whId = whSel ? whSel.value : defaultWarehouseId();
+  if(dir==='out' && qty>productQtyInWh(p,whId)){ toast(`${whName(whId)}da yetarli qoldiq yo'q`,true); return; }
   if(dir==='in'){
     const cost = Number(document.getElementById('sm_cost').value)||0;
     const price = Number(document.getElementById('sm_price').value)||0;
@@ -4404,7 +4799,7 @@ function saveStockMove(dir){
     const lot = lotRaw || generateLotCode();
     const sellerId = currentSellerId();
     if(!p.batches) p.batches = [];
-    const batch = {id:uid('lot'), productId:p.id, sellerId, lot, qty, cost, price, expiry, supplier, note, date:dateVal, createdAt:Date.now()};
+    const batch = {id:uid('lot'), productId:p.id, sellerId, lot, qty, cost, price, expiry, supplier, note, date:dateVal, createdAt:Date.now(), warehouseId:whId};
     p.batches.push(batch);
     p.qty = roundQty(p.qty + qty);
     if(cost) p.cost = cost;     // Tovarlar bo'limida "amaldagi narx" — eng oxirgi kiritilgan partiya narxi
@@ -4415,8 +4810,8 @@ function saveStockMove(dir){
     // "SOTUVDA" holati faqat tvMarkForSale()/dkMarkForSale() orqali o'rnatiladi
     // (Mahsulotlar/Tovarlar bo'limidagi "SOTUVDA" tugmasi).
     DB.stockMoves.unshift({dir,productId:p.id,productName:p.name,size:p.size||'',pkgUnit:p.pkgUnit||null,qty,unit:p.unit,date:new Date(dateVal).toISOString(),
-      reason:'Kirim', supplier, note, lot, cost, price});
-    logActivity(`${p.name} — omborga kirim qildi (${fmtQty(qty)} ${p.unit}, partiya ${lot})`);
+      reason:'Kirim', supplier, note, lot, cost, price, warehouseId:whId, warehouseName:whName(whId)});
+    logActivity(`${p.name} — ${whName(whId)}ga kirim qildi (${fmtQty(qty)} ${p.unit}, partiya ${lot})`);
     stockInProductId = null;
     save(); closeModal(); toast("Saqlandi"); renderPage();
     // Agar yaroqlilik muddati kiritilgan bo'lsa — kirim tasdiqlangach
@@ -4425,10 +4820,10 @@ function saveStockMove(dir){
     return;
   } else {
     const reason = document.getElementById('sm_reason').value;
-    consumeFromBatches(p, qty);
+    consumeFromBatches(p, qty, whId);
     DB.stockMoves.unshift({dir,productId:p.id,productName:p.name,size:p.size||'',pkgUnit:p.pkgUnit||null,qty,unit:p.unit,date:new Date().toISOString(),
-      reason, supplier:'', note:''});
-    logActivity(`${p.name} — ombordan chiqim qildi (${fmtQty(qty)} ${p.unit})`);
+      reason, supplier:'', note:'', warehouseId:whId, warehouseName:whName(whId)});
+    logActivity(`${p.name} — ${whName(whId)}dan chiqim qildi (${fmtQty(qty)} ${p.unit})`);
   }
   save(); closeModal(); toast("Saqlandi"); renderPage();
 }
@@ -4501,6 +4896,64 @@ function renderEAN13(element, code){
     element.style.height = 'auto';
     return true;
   }catch(error){ console.error('EAN-13 render xatosi:', error); return false; }
+}
+/* ---------------- "Mahsulot haqida" — QR-kod va Shtrix-kodni alohida chop etish ----------------
+   Mavjud QR/EAN-13 generatsiyasi va dizayni o'zgarmaydi — faqat shu mahsulotning
+   kodi alohida oynada (window.open, mavjud printReceipt/printBatchLabel uslubida)
+   ochilib chop etiladi, shunda dashboard/navbar/modal boshqa elementlar chop etilmaydi. */
+function printProductQr(productId){
+  const p = DB.products.find(x=>x.id===productId);
+  if(!p || !p.qrCode){ toast("QR-kod topilmadi", true); return; }
+  const qrImg = qrDataUrlSync(p.qrCode, 260);
+  if(!qrImg){ toast("QR-kodni chop etishda xatolik", true); return; }
+  const w = window.open('','_blank');
+  if(!w){ toast("Chop etish oynasi ochilmadi (brauzer popupni bloklagan bo'lishi mumkin)", true); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR-kod — ${p.name}</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;}
+  body{font-family:Arial,Helvetica,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .wrap{text-align:center;padding:24px;}
+  .wrap img{width:260px;height:260px;}
+  .name{font-size:14px;font-weight:700;margin-bottom:12px;}
+  .code{font-family:monospace;font-size:13px;margin-top:12px;}
+</style>
+</head><body>
+  <div class="wrap">
+    <div class="name">${p.name}</div>
+    <img src="${qrImg}">
+    <div class="code">${p.qrCode}</div>
+  </div>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 200);
+}
+function printProductBarcode(productId){
+  const p = DB.products.find(x=>x.id===productId);
+  if(!p || !p.barcode || !isValidEAN13(p.barcode)){ toast("EAN-13 barcode noto'g'ri. 13 xonali raqam kiriting.", true); return; }
+  const bcImg = ean13DataUrlSync(p.barcode, 3, 130, 22);
+  if(!bcImg){ toast("Shtrix-kodni chop etishda xatolik", true); return; }
+  const w = window.open('','_blank');
+  if(!w){ toast("Chop etish oynasi ochilmadi (brauzer popupni bloklagan bo'lishi mumkin)", true); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Shtrix-kod — ${p.name}</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;}
+  body{font-family:Arial,Helvetica,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .wrap{text-align:center;padding:24px;}
+  .wrap img{width:320px;max-width:90vw;height:auto;}
+  .name{font-size:14px;font-weight:700;margin-bottom:12px;}
+</style>
+</head><body>
+  <div class="wrap">
+    <div class="name">${p.name}</div>
+    <img src="${bcImg}">
+  </div>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 200);
 }
 /* Berilgan matndan (masalan productId+lotId) doim bir xil natija beruvchi
    12 xonali raqamlar ketma-ketligi hosil qiladi — shu asosda checksum'i
@@ -4899,12 +5352,13 @@ function tvOpenDetail(id){
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:#F3F7F4;border-radius:12px;">
           <div id="tv_detail_qr"></div>
           <div class="cell-mono" style="font-size:11px;">${p.qrCode||'—'}</div>
+          ${p.qrCode?`<button class="btn btn-outline btn-sm" onclick="printProductQr('${p.id}')">${icon('printer')} QR chop etish</button>`:''}
         </div>
       </div>
       <div class="field">
         <label>Shtrix-kod</label>
         <div style="padding:14px;background:#F3F7F4;border-radius:12px;text-align:center;overflow:hidden;">
-          ${p.barcode?`<svg id="tv_detail_bc" style="max-width:100%;"></svg><div class="cell-mono" style="font-size:11px;margin-top:4px;">${p.barcode}</div>`:`<div style="font-size:12px;color:var(--text-faint);">Shtrix-kod yo'q</div>`}
+          ${p.barcode?`<svg id="tv_detail_bc" style="max-width:100%;"></svg><div class="cell-mono" style="font-size:11px;margin-top:4px;">${p.barcode}</div>${isValidEAN13(p.barcode)?`<button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="printProductBarcode('${p.id}')">${icon('printer')} Shtrix-kod chop etish</button>`:''}`:`<div style="font-size:12px;color:var(--text-faint);">Shtrix-kod yo'q</div>`}
         </div>
       </div>
       <div class="field">
@@ -5293,57 +5747,371 @@ function deleteEmployee(id){
 }
 
 /* ================================================================
-   CASH REGISTER
-   ================================================================ */
+   KASSA — SMENA (SHIFT) TIZIMI
+   ================================================================
+   DB.currentShift  — hozir ochiq bo'lgan smena (yoki null).
+   DB.closedShifts  — yopilgan smenalarning YAKUNIY SNAPSHOT'lari.
+   Har bir savdo/qaytarish yaratilganda joriy smenaning id'si bilan
+   belgilanadi (shiftId) — shu orqali joriy smena hisoboti REAL VAQTDA,
+   qo'lda hech narsa qayta kiritmasdan yangilanib boradi. Smena
+   yopilganda barcha summalar bir marta hisoblab, o'zgarmas holda
+   closedShifts'ga yoziladi — keyinchalik joriy ma'lumotlar
+   o'zgarsa ham (masalan yangi savdo) ushbu tarixiy yozuv o'zgarmaydi. */
+function shiftCashierName(){
+  const sel = document.getElementById('roleSelect');
+  return sel ? sel.selectedOptions[0].textContent.split('—')[1].trim() : currentRole;
+}
+function computeShiftFigures(shift){
+  const sales = activeSales().filter(s=>s.shiftId===shift.id);
+  const returns = confirmedReturns().filter(r=>r.shiftId===shift.id);
+  const naqdSavdo = sales.filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.paidNow,0) + sales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cashPart||0),0);
+  const kartaSavdo = sales.filter(s=>s.paymentType==='karta').reduce((a,s)=>a+s.total,0) + sales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cardPart||0),0);
+  const tezTolovSavdo = sales.filter(s=>s.paymentType==='tezTolov').reduce((a,s)=>a+s.total,0);
+  const qarzSavdo = sales.filter(s=>s.paymentType==='qarz').reduce((a,s)=>a+s.total,0);
+  const jamiSavdo = sales.reduce((a,s)=>a+s.total,0);
+  const naqdQaytarilgan = returns.filter(r=>r.method==='naqd').reduce((a,r)=>a+returnAmount(r),0);
+  const kartaQaytarilgan = returns.filter(r=>r.method==='karta').reduce((a,r)=>a+returnAmount(r),0);
+  const tezTolovQaytarilgan = returns.filter(r=>r.method==='tezTolov').reduce((a,r)=>a+returnAmount(r),0);
+  const qaytarishJami = returns.reduce((a,r)=>a+returnAmount(r),0);
+  const sofSavdo = jamiSavdo - qaytarishJami;
+  const kirimJami = (shift.cashIncomes||[]).reduce((a,x)=>a+x.amount,0);
+  const chiqimJami = (shift.cashExpenses||[]).reduce((a,x)=>a+x.amount,0);
+  const inkassatsiyaJami = (shift.collections||[]).reduce((a,x)=>a+x.amount,0);
+  const expectedCash = (shift.openingCash||0) + naqdSavdo - naqdQaytarilgan + kirimJami - chiqimJami - inkassatsiyaJami;
+  const operatsiyalarSoni = sales.length + returns.length;
+  return {sales,returns,naqdSavdo,kartaSavdo,tezTolovSavdo,qarzSavdo,jamiSavdo,naqdQaytarilgan,kartaQaytarilgan,tezTolovQaytarilgan,
+    qaytarishJami,sofSavdo,kirimJami,chiqimJami,inkassatsiyaJami,expectedCash,operatsiyalarSoni};
+}
+
+/* ---------------- JORIY SMENA (real vaqtda) ---------------- */
 function renderCash(){
-  const csales = activeSales();
-  const naqd = csales.filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.paidNow,0) + csales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cashPart||0),0);
-  const karta = csales.filter(s=>s.paymentType==='karta').reduce((a,s)=>a+s.total,0) + csales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cardPart||0),0);
-  const qarz = csales.filter(s=>s.paymentType==='qarz').reduce((a,s)=>a+(s.total-s.paidNow),0);
-  const expectedCash = naqd;
+  const shift = DB.currentShift;
+  if(!shift){
+    return `
+    <div class="page-head">
+      <div><h1>Kassa — Joriy smena</h1><p>Hozircha ochiq smena yo'q</p></div>
+      <button class="btn btn-primary" onclick="openShiftModal()">${icon('play')} Smenani ochish</button>
+    </div>
+    <div class="card"><div class="empty-state">${icon('wallet')}<div>Savdo va kassa amaliyotlarini yuritish uchun avval smenani oching</div></div></div>
+    <div style="margin-top:16px;"><button class="btn btn-outline" onclick="nav('shiftHistory')">${icon('history')} Smena tarixi</button></div>`;
+  }
+  const f = computeShiftFigures(shift);
+  const ops = shiftOperationsList(shift, f).slice(0,20);
   return `
-  <div class="page-head"><div><h1>Kassa</h1><p>Kutilgan va haqiqiy summani solishtiring</p></div></div>
+  <div class="page-head">
+    <div><h1>Joriy smena — #${shift.number}</h1><p>Ochilgan: ${new Date(shift.openedAt).toLocaleString('uz-UZ')} · Kassir: ${shift.openedBy}</p></div>
+    <button class="btn btn-danger" onclick="openCloseShiftModal()">${icon('lock')} Smenani yopish</button>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:16px;">
+    ${statCard('Kassadagi naqd',fmt(f.expectedCash),'wallet','var(--primary)','var(--primary-light)','Real vaqtda','up')}
+    ${statCard('Jami savdo',fmt(f.jamiSavdo),'shopping-cart','var(--info)','var(--info-light)',f.operatsiyalarSoni+" ta operatsiya",'up')}
+    ${statCard('Sof savdo',fmt(f.sofSavdo),'trending-up','var(--primary)','var(--primary-light)','Qaytarish chegirilgan','up')}
+    ${statCard('Qaytarishlar',fmt(f.qaytarishJami),'rotate-ccw','var(--danger)','var(--danger-light)','Smena davomida','down')}
+  </div>
   <div class="grid grid-3" style="margin-bottom:16px;">
-    ${statCard('Naqd savdo',fmt(naqd),'banknote','var(--primary)','var(--primary-light)','Kutilgan','up')}
-    ${statCard('Karta savdo',fmt(karta),'credit-card','var(--info)','var(--info-light)','Kutilgan','up')}
-    ${statCard('Qarzga sotilgan',fmt(qarz),'user-round','var(--warning)','var(--warning-light)','Hali to\'lanmagan','down')}
+    ${statCard('Naqd savdolar',fmt(f.naqdSavdo),'banknote','var(--primary)','var(--primary-light)','','up')}
+    ${statCard('Karta savdolar',fmt(f.kartaSavdo),'credit-card','var(--info)','var(--info-light)','','up')}
+    ${statCard("Tez to'lov savdolar",fmt(f.tezTolovSavdo),'zap','var(--warning)','var(--warning-light)','','up')}
   </div>
-  <div class="card" style="max-width:480px;">
-    <div class="section-title">Kassani hisoblash</div>
-    <div class="field"><label>Kutilgan naqd summa</label><input type="text" disabled value="${fmtNum(expectedCash)} so'm"></div>
-    <div class="field"><label>Haqiqiy kassadagi pul</label><input type="number" id="actualCash" placeholder="Sanab, kiriting" oninput="calcCash(${expectedCash})"></div>
-    <div id="cashResult"></div>
-    <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="closeCashRegister(${expectedCash})">${icon('lock')} Kassani yopish</button>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="section-title">Kassa harakatlari</div>
+    <div class="grid grid-3" style="margin-bottom:12px;">
+      ${statCard('Kassa kirimlari',fmt(f.kirimJami),'plus-circle','var(--primary)','var(--primary-light)','','up')}
+      ${statCard('Kassa chiqimlari',fmt(f.chiqimJami),'minus-circle','var(--danger)','var(--danger-light)','','down')}
+      ${statCard('Inkassatsiya',fmt(f.inkassatsiyaJami),'briefcase','var(--warning)','var(--warning-light)','','down')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="openShiftMoneyModal('income')">${icon('plus-circle')} Kirim qo'shish</button>
+      <button class="btn btn-outline btn-sm" onclick="openShiftMoneyModal('expense')">${icon('minus-circle')} Chiqim qo'shish</button>
+      <button class="btn btn-outline btn-sm" onclick="openShiftMoneyModal('collection')">${icon('briefcase')} Inkassatsiya</button>
+    </div>
   </div>
-  <div class="card" style="margin-top:16px;">
-    <div class="section-title">Kassa tarixi</div>
+  <div class="card">
+    <div class="section-title">Smena operatsiyalari (${f.operatsiyalarSoni})</div>
     <div class="table-scroll"><table>
-      <thead><tr><th>Sana</th><th>Kutilgan</th><th>Haqiqiy</th><th>Farq</th></tr></thead>
+      <thead><tr><th>Vaqt</th><th>Turi</th><th>Tavsif</th><th>Summa</th></tr></thead>
       <tbody>
-        ${DB.cash.history.length? DB.cash.history.map(h=>`<tr>
-          <td data-label="Sana">${h.date}</td><td data-label="Kutilgan" class="cell-mono">${fmtNum(h.expected)}</td>
-          <td data-label="Haqiqiy" class="cell-mono">${fmtNum(h.actual)}</td>
-          <td data-label="Farq"><span class="badge badge-${h.diff===0?'green':(h.diff<0?'red':'yellow')}">${h.diff===0?"To'g'ri":(h.diff<0?'Kamomad '+fmtNum(Math.abs(h.diff)):'Ortiqcha '+fmtNum(h.diff))}</span></td>
-        </tr>`).join('') : emptyRow(4,"Tarix yo'q")}
+        ${ops.length? ops.map(o=>`<tr>
+          <td data-label="Vaqt">${new Date(o.date).toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}</td>
+          <td data-label="Turi"><span class="badge badge-gray">${o.label}</span></td>
+          <td data-label="Tavsif">${o.desc}</td>
+          <td data-label="Summa" class="cell-mono" style="color:${o.sign<0?'var(--danger)':'inherit'}">${o.sign<0?'−':'+'}${fmtNum(o.amount)}</td>
+        </tr>`).join('') : emptyRow(4,"Hali operatsiya yo'q")}
       </tbody>
     </table></div>
-  </div>`;
+  </div>
+  <div style="margin-top:16px;"><button class="btn btn-outline btn-block" onclick="nav('shiftHistory')">${icon('history')} Smena tarixi</button></div>`;
 }
-function calcCash(expected){
-  const actual = Number(document.getElementById('actualCash').value)||0;
+/* Joriy smenaning savdo/qaytarish/kirim/chiqim/inkassatsiya amaliyotlari — vaqt bo'yicha (yangisi tepada) */
+function shiftOperationsList(shift, f){
+  const list = [];
+  f.sales.forEach(s=>list.push({date:s.date, label:'Savdo', desc:`Chek ${s.checkNo} (${methodLabel(s.paymentType)})`, amount:s.total, sign:1}));
+  f.returns.forEach(r=>list.push({date:r.date, label:'Qaytarish', desc:`${r.product} — chek ${r.checkNo||''}`, amount:returnAmount(r), sign:-1}));
+  (shift.cashIncomes||[]).forEach(x=>list.push({date:x.date, label:'Kirim', desc:x.note||'Kassa kirimi', amount:x.amount, sign:1}));
+  (shift.cashExpenses||[]).forEach(x=>list.push({date:x.date, label:'Chiqim', desc:x.note||'Kassa chiqimi', amount:x.amount, sign:-1}));
+  (shift.collections||[]).forEach(x=>list.push({date:x.date, label:'Inkassatsiya', desc:x.note||'Inkassatsiya', amount:x.amount, sign:-1}));
+  return list.sort((a,b)=>new Date(b.date)-new Date(a.date));
+}
+
+/* ---------------- SMENANI OCHISH ---------------- */
+function openShiftModal(){
+  if(DB.currentShift){ toast("Allaqachon ochiq smena mavjud",true); return; }
+  openModal(`
+    <div class="modal-head"><h3>${icon('play')} Smenani ochish</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info">${icon('user-round')}<span>Kassir: ${shiftCashierName()}</span></div>
+      <div class="field"><label>Boshlang'ich naqd (kassadagi mavjud pul)</label><input type="number" id="os_opening" placeholder="0"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="confirmOpenShift()">${icon('check')} Smenani ochish</button></div>
+  `);
+}
+function confirmOpenShift(){
+  if(DB.currentShift){ toast("Allaqachon ochiq smena mavjud",true); closeModal(); return; }
+  const opening = Number(document.getElementById('os_opening').value)||0;
+  DB.shiftCounter = (DB.shiftCounter||0)+1;
+  const name = shiftCashierName();
+  DB.currentShift = {id:uid('sh'), number:DB.shiftCounter, openedAt:new Date().toISOString(), openedBy:name, closedBy:null,
+    openingCash:opening, cashIncomes:[], cashExpenses:[], collections:[], status:'ochiq'};
+  logActivity(`Smena #${DB.shiftCounter} ochildi`);
+  save(); closeModal(); toast("Smena ochildi"); renderPage();
+}
+
+/* ---------------- KASSA KIRIMI / CHIQIMI / INKASSATSIYA ---------------- */
+const SHIFT_MONEY_CFG = {
+  income:{title:"Kassa kirimi qo'shish", field:'cashIncomes', verb:'Kassa kirimi qo\'shildi'},
+  expense:{title:'Kassa chiqimi qo\'shish', field:'cashExpenses', verb:'Kassa chiqimi qo\'shildi'},
+  collection:{title:'Inkassatsiya', field:'collections', verb:'Inkassatsiya qilindi'},
+};
+function openShiftMoneyModal(kind){
+  if(!DB.currentShift){ toast("Ochiq smena yo'q",true); return; }
+  const cfg = SHIFT_MONEY_CFG[kind];
+  openModal(`
+    <div class="modal-head"><h3>${cfg.title}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Summa</label><input type="number" id="sm_amount" placeholder="Masalan 100000"></div>
+      <div class="field"><label>Izoh</label><textarea id="sm_note" rows="2" placeholder="Ixtiyoriy"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="saveShiftMoney('${kind}')">${icon('check')} Saqlash</button></div>
+  `);
+}
+function saveShiftMoney(kind){
+  if(!DB.currentShift){ toast("Ochiq smena yo'q",true); closeModal(); return; }
+  const amount = Number(document.getElementById('sm_amount').value)||0;
+  if(amount<=0){ toast("Summani kiriting",true); return; }
+  const note = document.getElementById('sm_note').value.trim();
+  const cfg = SHIFT_MONEY_CFG[kind];
+  if(!DB.currentShift[cfg.field]) DB.currentShift[cfg.field] = [];
+  DB.currentShift[cfg.field].push({id:uid('sm'), amount, note, date:new Date().toISOString(), who:shiftCashierName()});
+  logActivity(`Smena #${DB.currentShift.number} — ${cfg.verb}: ${fmt(amount)}`);
+  save(); closeModal(); toast(cfg.verb); renderPage();
+}
+
+/* ---------------- SMENANI YOPISH ---------------- */
+function openCloseShiftModal(){
+  if(!DB.currentShift){ toast("Ochiq smena yo'q",true); return; }
+  const f = computeShiftFigures(DB.currentShift);
+  openModal(`
+    <div class="modal-head"><h3>${icon('lock')} Smenani yopish — #${DB.currentShift.number}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="ct-row total"><span>Tizimdagi naqd</span><span>${fmt(f.expectedCash)}</span></div>
+      <div class="field" style="margin-top:10px;"><label>Amalda sanalgan naqd</label><input type="number" id="cs_actual" placeholder="Sanab, kiriting" oninput="updateCloseShiftDiff(${f.expectedCash})"></div>
+      <div id="cs_diffBox"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="openCloseShiftConfirm(${f.expectedCash})">${icon('arrow-right')} Davom etish</button></div>
+  `);
+}
+function updateCloseShiftDiff(expected){
+  const el = document.getElementById('cs_actual');
+  const box = document.getElementById('cs_diffBox');
+  if(!el || !box) return;
+  const actual = Number(el.value);
+  if(isNaN(actual) || el.value===''){ box.innerHTML=''; return; }
   const diff = actual-expected;
-  const box = document.getElementById('cashResult');
-  if(diff===0) box.innerHTML = `<div class="alert alert-ok">${icon('check-circle2')}<span>Kassa to'g'ri: kamomad yo'q</span></div>`;
+  if(diff===0) box.innerHTML = `<div class="alert alert-ok">${icon('check-circle2')}<span>To'g'ri: farq yo'q</span></div>`;
   else if(diff<0) box.innerHTML = `<div class="alert alert-danger">${icon('alert-triangle')}<span>Kamomad: ${fmt(Math.abs(diff))}</span></div>`;
   else box.innerHTML = `<div class="alert alert-warning">${icon('plus-circle')}<span>Ortiqcha: ${fmt(diff)}</span></div>`;
 }
-function closeCashRegister(expected){
-  const actual = Number(document.getElementById('actualCash').value);
-  if(isNaN(actual)){ toast("Haqiqiy summani kiriting",true); return; }
+function openCloseShiftConfirm(expected){
+  const actualEl = document.getElementById('cs_actual');
+  const actual = Number(actualEl ? actualEl.value : NaN);
+  if(!actualEl || actualEl.value==='' || isNaN(actual)){ toast("Amaldagi naqd summasini kiriting",true); return; }
+  const shift = DB.currentShift;
+  if(!shift) return;
+  const f = computeShiftFigures(shift);
   const diff = actual-expected;
-  DB.cash.history.unshift({date:new Date().toLocaleString('uz-UZ'),expected,actual,diff});
-  logActivity(`Kassani yopdi — kutilgan ${fmt(expected)}, haqiqiy ${fmt(actual)}`);
-  save(); toast("Kassa yopildi"); renderPage();
+  openModal(`
+    <div class="modal-head"><h3>Smenani yopishni tasdiqlaysizmi?</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="ct-row"><span>Smena №</span><span class="cell-strong">#${shift.number}</span></div>
+      <div class="ct-row"><span>Jami savdo</span><span>${fmt(f.jamiSavdo)}</span></div>
+      <div class="ct-row"><span>Jami qaytarish</span><span>${fmt(f.qaytarishJami)}</span></div>
+      <div class="ct-row"><span>Sof savdo</span><span>${fmt(f.sofSavdo)}</span></div>
+      <div class="ct-row"><span>Tizimdagi naqd</span><span>${fmt(expected)}</span></div>
+      <div class="ct-row"><span>Amaldagi naqd</span><span>${fmt(actual)}</span></div>
+      <div class="ct-row total"><span>Farq</span><span style="color:${diff===0?'inherit':(diff<0?'var(--danger)':'var(--warning)')}">${diff===0?'0':(diff<0?'−':'+')+fmt(Math.abs(diff))}</span></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="openCloseShiftModal()">Orqaga</button>
+      <button class="btn btn-primary" onclick="finalizeCloseShift(${actual})">${icon('check-circle2')} Tasdiqlash</button></div>
+  `);
+}
+function finalizeCloseShift(actual){
+  const shift = DB.currentShift;
+  if(!shift) return;
+  const f = computeShiftFigures(shift);
+  const closedByName = shiftCashierName();
+  const snapshot = {
+    id:shift.id, number:shift.number, openedAt:shift.openedAt, closedAt:new Date().toISOString(),
+    openedBy:shift.openedBy, closedBy:closedByName, openingCash:shift.openingCash||0,
+    naqdSavdo:f.naqdSavdo, kartaSavdo:f.kartaSavdo, tezTolovSavdo:f.tezTolovSavdo, qarzSavdo:f.qarzSavdo,
+    jamiSavdo:f.jamiSavdo, naqdQaytarilgan:f.naqdQaytarilgan, kartaQaytarilgan:f.kartaQaytarilgan, tezTolovQaytarilgan:f.tezTolovQaytarilgan,
+    qaytarishJami:f.qaytarishJami, sofSavdo:f.sofSavdo, operatsiyalarSoni:f.operatsiyalarSoni,
+    kirimJami:f.kirimJami, chiqimJami:f.chiqimJami, inkassatsiyaJami:f.inkassatsiyaJami,
+    cashIncomes:shift.cashIncomes||[], cashExpenses:shift.cashExpenses||[], collections:shift.collections||[],
+    expectedCash:f.expectedCash, actualCash:actual, diff:actual-f.expectedCash,
+    saleIds:f.sales.map(s=>s.id), returnIds:f.returns.map(r=>r.id),
+    status:'yopilgan'
+  };
+  if(!DB.closedShifts) DB.closedShifts = [];
+  DB.closedShifts.unshift(snapshot);
+  DB.currentShift = null;
+  logActivity(`Smena #${snapshot.number} yopildi — farq ${fmt(snapshot.diff)}`);
+  save(); closeModal(); toast("Smena yopildi"); nav('cash');
+}
+
+/* ---------------- SMENA TARIXI ---------------- */
+function renderShiftHistory(){
+  const rows = DB.closedShifts||[];
+  return `
+  <div class="page-head">
+    <div><h1>Smena tarixi</h1><p>${rows.length} ta yopilgan smena</p></div>
+    <button class="btn btn-outline" onclick="nav('cash')">${icon('wallet')} Joriy smena</button>
+  </div>
+  <div class="table-card"><div class="table-scroll"><table>
+    <thead><tr><th>Smena №</th><th>Sana</th><th>Kassir</th><th>Ochilish</th><th>Yopilish</th><th>Savdo</th><th>Qaytarish</th><th>Sof savdo</th><th>Farq</th><th>Holat</th></tr></thead>
+    <tbody>
+      ${rows.length? rows.map(h=>`<tr style="cursor:pointer;" onclick="openShiftDetailModal('${h.id}')">
+        <td data-label="Smena №" class="cell-strong">#${h.number}</td>
+        <td data-label="Sana">${h.closedAt.slice(0,10)}</td>
+        <td data-label="Kassir">${h.closedBy}</td>
+        <td data-label="Ochilish">${new Date(h.openedAt).toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}</td>
+        <td data-label="Yopilish">${new Date(h.closedAt).toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}</td>
+        <td data-label="Savdo" class="cell-mono">${fmtNum(h.jamiSavdo)}</td>
+        <td data-label="Qaytarish" class="cell-mono">${fmtNum(h.qaytarishJami)}</td>
+        <td data-label="Sof savdo" class="cell-mono cell-strong">${fmtNum(h.sofSavdo)}</td>
+        <td data-label="Farq"><span class="badge badge-${h.diff===0?'green':(h.diff<0?'red':'yellow')}">${h.diff===0?'0':(h.diff<0?'−':'+')+fmtNum(Math.abs(h.diff))}</span></td>
+        <td data-label="Holat"><span class="badge badge-gray">Yopilgan</span></td>
+      </tr>`).join('') : emptyRow(10,"Yopilgan smena yo'q")}
+    </tbody>
+  </table></div></div>`;
+}
+/* Yopilgan smenaning to'liq, O'ZGARMAS hisoboti (namunadagi tartibda):
+   Smena ma'lumotlari → Kassa qoldig'i → Savdo/to'lov turlari →
+   Qaytarishlar/to'lov turlari → Jami → Sof savdo → Qayta sanash →
+   Tizim va amaldagi pul → Farq → Inkassatsiya. Faqat KO'RISH uchun —
+   hech qanday tahrirlash tugmasi yo'q. */
+function openShiftDetailModal(id){
+  const h = (DB.closedShifts||[]).find(x=>x.id===id);
+  if(!h) return;
+  const diffColor = h.diff===0?'inherit':(h.diff<0?'var(--danger)':'var(--warning)');
+  openModal(`
+    <div class="modal-head"><h3>${icon('receipt')} Smena hisoboti — #${h.number}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="section-title">Smena ma'lumotlari</div>
+      <div class="ct-row"><span>Smena №</span><span class="cell-strong">#${h.number}</span></div>
+      <div class="ct-row"><span>Ochilgan</span><span>${new Date(h.openedAt).toLocaleString('uz-UZ')}</span></div>
+      <div class="ct-row"><span>Yopilgan</span><span>${new Date(h.closedAt).toLocaleString('uz-UZ')}</span></div>
+      <div class="ct-row"><span>Ochdi</span><span>${h.openedBy}</span></div>
+      <div class="ct-row"><span>Yopdi</span><span>${h.closedBy}</span></div>
+
+      <div class="section-title" style="margin-top:14px;">Kassa qoldig'i</div>
+      <div class="ct-row"><span>Boshlang'ich naqd</span><span>${fmt(h.openingCash)}</span></div>
+
+      <div class="section-title" style="margin-top:14px;">Savdo — to'lov turlari bo'yicha</div>
+      <table class="report-table">
+        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+        <tbody>
+          <tr><td>Naqd</td><td>${fmt(h.naqdSavdo)}</td></tr>
+          <tr><td>Karta</td><td>${fmt(h.kartaSavdo)}</td></tr>
+          <tr><td>Tez to'lov</td><td>${fmt(h.tezTolovSavdo)}</td></tr>
+          <tr><td>Qarz/Nasiya</td><td>${fmt(h.qarzSavdo)}</td></tr>
+          <tr class="report-total"><td>Jami</td><td>${fmt(h.jamiSavdo)}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title" style="margin-top:14px;">Qaytarishlar — to'lov turlari bo'yicha</div>
+      <table class="report-table">
+        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+        <tbody>
+          <tr class="report-neg"><td>Naqd</td><td>−${fmt(h.naqdQaytarilgan)}</td></tr>
+          <tr class="report-neg"><td>Karta</td><td>−${fmt(h.kartaQaytarilgan)}</td></tr>
+          <tr class="report-neg"><td>Tez to'lov</td><td>−${fmt(h.tezTolovQaytarilgan)}</td></tr>
+          <tr class="report-total report-neg"><td>Jami</td><td>−${fmt(h.qaytarishJami)}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title" style="margin-top:14px;">Jami</div>
+      <div class="ct-row"><span>Jami savdo</span><span>${fmt(h.jamiSavdo)}</span></div>
+      <div class="ct-row total"><span>Sof savdo</span><span>${fmt(h.sofSavdo)}</span></div>
+      <div class="ct-row"><span>Operatsiyalar soni</span><span>${h.operatsiyalarSoni}</span></div>
+
+      <div class="section-title" style="margin-top:14px;">Kassa harakatlari</div>
+      <div class="ct-row"><span>Kassa kirimlari</span><span>${fmt(h.kirimJami)}</span></div>
+      <div class="ct-row"><span>Kassa chiqimlari</span><span>−${fmt(h.chiqimJami)}</span></div>
+      <div class="ct-row"><span>Inkassatsiya</span><span>−${fmt(h.inkassatsiyaJami)}</span></div>
+
+      <div class="section-title" style="margin-top:14px;">Qayta sanash</div>
+      <div class="ct-row"><span>Tizimdagi naqd</span><span>${fmt(h.expectedCash)}</span></div>
+      <div class="ct-row"><span>Amaldagi naqd</span><span>${fmt(h.actualCash)}</span></div>
+      <div class="ct-row total"><span>Farq</span><span style="color:${diffColor}">${h.diff===0?'0':(h.diff<0?'−':'+')+fmt(Math.abs(h.diff))}</span></div>
+
+      ${currentRole==='admin'? `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="openShiftTransactionsModal('${h.id}')">${icon('list')} Tafsilotlar</button>`:''}
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline btn-block" onclick="closeModal()">Yopish</button></div>
+  `, true);
+}
+/* Admin uchun — yopilgan smenaning ichidagi savdo/qaytarish/kassa
+   harakatlari ro'yxati (faqat KO'RISH, tahrirlash yo'q). */
+function openShiftTransactionsModal(id){
+  const h = (DB.closedShifts||[]).find(x=>x.id===id);
+  if(!h) return;
+  const sales = (h.saleIds||[]).map(sid=>DB.sales.find(s=>s.id===sid)).filter(Boolean);
+  const returns = (h.returnIds||[]).map(rid=>DB.returns.find(r=>r.id===rid)).filter(Boolean);
+  const hasMoney = (h.cashIncomes&&h.cashIncomes.length)||(h.cashExpenses&&h.cashExpenses.length)||(h.collections&&h.collections.length);
+  openModal(`
+    <div class="modal-head"><h3>Smena #${h.number} — Tafsilotlar</h3><button class="btn-ghost" onclick="openShiftDetailModal('${h.id}')">${icon('arrow-left')}</button></div>
+    <div class="modal-body">
+      <div class="section-title">Savdolar (${sales.length})</div>
+      <div class="table-scroll"><table><thead><tr><th>Chek</th><th>Vaqt</th><th>Turi</th><th>Summa</th></tr></thead>
+        <tbody>${sales.length? sales.map(s=>`<tr>
+          <td data-label="Chek" class="cell-mono">${s.checkNo}</td>
+          <td data-label="Vaqt">${new Date(s.date).toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}</td>
+          <td data-label="Turi">${methodLabel(s.paymentType)}</td>
+          <td data-label="Summa" class="cell-mono">${fmtNum(s.total)}</td>
+        </tr>`).join(''):emptyRow(4,"Yo'q")}</tbody>
+      </table></div>
+      <div class="section-title" style="margin-top:14px;">Qaytarishlar (${returns.length})</div>
+      <div class="table-scroll"><table><thead><tr><th>Chek</th><th>Tovar</th><th>Summa</th></tr></thead>
+        <tbody>${returns.length? returns.map(r=>`<tr>
+          <td data-label="Chek" class="cell-mono">${r.checkNo||''}</td>
+          <td data-label="Tovar">${r.product}</td>
+          <td data-label="Summa" class="cell-mono">−${fmtNum(returnAmount(r))}</td>
+        </tr>`).join(''):emptyRow(3,"Yo'q")}</tbody>
+      </table></div>
+      <div class="section-title" style="margin-top:14px;">Kassa harakatlari</div>
+      <div class="table-scroll"><table><thead><tr><th>Turi</th><th>Summa</th><th>Izoh</th><th>Kim</th></tr></thead>
+        <tbody>
+          ${(h.cashIncomes||[]).map(x=>`<tr><td data-label="Turi">Kirim</td><td data-label="Summa" class="cell-mono">+${fmtNum(x.amount)}</td><td data-label="Izoh">${x.note||'—'}</td><td data-label="Kim">${x.who}</td></tr>`).join('')}
+          ${(h.cashExpenses||[]).map(x=>`<tr><td data-label="Turi">Chiqim</td><td data-label="Summa" class="cell-mono">−${fmtNum(x.amount)}</td><td data-label="Izoh">${x.note||'—'}</td><td data-label="Kim">${x.who}</td></tr>`).join('')}
+          ${(h.collections||[]).map(x=>`<tr><td data-label="Turi">Inkassatsiya</td><td data-label="Summa" class="cell-mono">−${fmtNum(x.amount)}</td><td data-label="Izoh">${x.note||'—'}</td><td data-label="Kim">${x.who}</td></tr>`).join('')}
+          ${!hasMoney?emptyRow(4,"Yo'q"):''}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline btn-block" onclick="openShiftDetailModal('${h.id}')">${icon('arrow-left')} Orqaga</button></div>
+  `, true);
 }
 
 /* ================================================================
@@ -5394,78 +6162,299 @@ function saveExpense(){
 /* ================================================================
    RETURNS
    ================================================================ */
+/* Bitta savdo satri (saleId+itemIndex) bo'yicha ilgari TASDIQLANGAN
+   qaytarilgan miqdor — ortiqcha qaytarishning oldini oladi. Eski
+   (itemIndex'siz) yozuvlar productId bo'yicha moslashtiriladi. */
+function returnedQtyFor(saleId, itemIndex, productId){
+  return roundQty((DB.returns||[]).filter(r=>r.status==='tasdiqlangan' && r.saleId===saleId &&
+    (r.itemIndex!=null ? r.itemIndex===itemIndex : r.productId===productId))
+    .reduce((a,r)=>a+r.qty,0));
+}
+function saleItemReturnable(s, idx){
+  const it = s.items[idx];
+  if(!it) return 0;
+  return Math.max(0, roundQty(it.qty - returnedQtyFor(s.id, idx, it.productId)));
+}
+/* Chekning to'lov turidan kelib chiqib qaytarish usulini "qulflaydi" —
+   Naqd/Karta sotuvlarda oddiy foydalanuvchi faqat shu usulda qaytara oladi,
+   boshqacha tanlash FAQAT ADMIN uchun ochiq (11-band). Aralash/qarz kabi
+   noaniq holatlarda usul erkin (admin) yoki standart 'naqd' (boshqalar). */
+function returnMethodLock(s){
+  return (s.paymentType==='naqd' || s.paymentType==='karta' || s.paymentType==='tezTolov') ? s.paymentType : null;
+}
+/* To'lov/qaytarish usuli — barcha joyda bir xil belgi (Naqd/Karta/Tez to'lov/Qarz/Aralash) */
+function methodLabel(m){
+  return m==='karta' ? 'Karta' : (m==='tezTolov' ? "Tez to'lov" : (m==='qarz' ? 'Qarz/Nasiya' : (m==='aralash' ? 'Aralash' : 'Naqd')));
+}
 function renderReturns(){
+  const rows = (DB.returns||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const canCancel = currentRole==='admin';
   return `
   <div class="page-head">
-    <div><h1>Qaytarishlar</h1><p>Sotilgan mahsulotni qaytarish</p></div>
-    <button class="btn btn-primary" onclick="openReturnModal()">${icon('plus')} Qaytarish</button>
+    <div><h1>Qaytarishlar</h1><p>Sotilgan mahsulotni savdo, kassa va ombor bilan bog'liq holda qaytarish</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="openReturnByCodeModal()">${icon('scan-line')} QR/Shtrix-kod</button>
+      <button class="btn btn-primary" onclick="openReturnModal()">${icon('plus')} Qaytarish</button>
+    </div>
   </div>
-  <div class="table-card"><div class="table-scroll"><table>
-    <thead><tr><th>Chek</th><th>Tovar</th><th>Miqdor</th><th>Narx</th><th>Sabab</th><th>Sana</th></tr></thead>
+  <div class="table-card"><div class="table-scroll" id="returnsTable"><table>
+    <thead><tr><th>ID</th><th>Chek</th><th>Sana</th><th>Mijoz</th><th>Tovar</th><th>SKU</th><th>Shtrix-kod</th><th>Miqdor</th><th>Summa</th><th>Holat</th><th>Usul</th><th>Kim</th><th>Status</th><th></th></tr></thead>
     <tbody>
-      ${DB.returns.length? DB.returns.map(r=>`<tr>
-        <td data-label="Chek" class="cell-mono">#${r.saleId.slice(-5)}</td>
+      ${rows.length? rows.map(r=>{
+        const cust = r.customerId ? DB.customers.find(c=>c.id===r.customerId) : null;
+        return `<tr>
+        <td data-label="ID" class="cell-mono">#${r.id.slice(-5)}</td>
+        <td data-label="Chek" class="cell-mono">${r.checkNo||('#'+r.saleId.slice(-5))}</td>
+        <td data-label="Sana">${r.date.slice(0,10)} ${r.date.slice(11,16)}</td>
+        <td data-label="Mijoz">${cust?cust.name:'—'}</td>
         <td data-label="Tovar">${r.product}</td>
+        <td data-label="SKU" class="cell-mono">${r.sku||'—'}</td>
+        <td data-label="Shtrix-kod" class="cell-mono">${r.barcode||'—'}</td>
         <td data-label="Miqdor" class="cell-mono">${fmtQty(r.qty)} ${r.unit||''}</td>
-        <td data-label="Narx" class="cell-mono">${fmtNum(r.price*r.qty)}</td>
-        <td data-label="Sabab"><span class="badge badge-yellow">${r.reason}</span></td>
-        <td data-label="Sana">${r.date.slice(0,10)}</td>
-      </tr>`).join('') : emptyRow(6,"Qaytarish yo'q")}
+        <td data-label="Summa" class="cell-mono cell-strong">${fmtNum(returnAmount(r))}</td>
+        <td data-label="Holat"><span class="badge badge-${r.condition==='brak'?'red':'green'}">${r.condition==='brak'?'BRAK':'Yaxshi'}</span></td>
+        <td data-label="Usul"><span class="badge badge-gray">${methodLabel(r.method)}</span></td>
+        <td data-label="Kim">${r.who||'—'}</td>
+        <td data-label="Status"><span class="badge badge-${r.status==='tasdiqlangan'?'green':(r.status==='bekor qilingan'?'red':'yellow')}">${r.status==='bekor qilingan'?'Bekor qilingan':(r.status==='kutilmoqda'?'Kutilmoqda':'Tasdiqlangan')}</span></td>
+        <td data-label="">${(canCancel && r.status==='tasdiqlangan')? `<button class="btn-ghost" onclick="cancelReturn('${r.groupId||r.id}')" title="Qaytarishni bekor qilish">${icon('rotate-ccw')}</button>` : ''}</td>
+      </tr>`;}).join('') : emptyRow(14,"Qaytarish yo'q")}
     </tbody>
-  </table></div></div>`;
+  </table></div>
+  <!-- Mobil ixcham ko'rinish — faqat <=640px ekranda ko'rinadi (CSS orqali), hisob-kitobga ta'sir qilmaydi -->
+  <div class="compact-op-list" style="padding:8px;">
+    ${rows.length? rows.map(r=>`
+      <div class="compact-op-row">
+        <div class="compact-op-top">
+          <span class="cop-date">${r.date.slice(0,10)} ${r.date.slice(11,16)}</span>
+          <span class="cop-check">${r.checkNo||('#'+r.saleId.slice(-5))}</span>
+          <span class="cop-usul"><span class="badge badge-gray">${methodLabel(r.method)}</span></span>
+        </div>
+        <div class="compact-op-mid">
+          <div class="compact-op-product">${r.product}</div>
+          ${(canCancel && r.status==='tasdiqlangan')? `<button class="btn-ghost compact-op-cancel" onclick="cancelReturn('${r.groupId||r.id}')" title="Qaytarishni bekor qilish">${icon('rotate-ccw')}</button>` : ''}
+        </div>
+        <div class="compact-op-bottom">
+          <span class="compact-op-qty">${fmtQty(r.qty)} ${r.unit||''}</span>
+          <span class="compact-op-amount">−${fmtNum(returnAmount(r))}</span>
+        </div>
+      </div>`).join('') : `<div class="empty-state">${icon('inbox')}<div>Qaytarish yo'q</div></div>`}
+  </div>
+  </div>`;
 }
-function openReturnModal(){
-  const validSales = activeSales().slice().reverse().slice(0,25);
+function openReturnModal(saleId, prefIndex){
+  if(!(currentRole==='admin' || DB.roleRights[currentRole].returns)){ toast("Sizda qaytarish huquqi yo'q",true); return; }
+  const validSales = activeSales().slice().reverse().slice(0,40);
   openModal(`
     <div class="modal-head"><h3>Tovar qaytarish</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
-    <div class="modal-body">
-      <div class="field"><label>Chekni tanlang</label><select id="rt_sale" onchange="fillReturnItems(this.value)">
+    <div class="modal-body" id="rtBody">
+      <div class="field"><label>Chekni tanlang</label><select id="rt_sale" onchange="renderReturnLines(this.value)">
         <option value="">Tanlang</option>
-        ${validSales.map(s=>`<option value="${s.id}">#${s.id.slice(-5)} — ${s.date.slice(0,10)} — ${fmtNum(s.total)}</option>`).join('')}
+        ${validSales.map(s=>`<option value="${s.id}" ${saleId===s.id?'selected':''}>${s.checkNo||('#'+s.id.slice(-5))} — ${s.date.slice(0,10)} — ${fmtNum(s.total)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Mahsulot</label><select id="rt_item" onchange="updateReturnMax()"></select></div>
-      <div class="field"><label>Qaytarilayotgan miqdor</label><input type="number" id="rt_qty" value="1" step="0.01" min="0.01"></div>
-      <div id="rt_maxHint" style="font-size:11px;color:var(--text-faint);margin-top:-8px;margin-bottom:12px;"></div>
-      <div class="field"><label>Sabab</label><select id="rt_reason"><option>Mijoz fikridan qaytdi</option><option>Brak</option><option>Noto'g'ri mahsulot</option><option>Boshqa</option></select></div>
-      <div class="field"><label>Holat</label><select id="rt_restock"><option value="restock">Omborga qaytadi (yaroqli)</option><option value="brak">Brak sifatida chiqadi</option></select></div>
+      <div id="rt_lines"></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="saveReturn()">${icon('check')} Qaytarishni tasdiqlash</button></div>
-  `);
+      <button class="btn btn-primary" onclick="saveReturnMulti()">${icon('check')} Qaytarishni tasdiqlash</button></div>
+  `, true, 'modal-return');
+  if(saleId) renderReturnLines(saleId, prefIndex);
 }
-function fillReturnItems(saleId){
+function renderReturnLines(saleId, prefIndex){
+  const box = document.getElementById('rt_lines');
+  if(!box) return;
   const s = DB.sales.find(x=>x.id===saleId);
-  const sel = document.getElementById('rt_item');
-  sel.innerHTML = s? s.items.map((it,i)=>`<option value="${i}">${it.name} (${fmtQty(it.qty)} ${it.unit||''})</option>`).join('') : '';
-  updateReturnMax();
+  if(!s || s.status==='bekor qilingan'){ box.innerHTML = s? `<div class="alert alert-danger">${icon('alert-triangle')}<span>Bu savdo bekor qilingan — qaytarib bo'lmaydi</span></div>` : ''; return; }
+  const lock = returnMethodLock(s);
+  const isAdmin = currentRole==='admin';
+  const methodLocked = !!lock && !isAdmin;
+  const defaultMethod = lock || 'naqd';
+  box.innerHTML = `
+    <div class="field"><label>Mahsulotlar (qaytariladiganlarni belgilang)</label></div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;margin-bottom:12px;">
+      ${s.items.map((it,i)=>{
+        const max = saleItemReturnable(s,i);
+        const already = roundQty(it.qty-max);
+        const checked = (prefIndex===i && max>0);
+        return `<div class="rt-line" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;${max<=0?'opacity:.45;':''}">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:${max<=0?'default':'pointer'};">
+            <input type="checkbox" id="rtc_${i}" ${max<=0?'disabled':''} ${checked?'checked':''} onchange="toggleReturnLine(${i})">
+            <span class="cell-strong" style="flex:1;">${it.name}</span>
+            <span style="color:var(--text-faint);font-size:11px;">sotilgan ${fmtQty(it.qty)}${already>0?` · qaytarilgan ${fmtQty(already)}`:''} · mumkin ${fmtQty(max)} ${it.unit||''}</span>
+          </label>
+          <div id="rtd_${i}" style="display:${checked?'flex':'none'};gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <div class="field" style="flex:1;min-width:110px;margin:0;"><label>Qaytarish miqdori</label><input type="number" id="rtq_${i}" value="${max>0?Math.min(1,max):0}" step="0.01" min="0.01" max="${max}"></div>
+            <div class="field" style="flex:1;min-width:140px;margin:0;"><label>Mahsulot holati</label><select id="rtcond_${i}">
+              <option value="yaxshi">Yaxshi holatda</option>
+              <option value="brak">BRAK</option>
+            </select></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Qaytarish usuli</label><select id="rt_method" ${methodLocked?'disabled':''}>
+        <option value="naqd" ${defaultMethod==='naqd'?'selected':''}>Naqd</option>
+        <option value="karta" ${defaultMethod==='karta'?'selected':''}>Karta</option>
+        <option value="tezTolov" ${defaultMethod==='tezTolov'?'selected':''}>Tez to'lov</option>
+      </select>
+      ${methodLocked?`<div style="font-size:10.5px;color:var(--text-faint);margin-top:4px;">Sotuvdagi to'lov turi bilan bir xil — faqat admin o'zgartira oladi</div>`:''}
+      </div>
+      <div class="field"><label>Sabab</label><select id="rt_reason"><option>Mijoz fikridan qaytdi</option><option>Brak</option><option>Noto'g'ri mahsulot</option><option>Boshqa</option></select></div>
+    </div>
+  `;
+  lucide.createIcons();
 }
-function updateReturnMax(){
-  const saleId = document.getElementById('rt_sale').value;
-  const s = DB.sales.find(x=>x.id===saleId);
-  const hint = document.getElementById('rt_maxHint');
-  if(!s || !hint){ if(hint) hint.textContent=''; return; }
-  const idx = Number(document.getElementById('rt_item').value)||0;
-  const it = s.items[idx];
-  hint.textContent = it? `Maksimal: ${fmtQty(it.qty)} ${it.unit||''}` : '';
+function toggleReturnLine(i){
+  const box = document.getElementById('rtd_'+i);
+  const cb = document.getElementById('rtc_'+i);
+  if(box && cb) box.style.display = cb.checked ? 'flex':'none';
 }
-function saveReturn(){
-  const saleId = document.getElementById('rt_sale').value;
+function saveReturnMulti(){
+  if(!(currentRole==='admin' || DB.roleRights[currentRole].returns)){ toast("Sizda qaytarish huquqi yo'q",true); return; }
+  const saleSel = document.getElementById('rt_sale');
+  const saleId = saleSel ? saleSel.value : '';
   if(!saleId){ toast("Chekni tanlang",true); return; }
   const s = DB.sales.find(x=>x.id===saleId);
-  const idx = Number(document.getElementById('rt_item').value);
-  const it = s.items[idx];
-  const qty = Number(document.getElementById('rt_qty').value)||0;
-  if(!it || qty<=0 || qty>it.qty){ toast("Miqdor noto'g'ri",true); return; }
-  const restock = document.getElementById('rt_restock').value==='restock';
-  const p = DB.products.find(x=>x.id===it.productId);
-  if(p && restock){
-    if(!p.batches) p.batches = [];
-    p.batches.push({id:uid('lot'), lot:generateLotCode(), qty, cost:it.cost||p.cost||0, price:it.price||p.price||0, expiry:null, supplier:'', note:"Mijozdan qaytarilgan (yaroqli)", date:todayISO(), createdAt:Date.now()});
-    p.qty = roundQty(p.qty+qty);
+  if(!s || s.status==='bekor qilingan'){ toast("Bu chek bekor qilingan yoki topilmadi",true); return; }
+  const methodEl = document.getElementById('rt_method');
+  const reasonEl = document.getElementById('rt_reason');
+  if(!methodEl || !reasonEl){ toast("Mahsulot tanlanmadi",true); return; }
+  const method = methodEl.value;
+  const lock = returnMethodLock(s);
+  if(lock && method!==lock && currentRole!=='admin'){ toast("To'lov usulini faqat admin o'zgartira oladi",true); return; }
+  const reason = reasonEl.value;
+  /* 1-BOSQICH: TEKSHIRUV — hech narsa o'zgartirilmasdan barcha qatorlar
+     tekshiriladi, shunda operatsiya ATOMIK bo'ladi (yarim bajarilgan
+     qaytarish hech qachon hosil bo'lmaydi). */
+  const lines = [];
+  for(let i=0;i<s.items.length;i++){
+    const cb = document.getElementById('rtc_'+i);
+    if(!cb || !cb.checked) continue;
+    const it = s.items[i];
+    const max = saleItemReturnable(s,i);
+    const qtyInput = document.getElementById('rtq_'+i);
+    const condSel = document.getElementById('rtcond_'+i);
+    const qty = roundQty(Number(qtyInput?qtyInput.value:0)||0);
+    const condition = condSel ? condSel.value : 'yaxshi';
+    if(qty<=0 || qty>max){ toast(`"${it.name}" uchun miqdor noto'g'ri (maksimal ${fmtQty(max)})`,true); return; }
+    const p = DB.products.find(x=>x.id===it.productId);
+    if(!p){ toast(`"${it.name}" mahsuloti bazada topilmadi`,true); return; }
+    lines.push({idx:i, it, p, qty, condition});
   }
-  DB.returns.push({id:uid('r'),saleId,customerId:s.customerId,product:it.name,qty,unit:it.unit,date:new Date().toISOString(),price:it.price,reason:document.getElementById('rt_reason').value,restock});
-  logActivity(`Qaytarish: ${it.name} x${fmtQty(qty)} — ${fmt(it.price*qty)} (${document.getElementById('rt_reason').value})`);
-  save(); closeModal(); toast("Qaytarish qayd etildi"); renderPage();
+  if(!lines.length){ toast("Kamida bitta mahsulotni belgilang",true); return; }
+  /* 2-BOSQICH: BAJARISH — tekshiruvdan o'tgan barcha qatorlar ketma-ket
+     qo'llaniladi: savdo → qaytarish → kassa → ombor/BRAK → hisobot →
+     qaytarishlar tarixi — barchasi shu yerda sinxron yangilanadi. */
+  const groupId = uid('rg');
+  const who = document.getElementById('roleSelect').selectedOptions[0].textContent.split('—')[1].trim();
+  const now = new Date().toISOString();
+  lines.forEach(({idx,it,p,qty,condition})=>{
+    let batchId = null;
+    if(condition==='yaxshi'){
+      if(!p.batches) p.batches = [];
+      batchId = uid('lot');
+      p.batches.push({id:batchId, lot:generateLotCode(), qty, cost:it.cost||p.cost||0, price:it.price||p.price||0, expiry:null, supplier:'', note:"Mijozdan qaytarilgan (yaroqli)", date:todayISO(), createdAt:Date.now(), warehouseId:defaultWarehouseId()});
+      p.qty = roundQty(p.qty+qty);
+      DB.stockMoves.unshift({dir:'in', productId:p.id, productName:p.name, size:p.size||'', pkgUnit:p.pkgUnit||null, qty, unit:p.unit,
+        date:now, reason:'Qaytarish', supplier:'', note:`Chek #${s.checkNo} — mijozdan qaytarilgan`, warehouseId:defaultWarehouseId(), warehouseName:whName(defaultWarehouseId())});
+    } else {
+      p.brakQty = roundQty((p.brakQty||0)+qty);
+    }
+    DB.returns.push({id:uid('r'), groupId, saleId:s.id, checkNo:s.checkNo, customerId:s.customerId, itemIndex:idx,
+      productId:p.id, product:it.name, sku:p.sku, barcode:p.barcode, unit:it.unit, qty, price:it.price, cost:it.cost||p.cost||0,
+      amount:roundQty(it.price*qty), condition, restock:condition==='yaxshi', batchId, method, reason, status:'tasdiqlangan', who, date:now,
+      shiftId: DB.currentShift ? DB.currentShift.id : null});
+  });
+  const totalAmt = lines.reduce((a,l)=>a+l.it.price*l.qty,0);
+  logActivity(`Qaytarish (#${s.checkNo}): ${lines.map(l=>l.it.name+' x'+fmtQty(l.qty)+(l.condition==='brak'?' [BRAK]':'')).join(', ')} — ${fmt(totalAmt)} (${method==='karta'?'Karta':'Naqd'}, ${reason})`);
+  save(); closeModal(); toast("Qaytarish tasdiqlandi");
+  renderPage();
+}
+/* Qaytarishni BEKOR QILISH — faqat admin. Kassa, ombor/BRAK va hisobotlar
+   avtomatik tiklanadi, chunki ular DB.returns'dagi status='tasdiqlangan'
+   yozuvlardan real vaqtda hisoblanadi (alohida "qaytarib berish" kodi shart emas). */
+function cancelReturn(groupId){
+  if(currentRole!=='admin'){ toast("Faqat admin qaytarishni bekor qila oladi",true); return; }
+  const group = (DB.returns||[]).filter(r=>r.groupId===groupId && r.status==='tasdiqlangan');
+  if(!group.length){ toast("Bekor qilinadigan qaytarish topilmadi",true); return; }
+  const reason = prompt("Qaytarishni bekor qilish sababini kiriting:");
+  if(!reason || !reason.trim()){ toast("Sabab kiritilishi shart",true); return; }
+  const who = document.getElementById('roleSelect').selectedOptions[0].textContent.split('—')[1].trim();
+  const now = new Date().toISOString();
+  group.forEach(r=>{
+    const p = DB.products.find(x=>x.id===r.productId);
+    if(p){
+      if(r.condition==='yaxshi'){
+        p.qty = Math.max(0, roundQty(p.qty - r.qty));
+        if(r.batchId && p.batches) p.batches = p.batches.filter(b=>b.id!==r.batchId);
+      } else {
+        p.brakQty = Math.max(0, roundQty((p.brakQty||0) - r.qty));
+      }
+    }
+    r.status = 'bekor qilingan';
+    r.cancelledBy = who; r.cancelledAt = now; r.cancelReason = reason.trim();
+  });
+  logActivity(`Qaytarish bekor qilindi (#${group[0].checkNo}) — sabab: ${reason.trim()}`);
+  save(); toast("Qaytarish bekor qilindi — kassa va ombor qayta tiklandi"); renderPage();
+}
+/* ---------------- QR / Shtrix-kod orqali qaytarishni boshlash ---------------- */
+function openReturnByCodeModal(){
+  openModal(`
+    <div class="modal-head"><h3>${icon('scan-line')} QR/Shtrix-kod orqali qaytarish</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Kodni kiriting yoki skanerlang</label>
+        <input type="text" id="rt_code" placeholder="Shtrix-kod / QR / SKU" onkeydown="if(event.key==='Enter')returnCodeLookup()">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-outline" onclick="returnCodeLookup()">${icon('search')} Qidirish</button>
+        <button class="btn btn-outline" id="rtCamBtn" onclick="toggleReturnCamera()">${icon('camera')} Kamera</button>
+      </div>
+      <video id="rtScanVideo" style="display:none;width:100%;border-radius:10px;max-height:220px;object-fit:cover;background:#000;" muted playsinline></video>
+      <div id="rt_codeResults"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Yopish</button></div>
+  `);
+}
+function toggleReturnCamera(){
+  const btn = document.getElementById('rtCamBtn');
+  const video = document.getElementById('rtScanVideo');
+  if(scanEngineActive){ stopScanEngine(); if(btn) btn.innerHTML=icon('camera')+' Kamera'; if(video) video.style.display='none'; lucide.createIcons(); return; }
+  if(!video) return;
+  video.style.display='block';
+  if(btn) btn.innerHTML=icon('camera-off')+" To'xtatish";
+  lucide.createIcons();
+  startScanEngine(video, (code)=>{
+    stopScanEngine();
+    video.style.display='none';
+    if(btn) btn.innerHTML=icon('camera')+' Kamera';
+    lucide.createIcons();
+    const inp=document.getElementById('rt_code'); if(inp) inp.value=code;
+    returnCodeLookup();
+  }, (err)=>{ toast(err,true); });
+}
+function returnCodeLookup(){
+  const codeEl = document.getElementById('rt_code');
+  const code = codeEl ? codeEl.value.trim() : '';
+  const box = document.getElementById('rt_codeResults');
+  if(!code || !box) return;
+  const matches = [];
+  activeSales().forEach(s=>{
+    s.items.forEach((it,idx)=>{
+      const p = DB.products.find(x=>x.id===it.productId);
+      if(!p) return;
+      if(p.barcode===code || p.qrCode===code || (p.sku||'').toLowerCase()===code.toLowerCase()){
+        const max = saleItemReturnable(s,idx);
+        if(max>0) matches.push({s, idx, it, max});
+      }
+    });
+  });
+  matches.sort((a,b)=>new Date(b.s.date)-new Date(a.s.date));
+  if(!matches.length){ box.innerHTML = `<div class="empty-state">${icon('search')}<div>Qaytarish mumkin bo'lgan sotuv topilmadi</div></div>`; lucide.createIcons(); return; }
+  box.innerHTML = matches.slice(0,15).map(m=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="closeModal();openReturnModal('${m.s.id}',${m.idx})">
+      <div><strong>${m.it.name}</strong><div style="color:var(--text-faint);font-size:11px;">${m.s.checkNo||('#'+m.s.id.slice(-5))} · ${m.s.date.slice(0,10)} · mumkin: ${fmtQty(m.max)} ${m.it.unit||''}</div></div>
+      ${icon('chevron-right')}
+    </div>`).join('');
+  lucide.createIcons();
 }
 
 /* ================================================================
@@ -5491,10 +6480,12 @@ function renderReportBody(){
   if(reportTab==='sales'){
     const byDay = {};
     activeSales().forEach(s=>{ const d=s.date.slice(0,10); byDay[d]=(byDay[d]||0)+s.total; });
+    const retByDay = {};
+    confirmedReturns().forEach(r=>{ const d=(r.date||'').slice(0,10); if(!d) return; retByDay[d]=(retByDay[d]||0)+returnAmount(r); });
     const rows = Object.entries(byDay).sort((a,b)=>b[0]<a[0]?-1:1);
     return `<div class="card"><div class="section-title">Kunlik savdo</div><div class="table-scroll"><table>
-      <thead><tr><th>Sana</th><th>Savdo soni</th><th>Jami summa</th></tr></thead>
-      <tbody>${rows.map(([d,total])=>`<tr><td data-label="Sana">${d}</td><td data-label="Soni">${activeSales().filter(s=>s.date.slice(0,10)===d).length} ta</td><td data-label="Summa" class="cell-mono cell-strong">${fmtNum(total)}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Sana</th><th>Savdo soni</th><th>Jami summa</th><th>Qaytarilgan</th><th>Sof savdo</th></tr></thead>
+      <tbody>${rows.map(([d,total])=>{ const ret=retByDay[d]||0; return `<tr><td data-label="Sana">${d}</td><td data-label="Soni">${activeSales().filter(s=>s.date.slice(0,10)===d).length} ta</td><td data-label="Summa" class="cell-mono cell-strong">${fmtNum(total)}</td><td data-label="Qaytarilgan" class="cell-mono">${ret?'−'+fmtNum(ret):'0'}</td><td data-label="Sof savdo" class="cell-mono cell-strong">${fmtNum(total-ret)}</td></tr>`; }).join('')}</tbody>
     </table></div></div>`;
   }
   if(reportTab==='products'){
@@ -5512,12 +6503,16 @@ function renderReportBody(){
     </div>`;
   }
   if(reportTab==='finance'){
-    const revenue = activeSales().reduce((a,s)=>a+s.total,0);
+    const grossRevenue = activeSales().reduce((a,s)=>a+s.total,0);
+    const returnedAmount = confirmedReturns().reduce((a,r)=>a+returnAmount(r),0);
+    const revenue = grossRevenue - returnedAmount;
     const expense = DB.expenses.reduce((a,e)=>a+e.amount,0);
-    const grossProfit = activeSales().reduce((a,s)=>a+s.items.reduce((x,it)=>x+(it.price-it.cost)*it.qty,0),0);
+    const grossProfitRaw = activeSales().reduce((a,s)=>a+s.items.reduce((x,it)=>x+(it.price-it.cost)*it.qty,0),0);
+    const returnedProfit = confirmedReturns().reduce((a,r)=>a+((r.price-(r.cost||0))*r.qty),0);
+    const grossProfit = grossProfitRaw - returnedProfit;
     const netProfit = grossProfit-expense;
     return `<div class="grid grid-4">
-      ${statCard('Tushum',fmt(revenue),'trending-up','var(--primary)','var(--primary-light)','Jami','up')}
+      ${statCard('Tushum',fmt(revenue),'trending-up','var(--primary)','var(--primary-light)','Qaytarishlar chegirilgan','up')}
       ${statCard('Xarajat',fmt(expense),'receipt','var(--danger)','var(--danger-light)','Jami','down')}
       ${statCard('Yalpi foyda',fmt(grossProfit),'sprout','var(--info)','var(--info-light)','Xarajatsiz','up')}
       ${statCard('Sof foyda',fmt(netProfit),'wallet','var(--primary)','var(--primary-light)','Xarajatlardan keyin',netProfit>=0?'up':'down')}
@@ -5596,6 +6591,310 @@ function renderSettings(){
 }
 
 /* ================================================================
+   INVENTARIZATSIYA (ombor tekshiruvi) — tizimdagi qoldiqni haqiqiy
+   sanoq bilan solishtirish va farqni (ortiqcha/kamomad) avtomatik
+   tuzatish. Mavjud partiya (batches) va stockMoves tizimidan
+   foydalanadi — hech narsa buzilmaydi, faqat ustiga qo'shiladi.
+   invView: 'list' (tarix + boshlash) -> 'count' (sanash) -> 'review'
+   (faqat farqlarni ko'rib tasdiqlash) -> yana 'list'ga qaytadi.
+   ================================================================ */
+let invView = 'list';
+let invSession = null;   // {whId, items:[{productId,name,unit,pkg,emoji,cost,systemQty,counted}], diffs}
+let invSearchQuery = '';
+
+function renderInventory(){
+  if(invView==='count' && invSession) return renderInventoryCount();
+  if(invView==='review' && invSession) return renderInventoryReview();
+  return renderInventoryList();
+}
+
+function renderInventoryList(){
+  const hist = (DB.inventories||[]).slice(0,50);
+  return `
+  <div class="page-head">
+    <div><h1>Inventarizatsiya</h1><p>Ombordagi haqiqiy qoldiqni tizim bilan solishtiring</p></div>
+  </div>
+  <div class="card" style="max-width:560px;margin-bottom:18px;">
+    <div class="section-title">Yangi inventarizatsiya boshlash</div>
+    ${DB.warehouses.length>1 ? `
+    <div class="field"><label>Qaysi ombor tekshiriladi</label>
+      <select id="invStartWh">${DB.warehouses.map(w=>`<option value="${w.id}" ${w.isDefault?'selected':''}>${w.name}</option>`).join('')}</select>
+    </div>` : `<input type="hidden" id="invStartWh" value="${defaultWarehouseId()}">`}
+    <button class="btn btn-primary btn-block" onclick="invStart(document.getElementById('invStartWh').value)">${icon('clipboard-check')} Sanashni boshlash</button>
+  </div>
+  <div class="table-card">
+    <div class="table-toolbar"><div class="section-title" style="margin:0;">Avvalgi tekshiruvlar</div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Sana</th><th>Ombor</th><th>Tekshirildi</th><th>Farqlar</th><th>Farq qiymati</th><th></th></tr></thead>
+      <tbody>${hist.length? hist.map(h=>{
+        const diffCount = h.items.filter(it=>it.diff!==0).length;
+        return `<tr onclick="invOpenHistoryDetail('${h.id}')" style="cursor:pointer;">
+          <td data-label="Sana">${h.date.slice(0,10)}</td>
+          <td data-label="Ombor">${h.warehouseName}</td>
+          <td data-label="Tekshirildi" class="cell-mono">${h.items.length} xil</td>
+          <td data-label="Farqlar">${diffCount? `<span class="badge badge-yellow">${diffCount} ta</span>` : `<span class="badge badge-green">0</span>`}</td>
+          <td data-label="Farq qiymati" class="cell-mono ${h.totalDiffValue<0?'inv-diff-neg':(h.totalDiffValue>0?'inv-diff-pos':'')}">${h.totalDiffValue>0?'+':''}${fmtNum(h.totalDiffValue)}</td>
+          <td data-label="Ko'rish"><button class="btn-ghost" onclick="event.stopPropagation();invOpenHistoryDetail('${h.id}')">${icon('eye')}</button></td>
+        </tr>`;
+      }).join('') : emptyRow(6,"Hali inventarizatsiya o'tkazilmagan")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function invStart(whId){
+  if(!whId){ toast("Ombor tanlang",true); return; }
+  const list = whProducts();
+  if(!list.length){ toast("Sotuvda tovar yo'q — avval Tovarlar bo'limidan qo'shing",true); return; }
+  invSearchQuery = '';
+  invSession = {
+    whId,
+    items: list.map(p=>({
+      productId:p.id, name:p.name, unit:p.unit, pkg:pkgLabel(p), emoji:p.emoji,
+      cost:p.cost, systemQty:productQtyInWh(p, whId), counted:null
+    }))
+  };
+  invView = 'count';
+  renderPage();
+}
+function invCancelCount(){
+  if(!confirm("Inventarizatsiya bekor qilinsinmi? Kiritilgan sanoqlar saqlanmaydi.")) return;
+  invSession = null; invView = 'list'; renderPage();
+}
+function invCountedItems(){ return invSession.items.filter(it=>it.counted!==null && !isNaN(it.counted)); }
+function invFilteredItems(){
+  const q = dkNormQuery(invSearchQuery);
+  if(!q) return invSession.items;
+  return invSession.items.filter(it=>(it.name+' '+(it.pkg||'')).toLowerCase().includes(q));
+}
+function renderInventoryCount(){
+  const wh = DB.warehouses.find(w=>w.id===invSession.whId);
+  const items = invFilteredItems();
+  const doneCount = invCountedItems().length;
+  return `
+  <div class="page-head">
+    <div><h1>Sanash — ${wh?wh.name:''}</h1><p>${doneCount} / ${invSession.items.length} tovar sanaldi</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline compact-action-btn" onclick="invCancelCount()">${icon('x')} Bekor qilish</button>
+      <button class="btn btn-primary compact-action-btn" onclick="invGoReview()">${icon('check')} Yakunlash</button>
+    </div>
+  </div>
+  <div class="dk-search-row dk-search-modern">
+    <div class="dk-search-input-wrap">
+      ${icon('search','dk-search-icon')}
+      <input type="text" id="invSearchInput" placeholder="Tovarni qidirish..." value="${invSearchQuery}"
+        oninput="invSearchQuery=this.value;renderPage()">
+    </div>
+    <button class="btn btn-outline dk-scan-btn" onclick="invOpenScan()" title="Skanerlash">${icon('camera')}</button>
+  </div>
+  <div class="table-card" style="margin-top:14px;">
+    <div class="table-scroll"><table>
+      <thead><tr><th>Mahsulot</th><th>Tizimda</th><th>Haqiqiy sanoq</th><th>Farq</th></tr></thead>
+      <tbody id="invCountBody">
+        ${items.length? items.map(it=>`
+        <tr id="inv_row_${it.productId}">
+          <td data-label="Mahsulot"><div style="display:flex;align-items:center;gap:10px;"><div class="thumb">${it.emoji}</div><span class="cell-strong">${it.name}${it.pkg?` <span style="color:var(--text-faint);font-weight:600;">(${it.pkg})</span>`:''}</span></div></td>
+          <td data-label="Tizimda" class="cell-mono">${fmtQty(it.systemQty)} ${it.unit}</td>
+          <td data-label="Haqiqiy sanoq"><input type="number" class="inv-count-input" id="inv_c_${it.productId}" value="${it.counted===null?'':it.counted}" min="0" step="0.01" oninput="invOnCountInput('${it.productId}',this.value)"></td>
+          <td data-label="Farq" class="cell-mono ${it.counted===null?'':(it.counted-it.systemQty>0?'inv-diff-pos':(it.counted-it.systemQty<0?'inv-diff-neg':'inv-diff-zero'))}" id="inv_diff_${it.productId}">${it.counted===null?'':((roundQty(it.counted-it.systemQty)>0?'+':'')+fmtQty(roundQty(it.counted-it.systemQty)))}</td>
+        </tr>`).join('') : emptyRow(4,"Tovar topilmadi")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+/* Kiritilgan sanoqni to'liq sahifani qayta chizmasdan yangilaydi —
+   shunda input fokusi va teri (typing) uzilmaydi. */
+function invOnCountInput(pid, val){
+  if(!invSession) return;
+  const it = invSession.items.find(x=>x.productId===pid);
+  if(!it) return;
+  it.counted = val===''? null : Number(val);
+  const diffEl = document.getElementById('inv_diff_'+pid);
+  if(!diffEl) return;
+  if(it.counted===null || isNaN(it.counted)){ diffEl.textContent=''; diffEl.className='cell-mono'; return; }
+  const diff = roundQty(it.counted - it.systemQty);
+  diffEl.textContent = (diff>0?'+':'') + fmtQty(diff);
+  diffEl.className = 'cell-mono ' + (diff>0?'inv-diff-pos':(diff<0?'inv-diff-neg':'inv-diff-zero'));
+}
+/* ---------------- Sanash paytida tezkor skanerlash ----------------
+   Kod o'qilganda mos qatorga o'tib, "Haqiqiy sanoq" inputiga fokus
+   qo'yiladi — sotuvdagi kirim/chiqim skaner tizimidan mustaqil. */
+function invOpenScan(){
+  openModal(`
+    <div class="modal-head"><h3>${icon('scan-line')} Tovarni skanerlash</h3><button class="btn-ghost" onclick="invCloseScan()">${icon('x')}</button></div>
+    <div class="modal-body" style="text-align:center;">
+      <div class="scan-frame" id="invScanFrame" style="max-width:340px;margin:0 auto 12px;">
+        <video id="invScanVideo" autoplay playsinline muted></video>
+        <span id="invScanPlaceholder">${icon('scan-line')}</span>
+        <div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <p class="scan-hint">Shtrix-kodni ramka ichiga joylashtiring</p>
+      <p id="invScanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">Kamera ochilmoqda...</p>
+      <div id="invScanResult" style="min-height:20px;margin-bottom:10px;"></div>
+      <div class="field" style="display:flex;gap:8px;text-align:left;">
+        <input type="text" id="invManualCode" placeholder="QR / shtrix-kod / SKU qo'lda kiriting" onkeydown="if(event.key==='Enter')invManualLookup()">
+        <button class="btn btn-outline" onclick="invManualLookup()">${icon('search')}</button>
+      </div>
+    </div>`);
+  const video = document.getElementById('invScanVideo');
+  video.style.display='block';
+  document.getElementById('invScanPlaceholder').style.display='none';
+  startScanEngine(video,(code)=>{ invHandleScan(code); },(err)=>{
+    const st=document.getElementById('invScanStatus'); if(st) st.textContent = "Xato: "+err;
+  });
+  const st=document.getElementById('invScanStatus'); if(st) st.textContent = "Kamera faol — kodni ramka ichiga tuting";
+}
+function invCloseScan(){ stopScanEngine(); closeModal(); }
+function invManualLookup(){
+  const el = document.getElementById('invManualCode');
+  const code = el ? el.value.trim() : '';
+  if(!code) return;
+  invHandleScan(code);
+}
+function invHandleScan(code){
+  const p = dkFindProductByCode(code, whProducts());
+  if(!p || !invSession.items.some(it=>it.productId===p.id)){
+    const box = document.getElementById('invScanResult');
+    if(box) box.innerHTML = `<div class="alert alert-danger">${icon('x-circle')}<span>Tovar ro'yxatda topilmadi</span></div>`;
+    else toast("Tovar topilmadi", true);
+    return;
+  }
+  stopScanEngine();
+  closeModal();
+  invSearchQuery = p.name;
+  renderPage();
+  setTimeout(()=>{
+    const inp = document.getElementById('inv_c_'+p.id);
+    if(inp){ inp.focus(); inp.select(); }
+  }, 60);
+}
+/* ---------------- Yakunlash — faqat farqi bor tovarlarni ko'rsatib tasdiqlash ---------------- */
+function invGoReview(){
+  if(!invCountedItems().length){ toast("Hech bo'lmaganda bitta tovar uchun haqiqiy miqdorni kiriting",true); return; }
+  invSession.diffs = invSession.items.filter(it=>it.counted!==null && !isNaN(it.counted) && roundQty(it.counted-it.systemQty)!==0);
+  invView = 'review';
+  renderPage();
+}
+function invBackToCount(){ invView = 'count'; renderPage(); }
+function renderInventoryReview(){
+  const wh = DB.warehouses.find(w=>w.id===invSession.whId);
+  const diffs = invSession.diffs || [];
+  const totalValue = diffs.reduce((a,it)=>a+roundQty(it.counted-it.systemQty)*it.cost,0);
+  return `
+  <div class="page-head">
+    <div><h1>Tasdiqlash — ${wh?wh.name:''}</h1><p>${diffs.length} ta tovarda farq aniqlandi</p></div>
+    <button class="btn btn-outline compact-action-btn" onclick="invBackToCount()">${icon('arrow-left')} Orqaga</button>
+  </div>
+  ${!diffs.length ? `<div class="alert alert-ok" style="margin-bottom:16px;">${icon('check-circle2')}<span>Farq yo'q — barcha qoldiqlar tizim bilan mos</span></div>` : ''}
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="table-scroll"><table>
+      <thead><tr><th>Mahsulot</th><th>Tizimda</th><th>Sanoq</th><th>Farq</th><th>Farq qiymati</th></tr></thead>
+      <tbody>${diffs.length? diffs.map(it=>{
+        const diff = roundQty(it.counted-it.systemQty);
+        const val = diff*it.cost;
+        return `<tr class="inv-row-diff">
+          <td data-label="Mahsulot" class="cell-strong">${it.name}${it.pkg?` (${it.pkg})`:''}</td>
+          <td data-label="Tizimda" class="cell-mono">${fmtQty(it.systemQty)} ${it.unit}</td>
+          <td data-label="Sanoq" class="cell-mono">${fmtQty(it.counted)} ${it.unit}</td>
+          <td data-label="Farq" class="cell-mono ${diff>0?'inv-diff-pos':'inv-diff-neg'}">${diff>0?'+':''}${fmtQty(diff)}</td>
+          <td data-label="Qiymati" class="cell-mono ${val>=0?'inv-diff-pos':'inv-diff-neg'}">${val>0?'+':''}${fmtNum(val)}</td>
+        </tr>`;
+      }).join('') : emptyRow(5,"Farq yo'q")}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card" style="max-width:520px;">
+    <div class="section-title">Jami farq qiymati: <span class="${totalValue<0?'inv-diff-neg':(totalValue>0?'inv-diff-pos':'')}">${totalValue>0?'+':''}${fmtNum(totalValue)}</span></div>
+    <div class="field"><label>Izoh (ixtiyoriy)</label><textarea id="invNote" rows="2" placeholder="Masalan: yillik inventarizatsiya"></textarea></div>
+    <button class="btn btn-primary btn-block" onclick="invConfirm()">${icon('check')} Tasdiqlash va saqlash</button>
+  </div>`;
+}
+/* ---------------- Tasdiqlash — farqlarni omborga qo'llash ----------------
+   Kamomad: mavjud partiyalardan consumeFromBatches() orqali ayiriladi (xuddi
+   oddiy chiqim kabi). Ortiqcha: yangi "INV-" partiyasi qo'shiladi (xuddi
+   oddiy kirim kabi). Ikkala holatda ham stockMoves tarixiga yoziladi va
+   butun sessiya DB.inventories ichida alohida hujjat sifatida saqlanadi. */
+function invConfirm(){
+  const wh = DB.warehouses.find(w=>w.id===invSession.whId);
+  const diffs = invSession.diffs || [];
+  const note = (document.getElementById('invNote')?.value||'').trim();
+  diffs.forEach(it=>{
+    const p = DB.products.find(x=>x.id===it.productId);
+    if(!p) return;
+    const diff = roundQty(it.counted-it.systemQty);
+    if(diff===0) return;
+    if(diff<0){
+      consumeFromBatches(p, Math.abs(diff), invSession.whId);
+      DB.stockMoves.unshift({dir:'out',productId:p.id,productName:p.name,size:p.size||'',pkgUnit:p.pkgUnit||null,qty:Math.abs(diff),unit:p.unit,date:new Date().toISOString(),
+        reason:"Inventarizatsiya — kamomad", supplier:'', note, warehouseId:invSession.whId, warehouseName:whName(invSession.whId)});
+    } else {
+      if(!p.batches) p.batches = [];
+      const lot = 'INV-'+todayISO()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+      p.batches.push({id:uid('lot'), productId:p.id, sellerId:currentSellerId(), lot, qty:diff, cost:p.cost, price:p.price, expiry:null, supplier:'', note:'Inventarizatsiya — ortiqcha', date:todayISO(), createdAt:Date.now(), warehouseId:invSession.whId});
+      p.qty = roundQty(p.qty + diff);
+      DB.stockMoves.unshift({dir:'in',productId:p.id,productName:p.name,size:p.size||'',pkgUnit:p.pkgUnit||null,qty:diff,unit:p.unit,date:new Date().toISOString(),
+        reason:"Inventarizatsiya — ortiqcha", supplier:'', note, lot, cost:p.cost, price:p.price, warehouseId:invSession.whId, warehouseName:whName(invSession.whId)});
+    }
+  });
+  const totalDiffValue = diffs.reduce((a,it)=>a+roundQty(it.counted-it.systemQty)*it.cost,0);
+  DB.inventories.unshift({
+    id:uid('inv'), date:new Date().toISOString(), warehouseId:invSession.whId, warehouseName: wh?wh.name:'',
+    items: invSession.items.filter(it=>it.counted!==null && !isNaN(it.counted)).map(it=>({
+      productId:it.productId, name:it.name, unit:it.unit, systemQty:it.systemQty, countedQty:it.counted, diff:roundQty(it.counted-it.systemQty), cost:it.cost
+    })),
+    totalDiffValue, user: (DB.employees.find(e=>e.role===currentRole)||{}).name || currentRole, note, createdAt:Date.now()
+  });
+  logActivity(`Inventarizatsiya o'tkazildi — ${wh?wh.name:''} (${diffs.length} ta farq, qiymati ${fmtNum(totalDiffValue)})`);
+  save();
+  invSession = null; invView = 'list';
+  toast("Inventarizatsiya yakunlandi va saqlandi");
+  renderPage();
+}
+/* ---------------- Tarix — batafsil ko'rish va chop etish ---------------- */
+function invOpenHistoryDetail(id){
+  const h = (DB.inventories||[]).find(x=>x.id===id);
+  if(!h) return;
+  const diffItems = h.items.filter(it=>it.diff!==0);
+  openModal(`
+    <div class="modal-head"><h3>${icon('clipboard-check')} Inventarizatsiya — ${h.warehouseName}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div id="invPrintBody">
+        <div style="font-size:12.5px;color:var(--text-soft);margin-bottom:10px;">
+          <div><strong>Sana:</strong> ${new Date(h.date).toLocaleString('uz-UZ')}</div>
+          <div><strong>Ombor:</strong> ${h.warehouseName}</div>
+          <div><strong>Kim o'tkazdi:</strong> ${h.user||'—'}</div>
+          ${h.note? `<div><strong>Izoh:</strong> ${h.note}</div>` : ''}
+        </div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Mahsulot</th><th>Tizimda</th><th>Sanoq</th><th>Farq</th><th>Qiymati</th></tr></thead>
+          <tbody>${diffItems.length? diffItems.map(it=>`<tr>
+            <td data-label="Mahsulot" class="cell-strong">${it.name}</td>
+            <td data-label="Tizimda" class="cell-mono">${fmtQty(it.systemQty)} ${it.unit}</td>
+            <td data-label="Sanoq" class="cell-mono">${fmtQty(it.countedQty)} ${it.unit}</td>
+            <td data-label="Farq" class="cell-mono ${it.diff>0?'inv-diff-pos':'inv-diff-neg'}">${it.diff>0?'+':''}${fmtQty(it.diff)}</td>
+            <td data-label="Qiymati" class="cell-mono">${fmtNum(it.diff*it.cost)}</td>
+          </tr>`).join('') : emptyRow(5,"Farq bo'lmagan")}
+          </tbody>
+        </table></div>
+        <div style="margin-top:10px;font-weight:800;">Jami farq qiymati: ${fmtNum(h.totalDiffValue)}</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="invPrintHistory('${h.id}')">${icon('printer')} Chop etish</button>
+      <button class="btn btn-primary btn-block" onclick="closeModal()">Yopish</button>
+    </div>`);
+}
+function invPrintHistory(id){
+  const html = document.getElementById('invPrintBody').innerHTML;
+  const w = window.open('','_blank');
+  w.document.write('<html><head><title>Inventarizatsiya</title></head><body style="font-family:Arial,sans-serif;padding:20px;">'+html+'</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+/* ================================================================
    GLOBAL SEARCH
    ================================================================ */
 document.getElementById('globalSearch').addEventListener('input',function(){
@@ -5646,8 +6945,8 @@ document.getElementById('notifBtn').addEventListener('click',()=>{
 const RENDERERS = {
   dashboard:renderDashboard, sales:renderSales, scanner:renderScanner, products:renderProducts,
   tovarlar:renderTovarlar,
-  warehouse:renderWarehouse, customers:renderCustomers, debts:renderDebts, delivery:renderDeliveries,
-  employees:renderEmployees, cash:renderCash, expenses:renderExpenses, returns:renderReturns,
+  warehouse:renderWarehouse, inventory:renderInventory, customers:renderCustomers, debts:renderDebts, delivery:renderDeliveries,
+  employees:renderEmployees, cash:renderCash, shiftHistory:renderShiftHistory, expenses:renderExpenses, returns:renderReturns,
   reports:renderReports, settings:renderSettings,
 };
 function renderPage(){
