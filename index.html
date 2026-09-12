@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="uz">
-<head>
+<head> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DO'KON.UZ — Oziq-ovqat mahsulotlari boshqaruv tizimi</title>
@@ -1744,7 +1744,7 @@ function renderDkCategoriesPage(){
         onkeydown="if(event.key==='Escape'){dkClearGlobalSearch();}">
       <button class="dk-search-clear" id="dkGlobalSearchClear" style="display:${dkCatSearch?'flex':'none'}" onclick="dkClearGlobalSearch()" title="Tozalash">${icon('x')}</button>
     </div>
-    <button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>
+    ${isMobileDevice()? `<button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>` : ''}
   </div>
   <div class="dk-filter-row">
     <select id="dkFilterCategorySelect" onchange="dkFilterCategory=this.value;dkRenderCategoriesBody();">
@@ -1826,7 +1826,7 @@ function renderDkCategoryPage(){
         onkeydown="if(event.key==='Escape'){dkClearCatSearch();}">
       <button class="dk-search-clear" id="dkCatSearchClear" style="display:${dkProdSearch?'flex':'none'}" onclick="dkClearCatSearch()" title="Tozalash">${icon('x')}</button>
     </div>
-    <button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>
+    ${isMobileDevice()? `<button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>` : ''}
   </div>
   <div class="dk-filter-row">
     <select id="dkCatFilterBrandSelect" onchange="dkFilterBrand=this.value;dkRenderCategoryBody();">
@@ -4357,7 +4357,7 @@ function renderWarehouse(){
         onkeydown="if(event.key==='Escape'){whClearSearch();}">
       <button class="dk-search-clear" id="whSearchClear" style="display:${whSearchQuery?'flex':'none'}" onclick="whClearSearch()" title="Tozalash">${icon('x')}</button>
     </div>
-    <button class="btn btn-outline dk-scan-btn" onclick="whOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>
+    ${isMobileDevice()? `<button class="btn btn-outline dk-scan-btn" onclick="whOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>` : ''}
   </div>
   <div id="whSearchResults">${whSearchResultsHtml()}</div>
   <div class="grid grid-4 wh-stats-desktop">
@@ -4759,7 +4759,7 @@ function openStockInSearch(){
           ${icon('search','dk-search-icon')}
           <input type="text" id="stockInSearchInput" placeholder="Mahsulotni qidiring: nomi, brend, SKU, shtrix-kod, QR..." oninput="stockInSearchQuery=this.value;renderStockInSearchResults()">
         </div>
-        <button class="btn btn-outline dk-scan-btn" onclick="stockInOpenScan()" title="Skanerlash">${icon('camera')}</button>
+        ${isMobileDevice()? `<button class="btn btn-outline dk-scan-btn" onclick="stockInOpenScan()" title="Skanerlash">${icon('camera')}</button>` : ''}
       </div>
       <div id="stockInSearchResults"></div>
     </div>
@@ -5719,6 +5719,7 @@ function renderDebts(){
           <td data-label="Muddat">${c.dueDate||'—'}</td>
           <td data-label="Holat"><span class="badge badge-${status[1]}">${status[0]}</span></td>
           <td data-label="" onclick="event.stopPropagation()"><div class="row-actions">
+            <button class="btn-ghost" onclick="openDebtPurchaseHistory('${c.id}')" title="Qarz xaridlari tarixi">${icon('receipt')}</button>
             <button class="btn-ghost" onclick="openCustomerProfile('${c.id}')">${icon('eye')}</button>
             <button class="btn btn-sm btn-primary" onclick="openDebtPayModal('${c.id}')">To'lov</button>
           </div></td>
@@ -5726,6 +5727,46 @@ function renderDebts(){
       }).join('') : emptyRow(7,"Qarzdor mijozlar yo'q")}
     </tbody>
   </table></div></div>`;
+}
+function openDebtPurchaseHistory(id){
+  const c = DB.customers.find(x=>x.id===id);
+  if(!c) return;
+  const debtSales = DB.sales.filter(s=>s.customerId===id && s.paymentType==='qarz').sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const payments = (c.history||[]).filter(h=>h.type==='tolov').sort((a,b)=>new Date(b.date)-new Date(a.date));
+  openModal(`
+    <div class="modal-head"><h3>${icon('receipt')} Qarz xaridlari tarixi — ${c.name}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="grid grid-3" style="margin-bottom:16px;">
+        <div class="card" style="padding:12px;"><div class="stat-label">Jami xarid</div><div class="stat-value" style="font-size:16px;">${fmt(customerTotalPurchase(c.id))}</div></div>
+        <div class="card" style="padding:12px;"><div class="stat-label">Qolgan qarz</div><div class="stat-value" style="font-size:16px;">${fmt(c.debtTotal)}</div></div>
+        <div class="card" style="padding:12px;"><div class="stat-label">Jami to'langan</div><div class="stat-value" style="font-size:16px;">${fmt(c.paid)}</div></div>
+      </div>
+      <div class="section-title">Nasiyaga olingan xaridlar</div>
+      <div class="table-scroll" style="margin-bottom:16px;"><table>
+        <thead><tr><th>Chek</th><th>Sana</th><th>Umumiy summa</th><th>Boshlang'ich to'lov</th><th>Qarzga yozilgan</th></tr></thead>
+        <tbody>
+          ${debtSales.length? debtSales.map(s=>`<tr style="cursor:pointer;" onclick="closeModal();openReceiptModal('${s.id}')">
+            <td data-label="Chek" class="cell-mono cell-strong">#${s.checkNo}${s.status==='bekor qilingan'?' <span class="badge badge-red">Bekor qilingan</span>':''}</td>
+            <td data-label="Sana">${new Date(s.date).toLocaleString('uz-UZ')}</td>
+            <td data-label="Umumiy" class="cell-mono">${fmtNum(s.total)}</td>
+            <td data-label="Boshlang'ich to'lov" class="cell-mono">${fmtNum(s.paidNow)}</td>
+            <td data-label="Qarzga yozilgan" class="cell-mono cell-strong">${fmtNum(s.total-s.paidNow)}</td>
+          </tr>`).join('') : emptyRow(5,"Nasiyaga xarid qilinmagan")}
+        </tbody>
+      </table></div>
+      <div class="section-title">Qarz to'lovlari</div>
+      <div style="max-height:180px;overflow:auto;">
+        ${payments.length? payments.map(h=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
+            <div><span class="badge badge-green">To'lov</span> ${h.note||''} — ${new Date(h.date).toLocaleString('uz-UZ')}</div>
+            <div class="cell-mono">${fmtNum(h.amount)}</div>
+          </div>`).join('') : `<div class="empty-state">${icon('inbox')}<div>To'lovlar tarixi yo'q</div></div>`}
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${c.debtTotal>0?`<button class="btn btn-primary" onclick="closeModal();openDebtPayModal('${c.id}')">${icon('banknote')} To'lov qabul qilish</button>`:''}
+    </div>
+  `);
 }
 function openDebtPayModal(id){
   const c = DB.customers.find(x=>x.id===id);
@@ -6848,7 +6889,7 @@ function renderInventoryCount(){
       <input type="text" id="invSearchInput" placeholder="Tovarni qidirish..." value="${invSearchQuery}"
         oninput="invSearchQuery=this.value;renderPage()">
     </div>
-    <button class="btn btn-outline dk-scan-btn" onclick="invOpenScan()" title="Skanerlash">${icon('camera')}</button>
+    ${isMobileDevice()? `<button class="btn btn-outline dk-scan-btn" onclick="invOpenScan()" title="Skanerlash">${icon('camera')}</button>` : ''}
   </div>
   <div class="table-card" style="margin-top:14px;">
     <div class="table-scroll"><table>
