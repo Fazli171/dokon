@@ -349,8 +349,9 @@ tbody tr:hover{background:var(--surface-2);}
   #mobileNav .mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--text-faint);flex:1;padding:6px 0;}
   #mobileNav .mn-item.active{color:var(--primary);}
   #mobileNav .mn-item svg{width:19px;height:19px;}
-  #mobileNav .mn-scan{background:var(--primary);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 4px 12px rgba(15,139,76,.4);}
+  #mobileNav .mn-scan{position:relative;background:var(--primary);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 4px 12px rgba(15,139,76,.4);}
   #mobileNav .mn-scan svg{width:24px;height:24px;}
+  #mobileNav .mn-cart-badge{position:absolute;top:-3px;right:-4px;background:#E4483A;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35);border:2px solid var(--surface);}
   .search-box{display:none;}
   #searchResults{left:14px;width:calc(100% - 28px);}
   #notifPanel{right:14px;width:calc(100% - 28px);}
@@ -374,6 +375,29 @@ tbody tr:hover{background:var(--surface-2);}
 .modal-receipt img{max-width:100%;height:auto;}
 .modal-receipt table{table-layout:fixed;width:100%;min-width:0;}
 .modal-receipt,.modal-receipt *{word-break:break-word;overflow-wrap:anywhere;}
+/* ---------- Savdo tarixi modal — ixcham 3 ustunli, gorizontal scrollsiz ---------- */
+.modal-saleshist{overflow-x:hidden;box-sizing:border-box;max-width:420px;}
+.modal-saleshist .modal-body{overflow-x:hidden;box-sizing:border-box;}
+.modal-saleshist table{table-layout:fixed;width:100%;min-width:0;}
+.modal-saleshist th:nth-child(2),.modal-saleshist td:nth-child(2){text-align:center;}
+/* ---------- Savdo: scanner orqali qo'shilgan mahsulot uchun markaziy mini-popup ----------
+   Faqat vizual tasdiq — savat/cart hisob-kitoblariga va scanner logikasiga ta'sir qilmaydi.
+   pointer-events:none — ekran ortidagi elementlarni bosishga xalaqit bermaydi. */
+.scan-success-popup{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);
+  width:min(300px,82vw);min-height:250px;
+  background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.22);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:20px 16px;box-sizing:border-box;z-index:9999;pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease;
+}
+.scan-success-popup.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
+.scan-success-img{width:140px;height:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:64px;border-radius:16px;background:var(--surface-2);overflow:hidden;}
+.scan-success-img img{width:100%;height:100%;object-fit:contain;}
+.scan-success-name{font-weight:800;font-size:15px;text-align:center;color:var(--text);line-height:1.25;}
+.scan-success-price{font-size:14px;font-weight:700;color:var(--primary);}
+.scan-success-badge{display:flex;align-items:center;gap:4px;background:var(--primary-light);color:var(--primary);font-weight:800;font-size:12.5px;padding:5px 12px;border-radius:999px;}
+.scan-success-badge svg{width:14px;height:14px;}
 @media(max-width:640px){
   .modal-receipt .modal-body{padding:14px;}
   .modal-receipt tbody td{padding:6px 8px;}
@@ -460,6 +484,14 @@ tbody tr:hover{background:var(--surface-2);}
 .dk-search-clear{position:absolute;right:7px;width:22px;height:22px;border:none;background:#EEF1EF;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-faint,#7D9587);padding:0;}
 .dk-search-clear svg{width:12px;height:12px;}
 .dk-search-count{font-size:12px;color:var(--text-faint,#7D9587);font-weight:700;margin:0 0 8px 2px;}
+.dk-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.dk-filter-row select{flex:1;min-width:150px;padding:9px 12px;border:1.5px solid var(--border,#E1E5E2);border-radius:12px;font-size:12.5px;background:#fff;color:var(--text-soft);}
+.dk-chip-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
+.dk-chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--border,#E1E5E2);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-soft);white-space:nowrap;}
+.dk-chip.active{background:var(--primary,#0F8B4C);border-color:var(--primary,#0F8B4C);color:#fff;}
+.dk-manage-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #EEF1EF;border-radius:12px;margin-bottom:7px;}
+.dk-manage-row .dk-manage-name{flex:1;font-weight:700;font-size:13px;}
+.dk-manage-row .dk-manage-count{font-size:11px;color:var(--text-faint,#7D9587);}
 .dk-cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 @media(min-width:641px){
   .dk-cat-grid{grid-template-columns:repeat(6,1fr);}
@@ -669,6 +701,8 @@ let currentPage = 'dashboard';
 let currentRole = 'admin';
 let cart = []; // {productId, qty} — price always comes from product database, no per-line price/discount
 let posSearchQuery = '';
+let posCatFilter = '';   // POS: tanlangan kategoriya (kategoriya bo'yicha ko'rish, '' = kategoriyalar gridi)
+let posBrandFilter = ''; // POS: tanlangan firma/brend ID (kategoriya ichida qo'shimcha filter)
 let selectedPayType = 'naqd';
 let cardReceiptImage = null; // base64 dataURL of card payment receipt photo (Savdo/POS)
 let cartDiscount = {type:'none', value:0}; // cart-level (invoice) discount set via the CHEGIRMA modal
@@ -748,6 +782,7 @@ function seedData(){
     categories: DEFAULT_CATEGORIES.slice(),
     categoryIcons: Object.assign({}, DEFAULT_CATEGORY_ICONS),
     categoryImages: {},
+    brands: [], // Firma/Brend entity bazasi: {id,name,status} — mahsulotga brandId orqali bog'lanadi (2-bo'lim)
     sales: [], expenses: [], returns: [], deliveries: [],
     stockMoves: [],
     sellerProducts: [], // {id, sellerId, productId, isForSale, createdAt} — kim (qaysi sotuvchi) qaysi mahsulotni SOTUVDA qilganini alohida yozadi (katalogdan mustaqil)
@@ -802,8 +837,33 @@ function migrateProduct(p){
       ? [{id:uid('lot'),lot:'LEGACY',qty:p.qty,cost:p.cost,price:p.price,expiry:null,supplier:'',note:"Eski tizimdan ko'chirilgan",date:todayISO(),createdAt:Date.now()}]
       : [];
   }
+  /* Firma/Brend — ID orqali bog'lanadi (DB.brands). Eski mahsulotlarda faqat
+     matn ko'rinishidagi p.brand bo'lgan (yoki umuman yo'q) — shu nom bo'yicha
+     mos brend topiladi yoki avtomatik yaratiladi, so'ng p.brandId biriktiriladi.
+     p.brand matn maydoni ATAYLAB saqlab qolinadi va har doim brend nomi bilan
+     sinxron yuritiladi — chunki dastur bo'ylab ko'plab joylarda (qidiruv,
+     kartochka, chek, POS va h.k.) hali ham shu matn maydonidan foydalaniladi;
+     shu bilan mavjud funksiyalarni buzmasdan haqiqiy ID-relation qo'shiladi. */
+  if(!DB.brands) DB.brands = [];
+  if(p.brandId===undefined) p.brandId = null;
+  if(!p.brandId && p.brand){
+    const bname = String(p.brand).trim();
+    if(bname){
+      let b = DB.brands.find(x=>x.name.toLowerCase()===bname.toLowerCase());
+      if(!b){ b = {id:uid('brand'), name:bname, status:'faol'}; DB.brands.push(b); }
+      p.brandId = b.id;
+      p.brand = b.name;
+    }
+  } else if(p.brandId){
+    const b = DB.brands.find(x=>x.id===p.brandId);
+    if(b) p.brand = b.name; else { p.brandId = null; }
+  }
   return p;
 }
+/* ---------------- Firma/Brend yordamchi funksiyalari ---------------- */
+function brandById(id){ return (DB.brands||[]).find(b=>b.id===id) || null; }
+function brandName(id){ const b = brandById(id); return b ? b.name : ''; }
+function brandProductCount(id){ return DB.products.filter(p=>p.brandId===id).length; }
 function save(){ localStorage.setItem('dokonuz_db', JSON.stringify(DB)); }
 /* Eski, alohida "Mahsulotlar" katalogi (dokon_categories_v1 / dokon_products_v1)
    endi ishlatilmaydi, lekin u yerda foydalanuvchi qo'shgan haqiqiy kategoriya
@@ -868,6 +928,7 @@ function load(){
     if(!DB.categoryIcons) DB.categoryIcons = {};
     Object.keys(DEFAULT_CATEGORY_ICONS).forEach(k=>{ if(DB.categoryIcons[k]===undefined) DB.categoryIcons[k]=DEFAULT_CATEGORY_ICONS[k]; });
     if(!DB.categoryImages) DB.categoryImages = {};
+    if(!DB.brands) DB.brands = [];
     if(!DB.deliveries) DB.deliveries = [];
     if(!DB.products) DB.products = [];
     DB.products.forEach(migrateProduct);
@@ -928,6 +989,7 @@ function load(){
       DB.activity = [];
       DB.saleCounter = 0;
       migrateLegacyDkStore();
+      DB.products.forEach(migrateProduct); // migrateLegacyDkStore orqali qo'shilgan mahsulotlarga ham brandId/boshqa maydonlar to'liq biriktirilsin
       DB.schemaV2Migrated = true;
       try{ localStorage.removeItem('dokon_categories_v1'); localStorage.removeItem('dokon_products_v1'); }catch(e){}
     }
@@ -936,6 +998,7 @@ function load(){
   else {
     seedData();
     migrateLegacyDkStore();
+    DB.products.forEach(migrateProduct);
     try{ localStorage.removeItem('dokon_categories_v1'); localStorage.removeItem('dokon_products_v1'); }catch(e){}
     save();
   }
@@ -975,7 +1038,7 @@ const MENU = [
   {id:'reports',label:'Hisobotlar',icon:'bar-chart-3'},
   {id:'settings',label:'Sozlamalar',icon:'settings'},
 ];
-const MOBILE_MAIN = ['dashboard','sales','scanner','debts','reports'];
+const MOBILE_MAIN = ['dashboard','tovarlar','scanner','debts','reports'];
 
 function canAccess(page){ return DB.roleRights[currentRole][page] !== false || page==='dashboard'; }
 
@@ -1025,11 +1088,26 @@ function renderMenu(){
     const m = MENU.find(x=>x.id===id);
     const allowed = id==='dashboard' ? true : DB.roleRights[currentRole][id];
     if(id==='scanner'){
-      return allowed?`<div class="mn-item mn-scan" onclick="nav('sales')">${icon('scan-line')}</div>`:`<div style="flex:1"></div>`;
+      if(!allowed) return `<div style="flex:1"></div>`;
+      const q = cartQtyTotal();
+      const badgeTxt = q>0 ? (Number.isInteger(q)? q : q.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')) : '';
+      return `<div class="mn-item" onclick="nav('sales')">
+        <div class="mn-scan">${icon('shopping-cart')}<span class="mn-cart-badge" id="mnCartBadge" style="display:${q>0?'flex':'none'}">${badgeTxt}</span></div>
+        <span>Savdo</span>
+      </div>`;
     }
     return `<div class="mn-item ${currentPage===id?'active':''} ${allowed?'':'menu-hidden'}" onclick="nav('${id}')">${icon(m.icon)}<span>${m.label}</span></div>`;
   }).join('');
   lucide.createIcons();
+}
+/* Savat markazidagi 🛒 badge — cart o'zgargan har safar (renderCart() ichidan)
+   real vaqtda yangilanadi, mobil menyuni to'liq qayta chizmasdan. */
+function mnUpdateCartBadge(){
+  const el = document.getElementById('mnCartBadge');
+  if(!el) return;
+  const q = cartQtyTotal();
+  el.style.display = q>0 ? 'flex' : 'none';
+  el.textContent = q>0 ? (Number.isInteger(q)? q : q.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')) : '';
 }
 
 function nav(page){
@@ -1050,7 +1128,22 @@ function openModal(html,lg,extraClass){
   document.getElementById('modalOverlay').classList.add('show');
   lucide.createIcons();
 }
-function closeModal(){ if(scanEngineActive) stopScanEngine(); document.getElementById('modalOverlay').classList.remove('show'); }
+function closeModal(){
+  if(scanEngineActive) stopScanEngine();
+  document.getElementById('modalOverlay').classList.remove('show');
+  if(dkCatBrandSettingsOpen){ dkCatBrandSettingsOpen=false; dkUpdateCatBrandSettingsBtn(); }
+}
+/* Kategoriya/Firma-Brend "⚙️ Sozlamalar" tugmasi holati — true bo'lganda
+   boshqaruv oynasi ochiq, tugma "✓ Tayyor" ko'rinishida bo'ladi. Modal
+   qanday yopilishidan qat'i nazar (X, Yopish, fon bosish) closeModal()
+   orqali avtomatik false'ga qaytadi. */
+let dkCatBrandSettingsOpen = false;
+function dkUpdateCatBrandSettingsBtn(){
+  const btn = document.getElementById('dkCatBrandSettingsBtn');
+  if(!btn) return;
+  btn.innerHTML = dkCatBrandSettingsOpen ? `${icon('check')} Tayyor` : `${icon('settings')} Sozlamalar`;
+  lucide.createIcons();
+}
 document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.target.id==='modalOverlay') closeModal(); });
 
 /* ================================================================
@@ -1289,6 +1382,9 @@ let dkProdSearch = '';
 let dkPackaged = true;
 let dkImageData = null;
 let dkModalCatName = null; // joriy ochiq mahsulot modali qaysi kategoriyaga tegishli (dkCurrentCatId'dan mustaqil, masalan Tovarlar'dan variant qo'shishda kerak)
+let dkCatManageSearch = ''; // Kategoriyalarni boshqarish oynasidagi qidiruv
+let dkFilterCategory = '';  // Mahsulotlar bo'limi — tanlangan kategoriya filteri ('' = Barchasi)
+let dkFilterBrand = '';     // Mahsulotlar bo'limi — tanlangan firma/brend filteri (brandId, '' = Barchasi)
 
 /* Kategoriya ikonkasi (emoji) yoki rasmi — DB.categoryIcons / DB.categoryImages
    ichida saqlanadi, nom orqali bog'lanadi. Kategoriya nomi o'zgarishi hozircha
@@ -1418,7 +1514,7 @@ function dkProdCardHtml(p){
         </div>
         <div class="dk-prod-img">${p.image?`<img src="${p.image}" alt="">`:(p.emoji||catIcon(p.category))}${p.qrCode?`<span class="dk-qr-badge" title="QR-kod mavjud">${icon('qr-code')}</span>`:''}</div>
         <div class="dk-prod-name">${p.name}</div>
-        <div class="dk-prod-meta">${[p.brand,((pkgLabel(p)||p.unit))].filter(Boolean).join(' · ')||'—'}</div>
+        <div class="dk-prod-meta">${[p.category,p.brand,((pkgLabel(p)||p.unit))].filter(Boolean).join(' · ')||'—'}</div>
         ${p.barcode? `<div class="dk-prod-meta cell-mono">${p.barcode}</div>`:''}
         <button class="dk-prod-sale-btn ${forSale?'active':''}" onclick="event.stopPropagation();dkMarkForSale('${p.id}')" ${forSale?'disabled':''}>${forSale?icon('check')+' Sotuvda':icon('tag')+' SOTUVDA'}</button>
       </div>`;
@@ -1435,8 +1531,9 @@ function renderProducts(){
 function renderDkCategoriesPage(){
   return `
   <div class="page-head">
-    <div><h1>Mahsulotlar</h1><p>${DB.categories.length} ta kategoriya</p></div>
+    <div><h1>Mahsulotlar</h1><p>${DB.categories.length} ta kategoriya · ${(DB.brands||[]).length} ta firma/brend</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="dkCatBrandSettingsBtn" class="btn btn-outline compact-action-btn" onclick="dkOpenCatBrandSettingsModal()">${dkCatBrandSettingsOpen?icon('check')+' Tayyor':icon('settings')+' Sozlamalar'}</button>
       <button class="btn btn-outline compact-action-btn" onclick="dkDownloadExcelTemplate()">${icon('download')} Excel shablonini yuklab olish</button>
       <button class="btn btn-primary compact-action-btn" onclick="dkOpenExcelImportModal()">${icon('file-spreadsheet')} Excel orqali import</button>
     </div>
@@ -1451,12 +1548,25 @@ function renderDkCategoriesPage(){
     </div>
     <button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>
   </div>
+  <div class="dk-filter-row">
+    <select id="dkFilterCategorySelect" onchange="dkFilterCategory=this.value;dkRenderCategoriesBody();">
+      <option value="">Kategoriya: Barchasi</option>
+      ${DB.categories.map(c=>`<option value="${c}" ${dkFilterCategory===c?'selected':''}>${c}</option>`).join('')}
+    </select>
+    <select id="dkFilterBrandSelect" onchange="dkFilterBrand=this.value;dkRenderCategoriesBody();">
+      <option value="">Firma/Brend: Barchasi</option>
+      ${(DB.brands||[]).map(b=>`<option value="${b.id}" ${dkFilterBrand===b.id?'selected':''}>${b.name}</option>`).join('')}
+    </select>
+  </div>
   <div id="dkCategoriesBody">${dkCategoriesBodyHtml()}</div>`;
 }
 function dkCategoriesBodyHtml(){
   const q = dkNormQuery(dkCatSearch);
-  if(q){
-    const results = dkSearchProducts(q);
+  const hasFilter = !!(dkFilterCategory || dkFilterBrand);
+  if(q || hasFilter){
+    let results = q ? dkSearchProducts(q) : DB.products.slice();
+    if(dkFilterCategory) results = results.filter(p=>p.category===dkFilterCategory);
+    if(dkFilterBrand) results = results.filter(p=>p.brandId===dkFilterBrand);
     return `
       <div class="dk-search-count">${results.length} ta mahsulot topildi</div>
       <div class="dk-prod-grid">${results.map(p=>dkProdCardHtml(p)).join('')}</div>
@@ -1520,10 +1630,17 @@ function renderDkCategoryPage(){
     </div>
     <button class="btn btn-outline dk-scan-btn" onclick="dkOpenScanModal()" title="QR/Shtrix-kod skanerlash">${icon('camera')}</button>
   </div>
+  <div class="dk-filter-row">
+    <select id="dkCatFilterBrandSelect" onchange="dkFilterBrand=this.value;dkRenderCategoryBody();">
+      <option value="">Firma/Brend: Barchasi</option>
+      ${(DB.brands||[]).map(b=>`<option value="${b.id}" ${dkFilterBrand===b.id?'selected':''}>${b.name}</option>`).join('')}
+    </select>
+  </div>
   <div id="dkCategoryBody">${dkCategoryBodyHtml(catName)}</div>`;
 }
 function dkCategoryRows(catName){
-  const catProducts = DB.products.filter(p=>p.category===catName);
+  let catProducts = DB.products.filter(p=>p.category===catName);
+  if(dkFilterBrand) catProducts = catProducts.filter(p=>p.brandId===dkFilterBrand);
   const q = dkNormQuery(dkProdSearch);
   return q ? dkSearchProducts(q, catProducts) : catProducts;
 }
@@ -1557,42 +1674,242 @@ function dkOpenCategory(name){ dkCurrentCatId=name; dkView='category'; dkProdSea
 function dkBackToCategories(){ dkView='categories'; dkCurrentCatId=null; renderPage(); }
 
 /* ---------------- Kategoriya yaratish ---------------- */
-function dkOpenCategoryModal(){
-  dkImageData = null;
+/* dkOpenCategoryModal(editName) — editName berilmasa "Yangi kategoriya",
+   berilsa mavjud kategoriyani tahrirlash (nomi/ikonka/rasm) rejimida ochiladi.
+   Nomi o'zgartirilsa, DB.categories/categoryIcons/categoryImages va shu
+   kategoriyaga tegishli BARCHA mahsulotlarning p.category maydoni ham
+   kaskad ravishda yangilanadi (mahsulotlar "yetim" qolmaydi). */
+function dkOpenCategoryModal(editName){
+  dkImageData = editName ? (DB.categoryImages && DB.categoryImages[editName] || null) : null;
   openModal(`
-    <div class="modal-head"><h3>Yangi kategoriya</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-head"><h3>${editName?"Kategoriyani tahrirlash":"Yangi kategoriya"}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
-      <div class="field"><label>Nomi</label><input id="dk_cat_name" placeholder="Masalan: Sut mahsulotlari"></div>
-      <div class="field"><label>Ikonka (emoji, ixtiyoriy)</label><input id="dk_cat_icon" placeholder="Masalan: 🥛" maxlength="4"></div>
+      <div class="field"><label>Nomi</label><input id="dk_cat_name" value="${editName?editName:''}" placeholder="Masalan: Sut mahsulotlari"></div>
+      <div class="field"><label>Ikonka (emoji, ixtiyoriy)</label><input id="dk_cat_icon" value="${editName?catIcon(editName):''}" placeholder="Masalan: 🥛" maxlength="4"></div>
       <div class="field">
         <label>Rasm yuklash (ixtiyoriy)</label>
         <div class="dk-img-upload">
-          <div class="dk-img-preview" id="dk_cat_img_preview">${icon('image')}</div>
+          <div class="dk-img-preview" id="dk_cat_img_preview">${dkImageData?`<img src="${dkImageData}">`:icon('image')}</div>
           <input type="file" accept="image/*" onchange="dkFileToBase64(this,src=>{dkImageData=src;document.getElementById('dk_cat_img_preview').innerHTML='<img src=\\''+src+'\\'>';})">
         </div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="dkSaveCategory()">${icon('check')} Saqlash</button>
+      <button class="btn btn-primary" onclick="dkSaveCategory(${editName?`'${jsEsc(editName)}'`:'null'})">${icon('check')} Saqlash</button>
     </div>
   `);
 }
-function dkSaveCategory(){
+function dkSaveCategory(editName){
   const name = document.getElementById('dk_cat_name').value.trim();
   if(!name){ toast("Kategoriya nomini kiriting",true); return; }
-  if(DB.categories.some(c=>c.toLowerCase()===name.toLowerCase())){ toast("Bu kategoriya allaqachon mavjud",true); return; }
+  const dup = DB.categories.some(c=>c.toLowerCase()===name.toLowerCase() && c.toLowerCase()!==(editName||'').toLowerCase());
+  if(dup){ toast("Bu kategoriya allaqachon mavjud",true); return; }
   const icn = document.getElementById('dk_cat_icon').value.trim();
-  DB.categories.push(name);
   if(!DB.categoryIcons) DB.categoryIcons = {};
-  DB.categoryIcons[name] = icn || '📦';
-  if(dkImageData){
-    if(!DB.categoryImages) DB.categoryImages = {};
-    DB.categoryImages[name] = dkImageData;
+  if(!DB.categoryImages) DB.categoryImages = {};
+  if(editName && DB.categories.includes(editName)){
+    // Tahrirlash: nomi o'zgargan bo'lsa kaskad yangilash
+    const idx = DB.categories.indexOf(editName);
+    DB.categories[idx] = name;
+    if(name!==editName){
+      delete DB.categoryIcons[editName];
+      const img = DB.categoryImages[editName];
+      delete DB.categoryImages[editName];
+      DB.products.forEach(p=>{ if(p.category===editName) p.category = name; });
+      if(img && !dkImageData) DB.categoryImages[name] = img;
+    }
+    DB.categoryIcons[name] = icn || '📦';
+    if(dkImageData) DB.categoryImages[name] = dkImageData;
+    logActivity(`"${editName}" kategoriyasini "${name}" ga tahrirladi`);
+    toast("Kategoriya yangilandi");
+  } else {
+    DB.categories.push(name);
+    DB.categoryIcons[name] = icn || '📦';
+    if(dkImageData) DB.categoryImages[name] = dkImageData;
+    logActivity(`"${name}" nomli yangi kategoriya qo'shdi`);
+    toast("Kategoriya qo'shildi");
   }
   CATEGORIES = DB.categories;
-  logActivity(`"${name}" nomli yangi kategoriya qo'shdi`);
-  save(); closeModal(); toast("Kategoriya qo'shildi"); renderPage();
+  save(); closeModal(); renderPage();
+}
+/* O'chirish xavfsizligi: agar kategoriyaga mahsulotlar bog'langan bo'lsa,
+   to'g'ridan-to'g'ri o'chirilmaydi — avval ogohlantirish ko'rsatiladi. */
+function dkDeleteCategoryConfirm(name){
+  const count = DB.products.filter(p=>p.category===name).length;
+  if(count>0){
+    alert(`Bu kategoriyaga ${count} ta mahsulot bog'langan. O'chirish uchun avval mahsulotlarni boshqa kategoriyaga biriktiring.`);
+    return;
+  }
+  if(!confirm(`"${name}" kategoriyasini o'chirishni tasdiqlaysizmi?`)) return;
+  DB.categories = DB.categories.filter(c=>c!==name);
+  if(DB.categoryIcons) delete DB.categoryIcons[name];
+  if(DB.categoryImages) delete DB.categoryImages[name];
+  CATEGORIES = DB.categories;
+  save();
+  logActivity(`"${name}" nomli kategoriyani o'chirdi`);
+  toast("Kategoriya o'chirildi");
+  dkRenderCategoryManageList();
+  renderMenu();
+}
+/* ---------------- ⚙️ Sozlamalar: Kategoriya + Firma/Brend birlashtirilgan
+   boshqaruv oynasi. Oddiy holatda kartalarda ✏️/🗑️ ko'rinmaydi — faqat
+   shu oyna orqali (bitta joydan) ikkalasini ham boshqarish mumkin. ---------------- */
+function dkOpenCatBrandSettingsModal(){
+  dkCatBrandSettingsOpen = true;
+  dkUpdateCatBrandSettingsBtn();
+  dkCatManageSearch = '';
+  dkBrandManageSearch = '';
+  openModal(`
+    <div class="modal-head"><h3>${icon('settings')} Kategoriya va Firma/Brend sozlamalari</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="dk-settings-section">
+        <h4 style="margin:0 0 10px;display:flex;align-items:center;gap:6px;">${icon('layers')} Kategoriyalar</h4>
+        <div class="dk-search-row dk-search-modern" style="margin-bottom:10px;">
+          <div class="dk-search-input-wrap">
+            ${icon('search','dk-search-icon')}
+            <input type="text" id="dkCatManageSearch" placeholder="Kategoriya qidirish..." oninput="dkCatManageSearch=this.value;dkRenderCategoryManageList()">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-bottom:12px;" onclick="closeModal();dkOpenCategoryModal()">${icon('plus')} Yangi kategoriya</button>
+        <div id="dkCatManageList"></div>
+      </div>
+      <div class="dk-settings-section" style="margin-top:22px;padding-top:18px;border-top:1px solid #EEF1EF;">
+        <h4 style="margin:0 0 10px;display:flex;align-items:center;gap:6px;">${icon('tag')} Firma / Brendlar</h4>
+        <div class="dk-search-row dk-search-modern" style="margin-bottom:10px;">
+          <div class="dk-search-input-wrap">
+            ${icon('search','dk-search-icon')}
+            <input type="text" id="dkBrandManageSearch" placeholder="Firma/brend qidirish..." oninput="dkBrandManageSearch=this.value;dkRenderBrandManageList()">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-bottom:12px;" onclick="dkOpenBrandFormModal()">${icon('plus')} Yangi firma/brend</button>
+        <div id="dkBrandManageList"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">✓ Tayyor</button>
+    </div>
+  `, true);
+  dkRenderCategoryManageList();
+  dkRenderBrandManageList();
+}
+function dkRenderCategoryManageList(){
+  const el = document.getElementById('dkCatManageList');
+  if(!el) return;
+  const q = dkNormQuery(dkCatManageSearch);
+  const list = DB.categories.filter(c=>!q || c.toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map(name=>{
+    const count = DB.products.filter(p=>p.category===name).length;
+    return `
+    <div class="dk-manage-row">
+      <div class="dk-cat-icon" style="width:36px;height:36px;font-size:16px;">${catVisualHtml(name)}</div>
+      <div style="flex:1;">
+        <div class="dk-manage-name">${name}</div>
+        <div class="dk-manage-count">${count} ta mahsulot</div>
+      </div>
+      <button class="btn-ghost" onclick="closeModal();dkOpenCategoryModal('${jsEsc(name)}')" title="Tahrirlash">${icon('pencil')}</button>
+      <button class="btn-ghost" onclick="dkDeleteCategoryConfirm('${jsEsc(name)}')" title="O'chirish">${icon('trash-2')}</button>
+    </div>`;
+  }).join('') : `<div class="empty-state">${icon('search')}<div>Kategoriya topilmadi</div></div>`;
+  lucide.createIcons();
+}
+
+/* ================================================================
+   FIRMA / BREND — alohida ID-based ma'lumotlar bazasi (DB.brands).
+   Mahsulotga p.brandId orqali bog'lanadi. p.brand (matn) — mavjud
+   qidiruv/kartochka/chek kabi ko'plab joylarda ishlatilgani uchun
+   ATAYLAB brend nomi bilan sinxron saqlanadi (backward compatible).
+   ================================================================ */
+let dkBrandManageSearch = '';
+function dkFindBrandByName(name){
+  const n = (name||'').trim().toLowerCase();
+  if(!n) return null;
+  return (DB.brands||[]).find(b=>b.name.toLowerCase()===n) || null;
+}
+/* Nom bo'yicha mavjud brendni topadi yoki yangisini yaratadi, ID qaytaradi. */
+function dkGetOrCreateBrandId(name){
+  const trimmed = (name||'').trim();
+  if(!trimmed) return null;
+  let b = dkFindBrandByName(trimmed);
+  if(!b){ b = {id:uid('brand'), name:trimmed, status:'faol'}; if(!DB.brands) DB.brands=[]; DB.brands.push(b); }
+  return b.id;
+}
+function dkRenderBrandManageList(){
+  const el = document.getElementById('dkBrandManageList');
+  if(!el) return;
+  const q = dkNormQuery(dkBrandManageSearch);
+  const list = (DB.brands||[]).filter(b=>!q || b.name.toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map(b=>{
+    const count = brandProductCount(b.id);
+    return `
+    <div class="dk-manage-row">
+      <div style="flex:1;">
+        <div class="dk-manage-name">${b.name} ${b.status==='nofaol'?'<span class="badge badge-gray">nofaol</span>':''}</div>
+        <div class="dk-manage-count">${count} ta mahsulot</div>
+      </div>
+      <button class="btn-ghost" onclick="dkOpenBrandFormModal('${b.id}')" title="Tahrirlash">${icon('pencil')}</button>
+      <button class="btn-ghost" onclick="dkDeleteBrandConfirm('${b.id}')" title="O'chirish">${icon('trash-2')}</button>
+    </div>`;
+  }).join('') : `<div class="empty-state">${icon('search')}<div>Firma/brend topilmadi</div></div>`;
+  lucide.createIcons();
+}
+function dkOpenBrandFormModal(id){
+  const b = id ? brandById(id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${b?"Firma/brendni tahrirlash":"Yangi firma/brend"}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Nomi</label><input id="dk_brand_name" value="${b?b.name:''}" placeholder="Masalan: Coca-Cola"></div>
+      <div class="field"><label>Holati</label>
+        <select id="dk_brand_status">
+          <option value="faol" ${!b||b.status==='faol'?'selected':''}>Faol</option>
+          <option value="nofaol" ${b&&b.status==='nofaol'?'selected':''}>Nofaol</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal();dkOpenCatBrandSettingsModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="dkSaveBrandForm(${b?`'${b.id}'`:'null'})">${icon('check')} Saqlash</button>
+    </div>
+  `);
+}
+function dkSaveBrandForm(id){
+  const name = document.getElementById('dk_brand_name').value.trim();
+  if(!name){ toast("Firma/brend nomini kiriting",true); return; }
+  const status = document.getElementById('dk_brand_status').value;
+  const dup = (DB.brands||[]).some(x=>x.id!==id && x.name.toLowerCase()===name.toLowerCase());
+  if(dup){ toast("Bu firma/brend allaqachon mavjud",true); return; }
+  if(!DB.brands) DB.brands=[];
+  if(id){
+    const b = brandById(id);
+    if(b){
+      b.name = name; b.status = status;
+      // Nomi o'zgargan bo'lsa, shu brendga bog'langan barcha mahsulotlarning
+      // ko'rinadigan p.brand matnini ham sinxronlaymiz (ID munosabati o'zgarmaydi).
+      DB.products.forEach(p=>{ if(p.brandId===id) p.brand = name; });
+      logActivity(`"${name}" firma/brendini tahrirladi`);
+      toast("Firma/brend yangilandi");
+    }
+  } else {
+    DB.brands.push({id:uid('brand'), name, status});
+    logActivity(`"${name}" nomli yangi firma/brend qo'shdi`);
+    toast("Firma/brend qo'shildi");
+  }
+  save(); closeModal(); dkOpenCatBrandSettingsModal();
+}
+function dkDeleteBrandConfirm(id){
+  const b = brandById(id);
+  if(!b) return;
+  const count = brandProductCount(id);
+  if(count>0){
+    alert(`Bu firma ${count} ta mahsulotga bog'langan. O'chirish uchun avval mahsulotlarni boshqa firma/brendga biriktiring.`);
+    return;
+  }
+  if(!confirm(`"${b.name}" firma/brendini o'chirishni tasdiqlaysizmi?`)) return;
+  DB.brands = DB.brands.filter(x=>x.id!==id);
+  save();
+  logActivity(`"${b.name}" nomli firma/brendni o'chirdi`);
+  toast("Firma/brend o'chirildi");
+  dkRenderBrandManageList();
 }
 
 /* ---------------- Mahsulot qo'shish / tahrirlash ---------------- */
@@ -1615,7 +1932,7 @@ function dkOpenProductModal(id, cloneFromId, prefillBarcode){
   dkImageData = p ? (p.image||null) : (cloneFrom ? (cloneFrom.image||null) : null);
   dkPackaged = p ? (p.packaged!==false) : (cloneFrom ? (cloneFrom.packaged!==false) : true);
   const nameVal = p ? p.name : (cloneFrom ? cloneFrom.name : '');
-  const brandVal = p ? (p.brand||'') : (cloneFrom ? (cloneFrom.brand||'') : '');
+  const brandIdVal = p ? (p.brandId||'') : (cloneFrom ? (cloneFrom.brandId||'') : '');
   const descVal = p ? (p.desc||'') : (cloneFrom ? (cloneFrom.desc||'') : '');
   openModal(`
     <div class="modal-head"><h3>${p?"Mahsulotni tahrirlash":(cloneFrom?"Yangi qadoq varianti qo'shish":"Yangi mahsulot qo'shish")}</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
@@ -1627,11 +1944,18 @@ function dkOpenProductModal(id, cloneFromId, prefillBarcode){
         <input type="file" accept="image/*" style="margin-top:8px;" onchange="dkFileToBase64(this,src=>{dkImageData=src;document.getElementById('dk_prod_img_preview').innerHTML='<img src=\\''+src+'\\'>';})">
       </div>
       <div class="field"><label>Mahsulot nomi *</label><input id="dk_p_name" value="${nameVal}" placeholder="Masalan: Coca Cola"></div>
-      <div class="field"><label>Brend</label><input id="dk_p_brand" value="${brandVal}" placeholder="Ixtiyoriy"></div>
       <div class="field"><label>Kategoriya *</label>
-        <select id="dk_p_category">
+        <select id="dk_p_category" onchange="dkCategorySelectChanged(this)">
           ${!catName?`<option value="" disabled selected>Kategoriyani tanlang</option>`:''}
           ${DB.categories.map(c=>`<option value="${c}" ${catName===c?'selected':''}>${c}</option>`).join('')}
+          <option value="__add_new__">+ Yangi kategoriya...</option>
+        </select>
+      </div>
+      <div class="field"><label>Firma / Brend</label>
+        <select id="dk_p_brand" onchange="dkBrandSelectChanged(this)">
+          <option value="" ${!brandIdVal?'selected':''}>Tanlanmagan</option>
+          ${(DB.brands||[]).map(b=>`<option value="${b.id}" ${brandIdVal===b.id?'selected':''}>${b.name}</option>`).join('')}
+          <option value="__add_new__">+ Yangi firma/brend...</option>
         </select>
       </div>
       <div class="field">
@@ -1662,6 +1986,52 @@ function dkOpenProductModal(id, cloneFromId, prefillBarcode){
     </div>
   `);
 }
+/* Mahsulot qo'shish/tahrirlash oynasidagi "+ Yangi kategoriya..." /
+   "+ Yangi firma/brend..." tanlanganda modalni yopmasdan tezkor qo'shish
+   (4-bo'lim talabi). Qo'shilgach select darhol yangilanadi va yangi
+   qiymat tanlangan holatda qoladi. */
+function dkCategorySelectChanged(sel){
+  if(sel.value!=='__add_new__') return;
+  const name = prompt("Yangi kategoriya nomini kiriting:");
+  const trimmed = (name||'').trim();
+  if(!trimmed){ sel.value = dkModalCatName||''; return; }
+  let finalName = trimmed;
+  if(DB.categories.some(c=>c.toLowerCase()===trimmed.toLowerCase())){
+    finalName = DB.categories.find(c=>c.toLowerCase()===trimmed.toLowerCase());
+    toast("Bu kategoriya allaqachon mavjud, tanlandi");
+  } else {
+    DB.categories.push(trimmed);
+    if(!DB.categoryIcons) DB.categoryIcons = {};
+    DB.categoryIcons[trimmed] = '📦';
+    CATEGORIES = DB.categories;
+    logActivity(`"${trimmed}" nomli yangi kategoriya qo'shdi`);
+    save();
+    toast("Kategoriya qo'shildi");
+  }
+  dkModalCatName = finalName;
+  sel.innerHTML = DB.categories.map(c=>`<option value="${c}" ${finalName===c?'selected':''}>${c}</option>`).join('')
+    + `<option value="__add_new__">+ Yangi kategoriya...</option>`;
+}
+function dkBrandSelectChanged(sel){
+  if(sel.value!=='__add_new__') return;
+  const name = prompt("Yangi firma/brend nomini kiriting:");
+  const trimmed = (name||'').trim();
+  if(!trimmed){ sel.value=''; return; }
+  let b = dkFindBrandByName(trimmed);
+  if(b){
+    toast("Bu firma/brend allaqachon mavjud, tanlandi");
+  } else {
+    b = {id:uid('brand'), name:trimmed, status:'faol'};
+    if(!DB.brands) DB.brands=[];
+    DB.brands.push(b);
+    logActivity(`"${trimmed}" nomli yangi firma/brend qo'shdi`);
+    save();
+    toast("Firma/brend qo'shildi");
+  }
+  sel.innerHTML = `<option value="">Tanlanmagan</option>`
+    + DB.brands.map(x=>`<option value="${x.id}" ${x.id===b.id?'selected':''}>${x.name}</option>`).join('')
+    + `<option value="__add_new__">+ Yangi firma/brend...</option>`;
+}
 function dkSaveProduct(id){
   const name = document.getElementById('dk_p_name').value.trim();
   if(!name){ toast("Mahsulot nomini kiriting",true); return; }
@@ -1675,11 +2045,14 @@ function dkSaveProduct(id){
   }
   const catSelect = document.getElementById('dk_p_category');
   const catName = catSelect ? catSelect.value : (existing ? existing.category : (dkModalCatName || dkCurrentCatId));
-  if(!catName){ toast("Kategoriyani tanlang",true); return; }
+  if(!catName || catName==='__add_new__'){ toast("Kategoriyani tanlang",true); return; }
+  const brandSelectVal = document.getElementById('dk_p_brand').value;
+  const brandId = (brandSelectVal && brandSelectVal!=='__add_new__') ? brandSelectVal : null;
   const data = {
     category: catName,
     name,
-    brand: document.getElementById('dk_p_brand').value.trim(),
+    brandId,
+    brand: brandId ? brandName(brandId) : '',
     image: dkImageData||null,
     packaged: dkPackaged,
     size: document.getElementById('dk_p_size').value.trim(),
@@ -1741,13 +2114,13 @@ let dkExcelPendingImport = [];
 function dkDownloadExcelTemplate(){
   if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
   const rows = [
-    ['Mahsulot nomi','Shtrix-kod'],
-    ['Coca Cola 1.5L','4780001234567'],
-    ['Sut 450g','4780001234568'],
-    ['Non','4780001234569'],
+    ['Mahsulot nomi','Shtrix-kod','Kategoriya','Firma/Brend'],
+    ['Coca Cola 1.5L','4780001234567','Gazli ichimliklar','Coca-Cola'],
+    ['Sut 450g','4780001234568','Sut mahsulotlari',''],
+    ['Non','4780001234569','Non',''],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:18}];
+  ws['!cols'] = [{wch:30},{wch:18},{wch:22},{wch:18}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Shablon');
   XLSX.writeFile(wb, 'mahsulotlar_shabloni.xlsx');
@@ -1758,7 +2131,7 @@ function dkOpenExcelImportModal(){
   openModal(`
     <div class="modal-head"><h3>${icon('file-spreadsheet')} Excel orqali import</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
-      <div class="alert alert-info">${icon('info')}<span>Excel faylda faqat 2 ta ustun bo'lishi kerak: <strong>Mahsulot nomi</strong> va <strong>Shtrix-kod</strong>. Rasm, brend, kategoriya, turi, hajm va boshqa ma'lumotlar keyinroq mahsulotni tahrirlash orqali kiritiladi.</span></div>
+      <div class="alert alert-info">${icon('info')}<span>Majburiy ustunlar: <strong>Mahsulot nomi</strong> va <strong>Shtrix-kod</strong>. Ixtiyoriy: <strong>Kategoriya</strong> va <strong>Firma/Brend</strong> — mavjud bo'lsa avtomatik bog'lanadi, mavjud bo'lmasa yangi yaratiladi. Boshqa ma'lumotlar (rasm, hajm va h.k.) keyinroq mahsulotni tahrirlash orqali kiritiladi.</span></div>
       <div class="field">
         <label>Excel fayl (.xlsx)</label>
         <input type="file" id="dk_excel_file" accept=".xlsx,.xls" onchange="dkHandleExcelFile(this)">
@@ -1813,6 +2186,10 @@ function dkProcessExcelRows(rows){
     const rowNum = idx+2; // sarlavha qatori hisobga olingan holda foydalanuvchiga tushunarli qator raqami
     const name = String(row[0]!=null?row[0]:'').trim();
     const barcode = String(row[1]!=null?row[1]:'').trim();
+    // Ixtiyoriy ustunlar (12-bo'lim): Kategoriya (C ustuni) va Firma/Brend (D ustuni).
+    // Eski 2-ustunli fayllarda bu qiymatlar bo'sh bo'ladi — importga ta'sir qilmaydi.
+    const categoryName = String(row[2]!=null?row[2]:'').trim();
+    const brandNameVal = String(row[3]!=null?row[3]:'').trim();
     if(!name && !barcode) return; // to'liq bo'sh qator — e'tiborsiz qoldiriladi
     let error = '';
     if(!name) error = "Mahsulot nomi bo'sh";
@@ -1820,7 +2197,7 @@ function dkProcessExcelRows(rows){
     else if(DB.products.some(p=>p.barcode===barcode)) error = "Shtrix-kod tizimda allaqachon mavjud";
     else if(seenInFile.has(barcode)) error = "Excel ichida shtrix-kod takrorlangan";
     if(error){ errorRows.push({rowNum,name,barcode,error}); }
-    else{ seenInFile.add(barcode); validRows.push({rowNum,name,barcode}); }
+    else{ seenInFile.add(barcode); validRows.push({rowNum,name,barcode,categoryName,brandNameVal}); }
   });
   dkRenderExcelPreview(validRows, errorRows);
 }
@@ -1855,6 +2232,7 @@ function dkRenderExcelPreview(validRows, errorRows){
             <div class="dk-prod-card" style="cursor:default;">
               <div class="dk-prod-img">${icon('image')}</div>
               <div class="dk-prod-name">${r.name}</div>
+              ${(r.categoryName||r.brandNameVal)?`<div class="dk-prod-meta">${[r.categoryName,r.brandNameVal].filter(Boolean).join(' · ')}</div>`:''}
               <div class="dk-prod-meta cell-mono">${r.barcode}</div>
             </div>`).join('')}
         </div>
@@ -1879,15 +2257,32 @@ function dkConfirmExcelImport(){
   rows.forEach(r=>{
     if(DB.products.some(p=>p.barcode===r.barcode)) return; // qo'shimcha xavfsizlik: import paytida takroriylik
     const sku = dkUniqueSku();
+    // Kategoriya: mavjud nom topilsa ID(nomi)ga bog'lanadi, topilmasa avtomatik yaratiladi (12-bo'lim).
+    let categoryName = '';
+    if(r.categoryName){
+      const existingCat = DB.categories.find(c=>c.toLowerCase()===r.categoryName.toLowerCase());
+      if(existingCat) categoryName = existingCat;
+      else {
+        DB.categories.push(r.categoryName);
+        if(!DB.categoryIcons) DB.categoryIcons = {};
+        DB.categoryIcons[r.categoryName] = '📦';
+        CATEGORIES = DB.categories;
+        categoryName = r.categoryName;
+      }
+    }
+    // Firma/Brend: mavjud nom topilsa shu brendning ID'siga bog'lanadi, topilmasa yangi yaratiladi.
+    let brandId = null;
+    if(r.brandNameVal) brandId = dkGetOrCreateBrandId(r.brandNameVal);
     DB.products.push({
       id: uid('p'),
       sku,
       barcode: r.barcode,
       qrCode: dkUniqueQr(sku),
       name: r.name,
-      brand: '',
-      category: '',
-      emoji: '📦',
+      brandId,
+      brand: brandId ? brandName(brandId) : '',
+      category: categoryName,
+      emoji: categoryName ? catIcon(categoryName) : '📦',
       image: null,
       packaged: true,
       size: '',
@@ -2473,7 +2868,7 @@ function addScannedToCart(){
 function renderSales(){
   return `
   <div class="page-head">
-    <div><h1>Savdo</h1><p>Mahsulotlarni tanlang, skanerlang yoki qidiring</p></div>
+    <div><h1>Savdo</h1><p>Mahsulotni qidiring yoki shtrix-kod/QR skanerlab Savatga qo'shing</p></div>
     <button class="btn btn-outline" onclick="openSalesHistoryModal()">${icon('history')} Tarix</button>
   </div>
   <div class="pos-wrap">
@@ -2488,7 +2883,7 @@ function renderSales(){
         </div>
         <button class="btn btn-primary dk-scan-btn" onclick="openSalesScanModal()" title="Kamera / USB skaner">${icon('scan-line')}</button>
       </div>
-      <div class="dk-prod-grid" id="posGrid"></div>
+      <div id="posGrid"></div>
     </div>
     <div class="card cart-card">
       <div class="section-title">Savat <span id="cartCount" style="font-weight:700;color:var(--text-faint);"></span></div>
@@ -2504,15 +2899,11 @@ function renderSales(){
 
       <div class="cart-items" id="cartItems"></div>
       <div class="cart-totals" id="cartTotals"></div>
-      <div style="font-size:12px;font-weight:700;color:var(--text-soft);margin-top:14px;margin-bottom:2px;">To'lov turi</div>
-      <div class="pay-types" id="payTypes"></div>
-      <div id="payExtra"></div>
       <div style="margin-top:14px;">
         <label class="check-line"><input type="checkbox" id="deliveryNeeded" onchange="toggleDeliveryFields()"> Yetkazib berish kerak</label>
         <div id="deliveryFields"></div>
       </div>
-      <button class="btn btn-outline btn-block" id="checkPreviewBtn" style="margin-top:14px;" onclick="openCheckPreview()">${icon('receipt')} Chek</button>
-      <button class="btn btn-primary btn-block" id="completeSaleBtn" style="margin-top:8px;" onclick="completeSale()">${icon('check-circle2')} Savdoni yakunlash</button>
+      <div id="payTrigger" style="margin-top:14px;"></div>
     </div>
   </div>`;
 }
@@ -2536,19 +2927,74 @@ function posProdCardHtml(p){
       ${p.packSize?`<button class="btn-ghost btn-sm" style="margin-top:2px;" onclick="event.stopPropagation();calcPacks('${p.id}')">${icon('calculator')} ${p.packUnit||'quti'}</button>`:''}
     </div>`;
 }
-/* Kategoriyalarsiz — bitta umumiy gridda barcha mahsulotlar (yoki qidiruv natijasi).
-   Universal dkSearchProducts() orqali nom/brend/SKU/shtrix-kod/QR bo'yicha real vaqtda qidiradi. */
+/* Savdo (POS) — qidiruv bo'lsa universal dkSearchProducts() orqali natija
+   ko'rsatiladi (avvalgi xatti-harakat o'zgarmagan). Qidiruv bo'sh bo'lsa,
+   mavjud kategoriya tizimi asosida ko'rish rejimi ishlaydi: avval faqat
+   SOTUVDA mahsulotlari mavjud kategoriyalar gridi, kategoriya tanlansa —
+   shu kategoriyadagi mahsulotlar + ustiga qo'shimcha Firma/Brend filteri
+   (6-bo'lim: brend filteri kategoriya filterini buzmaydi). */
+function posCategoryChipsHtml(){
+  const forSale = DB.products.filter(p=>p.isForSale);
+  const catsWithSale = DB.categories.filter(name=>forSale.some(p=>p.category===name));
+  return `
+    <div class="dk-cat-grid">
+      ${catsWithSale.map(name=>`
+        <div class="dk-cat-card" onclick="posSelectCategory('${jsEsc(name)}')">
+          <div class="dk-cat-icon">${catVisualHtml(name)}</div>
+          <div class="dk-cat-name">${name}</div>
+        </div>`).join('')}
+    </div>
+    ${!catsWithSale.length? `<div class="empty-state" style="grid-column:1/-1;">${icon('store')}<div>Hali sotuvga chiqarilgan mahsulot yo'q</div></div>` : ''}`;
+}
+function posSelectCategory(name){
+  posCatFilter = name;
+  posBrandFilter = '';
+  renderPosGrid();
+}
+function posBackToCategories(){
+  posCatFilter = '';
+  posBrandFilter = '';
+  renderPosGrid();
+}
+function posBrowseHtml(){
+  if(!posCatFilter) return posCategoryChipsHtml();
+  const forSaleInCat = DB.products.filter(p=>p.isForSale && p.category===posCatFilter);
+  const brandIds = [...new Set(forSaleInCat.map(p=>p.brandId).filter(Boolean))];
+  const brandChips = brandIds.map(id=>({id,name:brandName(id)})).filter(b=>b.name);
+  let list = forSaleInCat;
+  if(posBrandFilter) list = list.filter(p=>p.brandId===posBrandFilter);
+  return `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <button class="btn-ghost" onclick="posBackToCategories()">${icon('arrow-left')}</button>
+      <div style="font-weight:800;font-size:14px;">${catIcon(posCatFilter)} ${posCatFilter}</div>
+    </div>
+    ${brandChips.length? `
+    <div class="dk-chip-row">
+      <div class="dk-chip ${!posBrandFilter?'active':''}" onclick="posSelectBrand('')">Barchasi</div>
+      ${brandChips.map(b=>`<div class="dk-chip ${posBrandFilter===b.id?'active':''}" onclick="posSelectBrand('${b.id}')">${b.name}</div>`).join('')}
+    </div>` : ''}
+    <div class="dk-prod-grid">${list.map(p=>posProdCardHtml(p)).join('')}</div>
+    ${!list.length? `<div class="empty-state" style="grid-column:1/-1;">${icon('search-x')}<div>Bu bo'limda mahsulot yo'q</div></div>` : ''}`;
+}
+function posSelectBrand(id){
+  posBrandFilter = id;
+  renderPosGrid();
+}
 function renderPosGrid(){
   const q = dkNormQuery(posSearchQuery);
   const grid = document.getElementById('posGrid'); if(!grid) return;
   if(!q){
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${icon('search')}<div>Mahsulotni qidiring yoki skanerlang</div></div>`;
+    /* Savdo sahifasida mahsulotlar katalogi/kategoriya gridi ko'rsatilmaydi —
+       sahifa "kassa" kabi ishlaydi: faqat qidiruv yoki skaner orqali mahsulot
+       topib Savatga qo'shiladi. (posBrowseHtml/posCategoryChipsHtml funksiyalari
+       boshqa joyda buzilmasin deb o'chirilmagan, shunchaki bu yerda chaqirilmaydi.) */
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${icon('search')}<div>Mahsulotni qidiring yoki shtrix-kod/QR skanerlang</div></div>`;
     lucide.createIcons();
     return;
   }
   const forSale = DB.products.filter(p=>p.isForSale);
   const list = dkSearchProducts(q, forSale);
-  grid.innerHTML = list.length? list.map(p=>posProdCardHtml(p)).join('') : `<div class="empty-state" style="grid-column:1/-1;">${icon('search-x')}<div>Topilmadi</div></div>`;
+  grid.innerHTML = `<div class="dk-prod-grid">${list.length? list.map(p=>posProdCardHtml(p)).join('') : `<div class="empty-state" style="grid-column:1/-1;">${icon('search-x')}<div>Topilmadi</div></div>`}</div>`;
   lucide.createIcons();
 }
 function posSearchEnter(){
@@ -2700,7 +3146,13 @@ function renderCart(){
     <div class="ct-row total"><span>Yakuniy summa</span><span id="grandTotalVal">${fmt(grand)}</span></div>
     <button class="btn-ghost btn-sm" onclick="clearCart()" style="margin-top:4px;">${icon('trash-2')} Savatni tozalash</button>`;
 
+  const payTriggerBox = document.getElementById('payTrigger');
+  if(payTriggerBox){
+    payTriggerBox.innerHTML = `<button class="btn btn-primary btn-block" id="openPaymentBtn" onclick="openPaymentModal()" ${cart.length?'':'disabled'}>${icon('credit-card')} TO'LOV <span style="opacity:.85;">— ${fmt(grand)}</span></button>`;
+  }
+
   renderPayExtra();
+  mnUpdateCartBadge();
   lucide.createIcons();
 }
 function refreshTotals(){
@@ -2805,9 +3257,32 @@ function onSaleCustomerChange(){
 }
 
 /* ---------------- PAYMENT ---------------- */
+/* "TO'LOV" tugmasi bosilgandagina ochiladigan ixcham to'lov oynasi —
+   to'lov usullari va tafsilotlari savat asosiy ko'rinishida doimiy
+   ko'rinib turmaydi, faqat shu oyna ichida chiqadi (mavjud renderPayTypes/
+   renderPayExtra/validateSale/completeSale mantiqi o'zgarishsiz ishlatiladi). */
+function openPaymentModal(){
+  if(!cart.length){ toast("Savat bo'sh",true); return; }
+  const grand = currentGrandTotal();
+  openModal(`
+    <div class="modal-head"><h3>${icon('credit-card')} To'lov</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="ct-row total" style="margin-bottom:12px;"><span>Jami summa</span><span id="payModalGrand">${fmt(grand)}</span></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-soft);margin-bottom:4px;">To'lov turi</div>
+      <div class="pay-types" id="payTypes"></div>
+      <div id="payExtra"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-block" id="completeSaleBtn" onclick="completeSale()">${icon('check-circle2')} To'lovni tasdiqlash</button>
+    </div>
+  `, true);
+  renderPayTypes();
+  renderPayExtra();
+}
 function renderPayTypes(){
+  const box = document.getElementById('payTypes'); if(!box) return;
   const types = [['naqd','banknote','Naqd'],['karta','credit-card','Karta'],['aralash','shuffle','Aralash'],['qarz','user-round','Qarz/Nasiya']];
-  document.getElementById('payTypes').innerHTML = types.map(t=>`
+  box.innerHTML = types.map(t=>`
     <div class="pay-type ${selectedPayType===t[0]?'active':''}" onclick="selectedPayType='${t[0]}';renderPayTypes();renderPayExtra()">
       ${icon(t[1])}<span>${t[2]}</span>
     </div>`).join('');
@@ -3024,13 +3499,46 @@ function completeSale(){
 let scanModalProductId = null;
 let scanModalReturnToScan = false;
 let scanSaleMode = 'qty'; // 'qty' | 'money' — faqat qadoqsiz (kg/litr) mahsulotlar uchun ishlaydi
+/* ---------------- SCAN SUCCESS POPUP (faqat Savdo bo'limi, faqat scanner orqali) ----------------
+   Mahsulot scanner (kamera yoki USB/BT) orqali topilib, mavjud addToCart/cartAdd/cartAddMoney
+   logikasi bo'yicha Savatga muvaffaqiyatli qo'shilgandan KEYIN chaqiriladi. Cart hisob-kitoblariga
+   yoki scanner ishlash mexanizmiga hech qanday ta'sir qilmaydi — faqat 1.5s ko'rinadigan
+   vizual tasdiq. Ketma-ket skanerlashda bitta popup elementi qayta ishlatiladi va timer qayta
+   boshlanadi (eski popup ustiga yangisi qo'shilib ketmaydi). */
+let scanPopupHideTimer = null;
+function showScanProductPopup(p, qty){
+  if(!p) return;
+  let box = document.getElementById('scanSuccessPopup');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'scanSuccessPopup';
+    box.className = 'scan-success-popup';
+    document.body.appendChild(box);
+  }
+  const qtyLabel = (qty!=null && qty>0) ? `+${fmtQty(qty)} ${p.unit||''}`.trim() : '+1';
+  box.innerHTML = `
+    <div class="scan-success-img">${p.image?`<img src="${p.image}" alt="">`:(p.emoji||catIcon(p.category))}</div>
+    <div class="scan-success-name">${p.name}</div>
+    <div class="scan-success-price">${fmtNum(p.price)} so'm</div>
+    <div class="scan-success-badge">${icon('check-circle2')} ${qtyLabel} qo'shildi ✓</div>
+  `;
+  lucide.createIcons();
+  box.classList.remove('show');
+  void box.offsetWidth; /* reflow — animatsiyani har safar qaytadan ishga tushirish uchun */
+  box.classList.add('show');
+  if(scanPopupHideTimer) clearTimeout(scanPopupHideTimer);
+  scanPopupHideTimer = setTimeout(()=>{ box.classList.remove('show'); }, 1500);
+}
 function handleScannedCode(raw){
   const code = (raw||'').trim();
   if(!code) return;
   const p = DB.products.find(x=>x.qrCode===code || x.barcode===code || x.sku.toLowerCase()===code.toLowerCase());
   if(!p || !p.isForSale){ toast(`Mahsulot topilmadi: ${code}`, true); return; }
   if(p.qty<=0){ toast(`${p.name} tugagan — sotib bo'lmaydi`, true); return; }
+  const beforeQty = cartFind(p.id)?.qty || 0;
   addToCart(p.id);
+  const afterQty = cartFind(p.id)?.qty || 0;
+  if(afterQty>beforeQty) showScanProductPopup(p, roundQty(afterQty-beforeQty));
 }
 /* ---------------- SCAN PRODUCT CONFIRM MODAL ---------------- */
 function openScanProductModal(p, opts){
@@ -3147,6 +3655,7 @@ function confirmScanAddToCart(){
     const ok = cartAddMoney(p.id, money);
     if(!ok) return;
     toast(`${p.emoji} ${p.name} savatga qo'shildi`);
+    if(scanModalReturnToScan) showScanProductPopup(p, addQty);
     const resume = scanModalReturnToScan;
     closeModal();
     if(resume) openSalesScanModal();
@@ -3162,6 +3671,7 @@ function confirmScanAddToCart(){
   const ok = cartAdd(p.id, qty);
   if(!ok) return;
   toast(`${p.emoji} ${p.name} savatga qo'shildi`);
+  if(scanModalReturnToScan) showScanProductPopup(p, qty);
   const resume = scanModalReturnToScan;
   closeModal();
   if(resume) openSalesScanModal();
@@ -3215,8 +3725,11 @@ function openSalesScanModal(){
       return;
     }
     /* Oddiy mahsulot — darhol savatga qo'shiladi (qayta skanerlansa +1), kamera ishlashda davom etadi */
+    const beforeQty = cartFind(p.id)?.qty || 0;
     addToCart(p.id);
+    const afterQty = cartFind(p.id)?.qty || 0;
     if(box) box.innerHTML = `<div class="alert alert-ok">${icon('check-circle2')}<span>${p.name} savatga qo'shildi</span></div>`;
+    if(afterQty>beforeQty) showScanProductPopup(p, roundQty(afterQty-beforeQty));
   }, (err)=>{
     const st=document.getElementById('saleScanStatus'); if(st) st.textContent = "Xato: "+err;
   });
@@ -3411,29 +3924,21 @@ function openSalesHistoryModal(){
   openModal(`
     <div class="modal-head"><h3>Savdo tarixi</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
-      <div class="table-scroll" style="max-height:60vh;"><table>
-        <thead><tr><th>Chek</th><th>Ko'rish</th><th>Sana</th><th>Xodim</th><th>Mijoz</th><th>Jami</th><th>To'lov</th><th>Holat</th><th></th></tr></thead>
+      <div style="max-height:65vh;overflow-y:auto;overflow-x:hidden;"><table style="table-layout:fixed;width:100%;">
+        <thead><tr><th>Chek</th><th>Ko'rish</th><th>Sana</th></tr></thead>
         <tbody>
           ${list.length? list.map(s=>{
-            const cust = s.customerId? DB.customers.find(x=>x.id===s.customerId) : null;
-            const canCancel = s.status==='yakunlangan' && (currentRole==='admin' || DB.roleRights[currentRole].cancelSale);
             return `<tr>
               <td data-label="Chek" class="cell-mono">${s.checkNo||('#'+s.id.slice(-5))}</td>
-              <td data-label="Ko'rish"><button class="btn-ghost" onclick="openReceiptModal('${s.id}')" title="Chekni ko'rish">${icon('eye')}</button></td>
+              <td data-label="Ko'rish"><button class="btn-ghost" onclick="openReceiptModal('${s.id}')" title="Chekni ko'rish">${icon('eye')} Ko'rish</button></td>
               <td data-label="Sana">${new Date(s.date).toLocaleString('uz-UZ')}</td>
-              <td data-label="Xodim">${s.employee}</td>
-              <td data-label="Mijoz">${cust?cust.name:'—'}</td>
-              <td data-label="Jami" class="cell-mono">${fmtNum(s.total)}</td>
-              <td data-label="To'lov">${s.paymentType}</td>
-              <td data-label="Holat"><span class="badge badge-${s.status==='bekor qilingan'?'red':'green'}">${s.status}</span></td>
-              <td data-label="">${canCancel?`<button class="btn-ghost" onclick="cancelSale('${s.id}')" title="Bekor qilish">${icon('ban')}</button>`:''}</td>
             </tr>`;
-          }).join('') : emptyRow(9,"Savdo tarixi bo'sh")}
+          }).join('') : emptyRow(3,"Savdo tarixi bo'sh")}
         </tbody>
       </table></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal()">Yopish</button></div>
-  `);
+  `, false, 'modal-saleshist');
 }
 function activeSalesOrAll(){ return DB.sales; }
 function cancelSale(id){
