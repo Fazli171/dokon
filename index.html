@@ -810,6 +810,54 @@ function scanDebug(){ if(DEBUG_SCANNER){ try{ console.log.apply(console, ['[scan
 let wedgeBuffer = '';
 let wedgeLastTime = 0;
 
+/* ================================================================
+   DESKTOP vs MOBILE SCANNER — qurilma turini aniqlash + "avtomatik
+   Enter" sozlamasi (localStorage'da saqlanadi, default: YOQILGAN).
+   MUHIM: bu aniqlash oyna kengligiga (responsive breakpoint) emas,
+   haqiqiy qurilma turiga (user agent + touch) asoslanadi — shunda
+   desktop brauzer oynasi toraytirilganda ham kamera skaner
+   ishga tushmaydi, va aksincha.
+   ================================================================ */
+let _isMobileDeviceCache = null;
+function isMobileDevice(){
+  if(_isMobileDeviceCache!==null) return _isMobileDeviceCache;
+  try{
+    const ua = navigator.userAgent || navigator.vendor || '';
+    const uaMobile = /Android|iPhone|iPad|iPod|Windows Phone|IEMobile|Opera Mini|Mobile/i.test(ua);
+    let coarsePointer = false;
+    try{ coarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); }catch(e){}
+    const hasTouch = (navigator.maxTouchPoints||0) > 0;
+    _isMobileDeviceCache = uaMobile || (coarsePointer && hasTouch);
+  }catch(e){ _isMobileDeviceCache = false; }
+  return _isMobileDeviceCache;
+}
+const SCANNER_AUTO_ENTER_KEY = 'scannerAutoEnter';
+function getScannerAutoEnter(){
+  try{
+    const v = localStorage.getItem(SCANNER_AUTO_ENTER_KEY);
+    return v===null ? true : v==='true';
+  }catch(e){ return true; }
+}
+function setScannerAutoEnter(val){
+  try{ localStorage.setItem(SCANNER_AUTO_ENTER_KEY, val ? 'true' : 'false'); }catch(e){}
+}
+function onScannerAutoEnterToggle(checked){
+  setScannerAutoEnter(!!checked);
+  toast(checked ? "Skanerdan keyin avtomatik Enter yoqildi" : "Skanerdan keyin avtomatik Enter o'chirildi");
+}
+/* Duplicate-scan himoyasi: bitta skanerlash bir nechta yo'l bilan (avtomatik
+   Enter, skanerning o'z Enter'i, fokusdagi input'ning o'z onkeydown Enter
+   handler'i) qayta ishlanib ketishi mumkin. Shu funksiya orqali bir xil kod
+   qisqa vaqt oralig'ida faqat BIR marta qabul qilinadi — mavjud savatga
+   qo'shish logikasi o'zi o'zgarmaydi, faqat takroriy chaqiruv oldi olinadi. */
+let lastWedgeSubmit = {code:null, time:0};
+function wedgeShouldProcess(code){
+  const now = Date.now();
+  if(code && code===lastWedgeSubmit.code && (now-lastWedgeSubmit.time)<800){ return false; }
+  lastWedgeSubmit = {code, time:now};
+  return true;
+}
+
 /* Kategoriyalar ro'yxati + har biriga mos ikonka (Mahsulotlar bo'limidagi
    kategoriya gridida ishlatiladi). Bitta manbadan ikkalasi ham hosil qilinadi,
    shuning uchun nom va ikonka doim mos keladi. */
@@ -1686,8 +1734,6 @@ function renderDkCategoriesPage(){
     <div><h1>Mahsulotlar</h1><p>${DB.categories.length} ta kategoriya · ${(DB.brands||[]).length} ta firma/brend</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="dkCatBrandSettingsBtn" class="btn btn-outline compact-action-btn" onclick="dkOpenCatBrandSettingsModal()">${dkCatBrandSettingsOpen?icon('check')+' Tayyor':icon('settings')+' Sozlamalar'}</button>
-      <button class="btn btn-outline compact-action-btn" onclick="dkDownloadExcelTemplate()">${icon('download')} Excel shablonini yuklab olish</button>
-      <button class="btn btn-primary compact-action-btn" onclick="dkOpenExcelImportModal()">${icon('file-spreadsheet')} Excel orqali import</button>
     </div>
   </div>
   <div class="dk-search-row dk-search-modern">
@@ -2252,30 +2298,33 @@ function dkDeleteProduct(id){
 }
 
 /* ================================================================
-   MAHSULOTLAR — EXCEL ORQALI IMPORT (DEMO)
-   Faqat 2 ustun: Mahsulot nomi + Shtrix-kod. Boshqa barcha maydonlar
-   (rasm, brend, kategoriya, turi, hajm, narxlar, tavsif va h.k.)
-   keyinroq mavjud "Mahsulotni tahrirlash" oynasi orqali to'ldiriladi —
-   bu funksiya ularga TEGMAYDI va mavjud tahrirlash logikasini
+   TOVARLAR — EXCEL ORQALI IMPORT
+   Ustunlar: Mahsulot nomi + Shtrix-kod (majburiy), Sotib olish narxi +
+   Sotish narxi (to'ldirilsa — mahsulot to'g'ridan-to'g'ri shu narxlar
+   bilan bazaga yoziladi va Tovarlar bo'limida SOTUVDA sifatida
+   ko'rinadi — tvMarkForSale() bosish shart emas). Kategoriya/Firma
+   ixtiyoriy. Boshqa maydonlar (rasm, hajm, tavsif va h.k.) keyinroq
+   mavjud "Mahsulotni tahrirlash" oynasi orqali to'ldiriladi — bu
+   funksiya ularga TEGMAYDI va mavjud tahrirlash logikasini
    o'zgartirmaydi. Tasdiqlangunga qadar DB.products'ga hech narsa
    yozilmaydi (avval tekshiruv/preview ko'rsatiladi).
    ================================================================ */
 let dkExcelPendingImport = [];
 
-/* "Excel shablonini yuklab olish" — faqat 2 ustunli tayyor .xlsx fayl. */
+/* "Excel shablonini yuklab olish" — nomi, shtrix-kod, narxlar (+ixtiyoriy kategoriya/brend). */
 function dkDownloadExcelTemplate(){
   if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
   const rows = [
-    ['Mahsulot nomi','Shtrix-kod','Kategoriya','Firma/Brend'],
-    ['Coca Cola 1.5L','4780001234567','Gazli ichimliklar','Coca-Cola'],
-    ['Sut 450g','4780001234568','Sut mahsulotlari',''],
-    ['Non','4780001234569','Non',''],
+    ['Mahsulot nomi','Shtrix-kod','Sotib olish narxi','Sotish narxi','Kategoriya','Firma/Brend'],
+    ['Coca Cola 1.5L','4780001234567',9000,12000,'Gazli ichimliklar','Coca-Cola'],
+    ['Sut 450g','4780001234568',7000,9500,'Sut mahsulotlari',''],
+    ['Non','4780001234569',2000,3000,'Non',''],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:18},{wch:22},{wch:18}];
+  ws['!cols'] = [{wch:30},{wch:18},{wch:16},{wch:16},{wch:22},{wch:18}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Shablon');
-  XLSX.writeFile(wb, 'mahsulotlar_shabloni.xlsx');
+  XLSX.writeFile(wb, 'tovarlar_shabloni.xlsx');
 }
 
 function dkOpenExcelImportModal(){
@@ -2283,7 +2332,7 @@ function dkOpenExcelImportModal(){
   openModal(`
     <div class="modal-head"><h3>${icon('file-spreadsheet')} Excel orqali import</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
-      <div class="alert alert-info">${icon('info')}<span>Majburiy ustunlar: <strong>Mahsulot nomi</strong> va <strong>Shtrix-kod</strong>. Ixtiyoriy: <strong>Kategoriya</strong> va <strong>Firma/Brend</strong> — mavjud bo'lsa avtomatik bog'lanadi, mavjud bo'lmasa yangi yaratiladi. Boshqa ma'lumotlar (rasm, hajm va h.k.) keyinroq mahsulotni tahrirlash orqali kiritiladi.</span></div>
+      <div class="alert alert-info">${icon('info')}<span>Majburiy ustunlar: <strong>Mahsulot nomi</strong> va <strong>Shtrix-kod</strong>. <strong>Sotib olish narxi</strong> va <strong>Sotish narxi</strong> to'ldirilsa, mahsulot shu narxlar bilan to'g'ridan-to'g'ri Tovarlar bo'limiga (SOTUVDA) qo'shiladi. Kategoriya va Firma/Brend ixtiyoriy — mavjud bo'lsa avtomatik bog'lanadi, mavjud bo'lmasa yangi yaratiladi. Boshqa ma'lumotlar (rasm, hajm va h.k.) keyinroq mahsulotni tahrirlash orqali kiritiladi.</span></div>
       <div class="field">
         <label>Excel fayl (.xlsx)</label>
         <input type="file" id="dk_excel_file" accept=".xlsx,.xls" onchange="dkHandleExcelFile(this)">
@@ -2322,9 +2371,21 @@ function dkHandleExcelFile(inputEl){
   reader.readAsArrayBuffer(file);
 }
 
+/* Sonli ustun (narx) qiymatini xavfsiz o'qiydi: bo'sh bo'lsa {ok:true, val:0}
+   (ixtiyoriy — importga xalaqit bermaydi), noto'g'ri (sonsiz) qiymat
+   kiritilgan bo'lsa {ok:false} — shu qator xatolik sifatida belgilanadi. */
+function dkParseExcelPrice(raw){
+  const s = String(raw!=null?raw:'').trim();
+  if(!s) return {ok:true, val:0};
+  const n = Number(String(s).replace(/\s/g,'').replace(/,/g,'.'));
+  if(isNaN(n) || n<0) return {ok:false, val:0};
+  return {ok:true, val:Math.round(n)};
+}
+
 /* Excel qatorlarini tekshiradi: nom/shtrix-kod bo'sh, shtrix-kod tizimda
-   allaqachon mavjud, yoki Excel ichida shtrix-kod takrorlangan bo'lsa —
-   shu qator xatolik blokiga tushadi va import qilinmaydi. */
+   allaqachon mavjud, Excel ichida shtrix-kod takrorlangan, yoki narx
+   ustunlariga son bo'lmagan qiymat kiritilgan bo'lsa — shu qator
+   xatolik blokiga tushadi va import qilinmaydi. */
 function dkProcessExcelRows(rows){
   let dataRows = rows.slice();
   // Birinchi qator sarlavhaga o'xshasa (masalan "Mahsulot nomi"), uni o'tkazib yuboramiz.
@@ -2338,18 +2399,24 @@ function dkProcessExcelRows(rows){
     const rowNum = idx+2; // sarlavha qatori hisobga olingan holda foydalanuvchiga tushunarli qator raqami
     const name = String(row[0]!=null?row[0]:'').trim();
     const barcode = String(row[1]!=null?row[1]:'').trim();
-    // Ixtiyoriy ustunlar (12-bo'lim): Kategoriya (C ustuni) va Firma/Brend (D ustuni).
-    // Eski 2-ustunli fayllarda bu qiymatlar bo'sh bo'ladi — importga ta'sir qilmaydi.
-    const categoryName = String(row[2]!=null?row[2]:'').trim();
-    const brandNameVal = String(row[3]!=null?row[3]:'').trim();
+    // Sotib olish narxi (E ustuni emas, C) va Sotish narxi (D) — ixtiyoriy, lekin
+    // to'ldirilsa mahsulot to'g'ridan-to'g'ri shu narxlar bilan yoziladi.
+    const costParsed = dkParseExcelPrice(row[2]);
+    const priceParsed = dkParseExcelPrice(row[3]);
+    // Ixtiyoriy ustunlar: Kategoriya (E ustuni) va Firma/Brend (F ustuni).
+    // Eski qisqa fayllarda bu qiymatlar bo'sh bo'ladi — importga ta'sir qilmaydi.
+    const categoryName = String(row[4]!=null?row[4]:'').trim();
+    const brandNameVal = String(row[5]!=null?row[5]:'').trim();
     if(!name && !barcode) return; // to'liq bo'sh qator — e'tiborsiz qoldiriladi
     let error = '';
     if(!name) error = "Mahsulot nomi bo'sh";
     else if(!barcode) error = "Shtrix-kod bo'sh";
     else if(DB.products.some(p=>p.barcode===barcode)) error = "Shtrix-kod tizimda allaqachon mavjud";
     else if(seenInFile.has(barcode)) error = "Excel ichida shtrix-kod takrorlangan";
+    else if(!costParsed.ok) error = "Sotib olish narxi noto'g'ri (son bo'lishi kerak)";
+    else if(!priceParsed.ok) error = "Sotish narxi noto'g'ri (son bo'lishi kerak)";
     if(error){ errorRows.push({rowNum,name,barcode,error}); }
-    else{ seenInFile.add(barcode); validRows.push({rowNum,name,barcode,categoryName,brandNameVal}); }
+    else{ seenInFile.add(barcode); validRows.push({rowNum,name,barcode,cost:costParsed.val,price:priceParsed.val,categoryName,brandNameVal}); }
   });
   dkRenderExcelPreview(validRows, errorRows);
 }
@@ -2386,6 +2453,7 @@ function dkRenderExcelPreview(validRows, errorRows){
               <div class="dk-prod-name">${r.name}</div>
               ${(r.categoryName||r.brandNameVal)?`<div class="dk-prod-meta">${[r.categoryName,r.brandNameVal].filter(Boolean).join(' · ')}</div>`:''}
               <div class="dk-prod-meta cell-mono">${r.barcode}</div>
+              <div class="dk-prod-meta">Sotish: <strong>${fmtNum(r.price)}</strong> · Sotib olish: <strong>${fmtNum(r.cost)}</strong></div>
             </div>`).join('')}
         </div>
       </div>` : `<div class="empty-state">${icon('inbox')}<div>Import qilinadigan to'g'ri qator topilmadi</div></div>`}
@@ -2400,11 +2468,15 @@ function dkRenderExcelPreview(validRows, errorRows){
 /* Faqat shu bosilgandagina DB.products'ga yoziladi. Har bir yangi mahsulot
    mavjud yaratish logikasidagi kabi unique ID/SKU/QR-kod oladi (dkUniqueSku/
    dkUniqueQr — xuddi dkSaveProduct'da ishlatilgani kabi). Kategoriya ATAYLAB
-   bo'sh qoldiriladi (DB.categories[0] majburan tanlanmaydi) — mahsulot
-   keyinchalik tahrirlash orqali kategoriyaga ega bo'ladi. */
+   bo'sh qoldirilishi mumkin (DB.categories[0] majburan tanlanmaydi) — narx
+   kiritilgan mahsulot esa to'g'ridan-to'g'ri isForSale:true (SOTUVDA) qilib
+   yoziladi va Tovarlar bo'limidagi sellerProducts yozuviga ham qo'shiladi —
+   xuddi tvMarkForSale() bajaradigan ishning o'zi, faqat import paytida
+   avtomatik amalga oshiriladi. */
 function dkConfirmExcelImport(){
   const rows = dkExcelPendingImport || [];
   if(!rows.length){ closeModal(); return; }
+  const sellerId = currentSellerId();
   let count = 0;
   rows.forEach(r=>{
     if(DB.products.some(p=>p.barcode===r.barcode)) return; // qo'shimcha xavfsizlik: import paytida takroriylik
@@ -2425,8 +2497,10 @@ function dkConfirmExcelImport(){
     // Firma/Brend: mavjud nom topilsa shu brendning ID'siga bog'lanadi, topilmasa yangi yaratiladi.
     let brandId = null;
     if(r.brandNameVal) brandId = dkGetOrCreateBrandId(r.brandNameVal);
+    const forSale = (r.cost>0 || r.price>0); // narx to'ldirilgan bo'lsa — to'g'ridan-to'g'ri Tovarlar (SOTUVDA)
+    const pid = uid('p');
     DB.products.push({
-      id: uid('p'),
+      id: pid,
       sku,
       barcode: r.barcode,
       qrCode: dkUniqueQr(sku),
@@ -2441,11 +2515,16 @@ function dkConfirmExcelImport(){
       pkgUnit: null,
       unit: 'dona',
       desc: '',
-      isForSale: false,
-      qty: 0, cost: 0, price: 0, minQty: 0,
+      isForSale: forSale,
+      qty: 0, cost: r.cost||0, price: r.price||0, minQty: 0,
       batches: [],
       createdAt: Date.now(), updatedAt: Date.now(),
     });
+    if(forSale){
+      // tvMarkForSale() bilan bir xil sellerProducts yozuvi — Tovarlar/Ombor
+      // shu bayroqni o'qiydi, mavjud "SOTUVDA" mantig'i o'zgarmaydi.
+      DB.sellerProducts.push({id:uid('sp'), sellerId, productId:pid, isForSale:true, createdAt:Date.now()});
+    }
     count++;
   });
   save();
@@ -2587,9 +2666,11 @@ function emptyRow(cols,text){
    QR / BARKOD SKANER (real camera via ZXing multi-format engine, with manual/keyboard-wedge fallback)
    ================================================================ */
 function renderScanner(){
+  const mobile = isMobileDevice();
   return `
-  <div class="page-head"><div><h1>QR / Barkod Skaner</h1><p>Telefon yoki kompyuter kamerasi orqali QR, EAN-13, EAN-8, UPC-A, UPC-E, Code128, Code39, ITF kodlarni — qanday yo'nalishda joylashgan bo'lishidan qat'i nazar — avtomatik skanerlang</p></div></div>
+  <div class="page-head"><div><h1>QR / Barkod Skaner</h1><p>${mobile? "Telefon kamerasi orqali QR, EAN-13, EAN-8, UPC-A, UPC-E, Code128, Code39, ITF kodlarni — qanday yo'nalishda joylashgan bo'lishidan qat'i nazar — avtomatik skanerlang" : "USB yoki Bluetooth barkod skaner orqali skanerlang"}</p></div></div>
   <div class="scan-box">
+    ${mobile? `
     <div class="scan-frame" id="scanFrame">
       <video id="scanVideo" autoplay playsinline muted></video>
       <span id="scanPlaceholder">${icon('scan-line')}</span>
@@ -2600,12 +2681,14 @@ function renderScanner(){
     <p id="scanStatus" style="font-size:12px;color:var(--text-faint);margin-bottom:14px;">Kamerani yoqish uchun tugmani bosing</p>
     <div style="margin-bottom:14px;">
       <button class="btn btn-primary" id="camToggleBtn" onclick="toggleCamera()">${icon('camera')} Kamerani yoqish</button>
-    </div>
+    </div>` : `
+    <div class="alert alert-info" style="margin-bottom:14px;">${icon('info')}<span>Kompyuterda kamera skaner ishlatilmaydi — USB yoki Bluetooth barkod skaneringizni ulang va quyidagi maydonga skanerlang.</span></div>
+    `}
     <div class="field" style="display:flex;gap:8px;">
       <input type="text" id="manualCode" placeholder="QR / shtrix-kod / SKU qo'lda kiriting yoki USB skaner bilan o'qiting" onkeydown="if(event.key==='Enter')scanLookup()">
       <button class="btn btn-outline" onclick="scanLookup()">${icon('search')}</button>
     </div>
-    <div style="font-size:11px;color:var(--text-faint);margin:-8px 0 14px;">USB/Bluetooth barkod skaner ulangan bo'lsa, shu maydonga fokus qo'yib to'g'ridan-to'g'ri skanerlashingiz mumkin</div>
+    <div style="font-size:11px;color:var(--text-faint);margin:-8px 0 14px;">USB/Bluetooth barkod skaner ulangan bo'lsa, shu maydonga qo'lda fokus qo'yish shart emas — Savdo yoki shu sahifa faol bo'lsa to'g'ridan-to'g'ri skanerlashingiz mumkin</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:18px;">
       ${DB.products.slice(0,4).map(p=>`<button class="btn btn-outline btn-sm" onclick="document.getElementById('manualCode').value='${p.qrCode}';scanLookup()">${p.emoji} ${p.name}</button>`).join('')}
     </div>
@@ -2784,6 +2867,15 @@ function switchToZxingFallback(){
    ishlashda davom etadi: startScanEngine(videoEl, onDecode, onError). */
 function startScanEngine(videoEl, onDecode, onError){
   if(scanEngineActive) return;
+  if(!isMobileDevice()){
+    /* Desktopda kamera orqali barcode scanner ishlatilmaydi — faqat
+       USB/Bluetooth fizik scanner + avtomatik Enter sozlamasi ishlaydi.
+       Bu yerda to'xtatish getUserMedia/camera stream/video preview
+       kabi barcha kamera kodlarining desktopda ishga tushishining
+       oldini oladi (chaqiruvchi joy qaysi bo'lishidan qat'i nazar). */
+    onError && onError("Kamera skaner faqat mobil qurilmalarda mavjud. Kompyuterda USB/Bluetooth barkod skanerdan foydalaning.");
+    return;
+  }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     onError && onError("Bu qurilma/brauzerda kameraga kirish imkoni yo'q");
     return;
@@ -3023,6 +3115,16 @@ function addScannedToCart(){
    POS / SALES
    ================================================================ */
 function renderSales(){
+  if(!DB.currentShift){
+    return `
+    <div class="page-head">
+      <div><h1>Savdo</h1><p>Savdo qilish uchun avval smena ochilishi kerak</p></div>
+    </div>
+    <div class="card">
+      <div class="empty-state">${icon('wallet')}<div>Hozircha ochiq smena yo'q. Savdo qilishdan oldin Kassa bo'limida smenani oching.</div></div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="nav('cash')">${icon('play')} Kassaga o'tish va smenani ochish</button>
+    </div>`;
+  }
   return `
   <div class="page-head">
     <div><h1>Savdo</h1><p>Mahsulotni qidiring yoki shtrix-kod/QR skanerlab Savatga qo'shing</p></div>
@@ -3038,8 +3140,9 @@ function renderSales(){
             onkeydown="if(event.key==='Enter')posSearchEnter();if(event.key==='Escape')posClearSearch();">
           <button class="dk-search-clear" id="posSearchClear" style="display:${posSearchQuery?'flex':'none'}" onclick="posClearSearch()" title="Tozalash">${icon('x')}</button>
         </div>
-        <button class="btn btn-primary dk-scan-btn" onclick="openSalesScanModal()" title="Kamera / USB skaner">${icon('scan-line')}</button>
+        ${isMobileDevice()? `<button class="btn btn-primary dk-scan-btn" onclick="openSalesScanModal()" title="Kamera skaner">${icon('scan-line')}</button>` : ''}
       </div>
+      ${!isMobileDevice()? `<div style="font-size:11px;color:var(--text-faint);margin:-6px 0 10px;">USB/Bluetooth barkod skaneringiz bilan to'g'ridan-to'g'ri skanerlashingiz mumkin — maydonga fokus qo'yish shart emas</div>` : ''}
       <div id="posGrid"></div>
     </div>
     <div class="card cart-card">
@@ -3160,6 +3263,7 @@ function posSearchEnter(){
   if(!q) return;
   const exact = DB.products.find(x=>x.isForSale && (x.qrCode===q || x.barcode===q || x.sku.toLowerCase()===q.toLowerCase()));
   if(exact){
+    if(!wedgeShouldProcess(q)) return; // duplicate-scan himoyasi: xuddi shu kod wedge listener orqali allaqachon qayta ishlangan bo'lishi mumkin
     addToCart(exact.id);
     posSearchQuery='';
     document.getElementById('posSearch').value='';
@@ -3944,15 +4048,33 @@ function openSalesScanModal(){
 }
 function closeSalesScan(){ stopScanEngine(); closeModal(); if(currentPage==='sales') renderCart(); }
 
-/* Keyboard-wedge: USB/Bluetooth barcode scanners type fast + Enter */
+/* Keyboard-wedge: USB/Bluetooth barcode scanners type fast + Enter.
+   "Skanerdan keyin avtomatik Enter" (Sozlamalar > Umumiy, getScannerAutoEnter())
+   YOQILGANDA: tez yozish to'xtagandan so'ng (scanner odatda barcode'ni bir
+   necha millisekundda to'liq yuboradi) — hatto scanner o'zi Enter yubormasa
+   ham — bufer avtomatik yuboriladi.
+   O'CHIRILGANDA: mavjud (asl) xatti-harakat saqlanadi — faqat aniq Enter
+   bosilganda (yoki scannerning o'zi Enter yuborganda) ishlaydi.
+   Ikkala holatda ham wedgeShouldProcess() bir xil kodni ikki marta qayta
+   ishlanishining (masalan avtomatik Enter + scannerning o'z Enter'i bir
+   xil skanerlash uchun ketma-ket kelsa) oldini oladi — savatga qo'shish
+   logikasi ikki marta chaqirilmaydi. */
+let wedgeAutoTimer = null;
+function wedgeClearAutoTimer(){ if(wedgeAutoTimer){ clearTimeout(wedgeAutoTimer); wedgeAutoTimer=null; } }
+function wedgeSubmit(code){
+  if(!code || code.length<3) return;
+  if(!wedgeShouldProcess(code)) return;
+  if(currentPage==='sales') handleScannedCode(code);
+  else if(currentPage==='scanner'){ const mc=document.getElementById('manualCode'); if(mc){ mc.value=code; scanLookup(); } }
+}
 document.addEventListener('keydown', function(e){
   if(currentPage!=='sales' && currentPage!=='scanner') return;
   const now = Date.now();
   if(e.key==='Enter'){
+    wedgeClearAutoTimer();
     if(wedgeBuffer.length>=3 && (now-wedgeLastTime)<80){
       e.preventDefault();
-      if(currentPage==='sales') handleScannedCode(wedgeBuffer);
-      else { const mc=document.getElementById('manualCode'); if(mc){ mc.value=wedgeBuffer; scanLookup(); } }
+      wedgeSubmit(wedgeBuffer);
     }
     wedgeBuffer=''; wedgeLastTime=now; return;
   }
@@ -3960,6 +4082,17 @@ document.addEventListener('keydown', function(e){
     if(now-wedgeLastTime>80){ wedgeBuffer=''; }
     wedgeBuffer += e.key;
     wedgeLastTime = now;
+    if(getScannerAutoEnter()){
+      wedgeClearAutoTimer();
+      const bufAtSchedule = wedgeBuffer;
+      wedgeAutoTimer = setTimeout(function(){
+        wedgeAutoTimer = null;
+        if(wedgeBuffer===bufAtSchedule && wedgeBuffer.length>=3){
+          wedgeSubmit(wedgeBuffer);
+          wedgeBuffer='';
+        }
+      }, 100);
+    }
   }
 });
 
@@ -5183,6 +5316,10 @@ function renderTovarlar(){
   return `
   <div class="page-head">
     <div><h1>Tovarlar</h1><p>Do'konda sotuvga chiqarilgan mahsulotlar</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline compact-action-btn" onclick="dkDownloadExcelTemplate()">${icon('download')} Excel shablonini yuklab olish</button>
+      <button class="btn btn-primary compact-action-btn" onclick="dkOpenExcelImportModal()">${icon('file-spreadsheet')} Excel orqali import</button>
+    </div>
   </div>
   <div class="card" style="margin-bottom:14px;">
     <div class="section-title">Mahsulot qidirish (nomi, SKU, shtrix-kod yoki QR kod)</div>
@@ -5506,6 +5643,7 @@ function saveCustomer(id){
 function openCustomerProfile(id){
   const c = DB.customers.find(x=>x.id===id);
   const status = c.debtTotal===0?['Qarzi yo\'q','green']:(c.dueDate&&c.dueDate<todayISO()?['Muddati o\'tgan','red']:(c.dueDate&&daysBetween(todayISO(),c.dueDate)<=2?['Muddati yaqin','yellow']:['Faol','green']));
+  const custSales = DB.sales.filter(s=>s.customerId===c.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
   openModal(`
     <div class="modal-head"><h3>Mijoz profili</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
     <div class="modal-body">
@@ -5524,12 +5662,26 @@ function openCustomerProfile(id){
         <div class="card" style="padding:12px;"><div class="stat-label">Muddat</div><div class="stat-value" style="font-size:17px;">${c.dueDate||'—'}</div></div>
       </div>
       <div class="section-title">Qarz tarixi</div>
-      <div style="max-height:200px;overflow:auto;">
+      <div style="max-height:180px;overflow:auto;margin-bottom:16px;">
         ${c.history.length? c.history.map(h=>`
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
             <div><span class="badge badge-${h.type==='qarz'?'red':'green'}">${h.type==='qarz'?'Qarz':'To\'lov'}</span> ${h.note||''}</div>
             <div class="cell-mono">${h.type==='qarz'?'+':'−'}${fmtNum(h.amount)}</div>
           </div>`).join('') : `<div class="empty-state">${icon('inbox')}<div>Tarix yo'q</div></div>`}
+      </div>
+      <div class="section-title">Xaridlar tarixi (cheklar)</div>
+      <div style="max-height:220px;overflow:auto;">
+        ${custSales.length? custSales.map(s=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="closeModal();openReceiptModal('${s.id}')">
+            <div>
+              <div class="cell-strong" style="font-size:12.5px;">Chek #${s.checkNo}${s.status==='bekor qilingan'?' <span class="badge badge-red" style="margin-left:4px;">Bekor qilingan</span>':''}</div>
+              <div style="font-size:11px;color:var(--text-faint);">${new Date(s.date).toLocaleString('uz-UZ')} · ${methodLabel(s.paymentType)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="cell-mono cell-strong">${fmtNum(s.total)}</span>
+              ${icon('chevron-right')}
+            </div>
+          </div>`).join('') : `<div class="empty-state">${icon('receipt')}<div>Xarid tarixi yo'q</div></div>`}
       </div>
     </div>
     <div class="modal-foot">
@@ -5559,14 +5711,17 @@ function renderDebts(){
       ${withDebt.length? withDebt.map(c=>{
         const status = c.dueDate&&c.dueDate<todayISO()?['Muddati o\'tgan','red']:(c.dueDate&&daysBetween(todayISO(),c.dueDate)<=2?['Muddati yaqin','yellow']:['Faol','green']);
         const pct = Math.min(100,Math.round(c.paid/(c.debtTotal+c.paid||1)*100));
-        return `<tr>
+        return `<tr style="cursor:pointer;" onclick="openCustomerProfile('${c.id}')">
           <td data-label="Mijoz"><div style="display:flex;align-items:center;gap:10px;"><div class="thumb" style="border-radius:50%;">${initials(c.name)}</div><span class="cell-strong">${c.name}</span></div></td>
           <td data-label="Jami" class="cell-mono">${fmtNum(c.debtTotal+c.paid)}</td>
           <td data-label="To'langan"><div class="debt-progress" style="margin-bottom:4px;"><span style="width:${pct}%"></span></div><span class="cell-mono" style="font-size:11px;">${fmtNum(c.paid)}</span></td>
           <td data-label="Qolgan" class="cell-mono cell-strong">${fmtNum(c.debtTotal)}</td>
           <td data-label="Muddat">${c.dueDate||'—'}</td>
           <td data-label="Holat"><span class="badge badge-${status[1]}">${status[0]}</span></td>
-          <td data-label=""><button class="btn btn-sm btn-primary" onclick="openDebtPayModal('${c.id}')">To'lov</button></td>
+          <td data-label="" onclick="event.stopPropagation()"><div class="row-actions">
+            <button class="btn-ghost" onclick="openCustomerProfile('${c.id}')">${icon('eye')}</button>
+            <button class="btn btn-sm btn-primary" onclick="openDebtPayModal('${c.id}')">To'lov</button>
+          </div></td>
         </tr>`;
       }).join('') : emptyRow(7,"Qarzdor mijozlar yo'q")}
     </tbody>
@@ -6559,6 +6714,14 @@ function renderSettings(){
       <div class="field"><label>Manzil</label><input value="Toshkent sh., Chilonzor tumani" disabled></div>
       <div class="field"><label>Asosiy valyuta</label><input value="UZS (so'm)" disabled></div>
       <div class="alert alert-info" style="margin-top:6px;">${icon('info')}<span>To'liq sozlamalar keyingi bosqichda backend bilan ulanadi</span></div>
+    </div>
+    <div class="card" style="max-width:520px;margin-top:16px;">
+      <div class="section-title">Barkod skaner (USB / Bluetooth)</div>
+      <label class="check-line"><input type="checkbox" id="scannerAutoEnterChk" ${getScannerAutoEnter()?'checked':''} onchange="onScannerAutoEnterToggle(this.checked)"> Skanerdan keyin avtomatik Enter</label>
+      <div style="font-size:11.5px;color:var(--text-faint);margin-top:6px;line-height:1.6;">
+        Yoqilganda, USB/Bluetooth skaner barkodni yozgach — Enter kutmasdan — mahsulot avtomatik qidiriladi va Savatga qo'shiladi.<br>
+        O'chirilganda, skaner (yoki foydalanuvchi) Enter bosgandan keyingina qidiruv amalga oshadi.
+      </div>
     </div>` : ''}
   ${settingsTab==='categories'? `
     <div class="card" style="max-width:560px;">
@@ -6953,7 +7116,7 @@ function renderPage(){
   document.getElementById('content').innerHTML = `<div class="page active">${RENDERERS[currentPage]()}</div>`;
   lucide.createIcons();
   if(currentPage==='dashboard') drawDashboardCharts();
-  if(currentPage==='sales'){ renderPosGrid(); renderPayTypes(); renderCart(); }
+  if(currentPage==='sales' && DB.currentShift){ renderPosGrid(); renderPayTypes(); renderCart(); }
   document.getElementById('notifDot').style.display = buildNotifications().length? 'block':'none';
 }
 
