@@ -12,34 +12,44 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   DO'KON.UZ — style.css (1-bosqichda shu yerda, keyin ajratiladi)
+   DO'KON.UZ — style.css (premium POS/SaaS design system)
    ============================================================ */
 :root{
-  --primary:#0F8B4C;
-  --primary-dark:#0B6B3A;
-  --primary-light:#E6F5EC;
-  --danger:#D6432F;
-  --danger-light:#FBEAE7;
-  --warning:#C7861B;
-  --warning-light:#FDF2E0;
-  --info:#2563A6;
-  --info-light:#E8F0F9;
-  --bg:#F3F5F4;
+  --primary:#3B82F6;
+  --primary-dark:#2563EB;
+  --primary-light:#EFF6FF;
+  --primary-rgb:59,130,246;
+  --secondary:#10B981;
+  --secondary-dark:#059669;
+  --secondary-light:#ECFDF5;
+  --secondary-rgb:16,185,129;
+  --danger:#EF4444;
+  --danger-light:#FEF2F2;
+  --warning:#F59E0B;
+  --warning-light:#FFFBEB;
+  --info:#3B82F6;
+  --info-light:#EFF6FF;
+  --bg:#F8FAFC;
   --surface:#FFFFFF;
-  --surface-2:#F8F9F8;
-  --border:#E1E5E2;
-  --text:#1B211D;
-  --text-soft:#5B655E;
-  --text-faint:#8B958E;
-  --radius-s:6px;
-  --radius-m:10px;
-  --radius-l:16px;
-  --shadow:0 1px 2px rgba(20,30,24,.06), 0 1px 1px rgba(20,30,24,.04);
-  --shadow-lift:0 8px 24px rgba(20,30,24,.12);
-  --font:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
+  --surface-2:#F1F5F9;
+  --glass:rgba(255,255,255,.7);
+  --glass-blur:12px;
+  --border:#E2E8F0;
+  --text:#1E293B;
+  --text-soft:#64748B;
+  --text-faint:#94A3B8;
+  --radius-s:8px;
+  --radius-m:12px;
+  --radius-l:20px;
+  --radius-xl:24px;
+  --shadow:0 4px 24px rgba(15,23,42,.06);
+  --shadow-md:0 8px 28px rgba(15,23,42,.09);
+  --shadow-lift:0 20px 50px rgba(15,23,42,.16);
+  --ease:cubic-bezier(.4,0,.2,1);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --mono:'IBM Plex Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -49,9 +59,20 @@ body{
   background:var(--bg);
   color:var(--text);
   font-size:14px;
-  line-height:1.45;
+  line-height:1.5;
   -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
   overflow-x:hidden;
+  position:relative;
+}
+/* Frosted Bento Grid — soft blurred color blobs behind the glass surfaces */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(560px circle at 12% 8%, rgba(var(--primary-rgb),.14), transparent 60%),
+    radial-gradient(620px circle at 92% 18%, rgba(var(--secondary-rgb),.13), transparent 60%),
+    radial-gradient(680px circle at 30% 92%, rgba(var(--primary-rgb),.10), transparent 60%),
+    radial-gradient(500px circle at 80% 85%, rgba(var(--secondary-rgb),.09), transparent 60%);
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
 button{cursor:pointer;border:none;background:none;}
@@ -59,100 +80,130 @@ a{color:inherit;text-decoration:none;}
 ul{list-style:none;}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px;}
 .field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{outline:none;}
-svg.icon{width:18px;height:18px;stroke-width:2;flex-shrink:0;}
+svg.icon{width:18px;height:18px;stroke-width:1.9;flex-shrink:0;}
 ::-webkit-scrollbar{width:8px;height:8px;}
-::-webkit-scrollbar-thumb{background:#D3D8D4;border-radius:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#CFD8D2;border-radius:8px;}
+::-webkit-scrollbar-thumb:hover{background:#B9C5BE;}
 
 /* ---------- App shell ---------- */
 #app{display:flex;min-height:100vh;}
 
 /* Sidebar */
 #sidebar{
-  width:248px;flex-shrink:0;background:#12241A;color:#DCE7DF;
+  width:252px;flex-shrink:0;
+  background:linear-gradient(190deg,#0F172A 0%,#0B1220 65%,#0A0F1C 100%);
+  color:#DCE5F5;
   display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;
-  z-index:40;transition:transform .25s ease;
+  z-index:40;transition:transform .25s var(--ease);
+  box-shadow:1px 0 0 rgba(255,255,255,.03) inset;
 }
-.brand{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
-.brand .mark{width:34px;height:34px;border-radius:9px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;}
+.brand{display:flex;align-items:center;gap:11px;padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.07);}
+.brand .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(155deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.25);}
 .brand .name{font-weight:800;font-size:16px;letter-spacing:.2px;color:#fff;}
-.brand .sub{font-size:11px;color:#8EA598;}
-nav.menu{flex:1;overflow-y:auto;padding:12px 10px;}
+.brand .sub{font-size:11px;color:#7C8AAE;margin-top:1px;}
+nav.menu{flex:1;overflow-y:auto;padding:14px 12px;}
 .menu-item{
-  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--radius-s);
-  color:#B9C9BF;font-weight:600;font-size:13.5px;cursor:pointer;margin-bottom:2px;transition:.15s;
+  display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:10px;
+  color:#A9B7D1;font-weight:600;font-size:13.5px;cursor:pointer;margin-bottom:3px;
+  transition:background .15s var(--ease),color .15s var(--ease);
   position:relative;
 }
-.menu-item svg{width:17px;height:17px;opacity:.85;}
-.menu-item:hover{background:rgba(255,255,255,.06);color:#fff;}
-.menu-item.active{background:var(--primary);color:#fff;}
+.menu-item svg{width:17px;height:17px;opacity:.85;transition:opacity .15s var(--ease);}
+.menu-item:hover{background:rgba(255,255,255,.055);color:#fff;}
+.menu-item:hover svg{opacity:1;}
+.menu-item.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.35);}
+.menu-item.active svg{opacity:1;}
 .menu-item .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:20px;}
 .menu-hidden{display:none !important;}
-.sidebar-foot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#7D9587;}
+.sidebar-foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#5B6884;}
 
 /* Main */
-#main{flex:1;margin-left:248px;display:flex;flex-direction:column;min-height:100vh;min-width:0;}
+#main{flex:1;margin-left:252px;display:flex;flex-direction:column;min-height:100vh;min-width:0;}
 header.topbar{
-  height:64px;background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:30;
+  height:66px;background:var(--glass);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+  border-bottom:1px solid rgba(226,232,240,.7);
+  display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:30;
 }
 .burger{display:none;}
 .search-box{
-  flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--surface-2);
-  border:1px solid var(--border);border-radius:var(--radius-m);padding:8px 12px;
+  flex:1;max-width:420px;display:flex;align-items:center;gap:9px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:var(--radius-m);padding:9px 13px;
+  transition:border-color .15s var(--ease),box-shadow .15s var(--ease);
 }
+.search-box:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.1);background:var(--surface);}
 .search-box input{flex:1;background:transparent;border:none;outline:none;}
 .search-box svg{width:16px;height:16px;color:var(--text-faint);}
 #searchResults{
-  position:absolute;top:56px;left:22px;width:420px;max-height:360px;overflow:auto;background:var(--surface);
-  border:1px solid var(--border);border-radius:var(--radius-m);box-shadow:var(--shadow-lift);display:none;z-index:50;
+  position:absolute;top:58px;left:22px;width:420px;max-height:360px;overflow:auto;background:var(--glass);
+  backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+  border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-m);box-shadow:var(--shadow-lift);display:none;z-index:50;
 }
-#searchResults .sr-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
+#searchResults .sr-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease);}
 #searchResults .sr-item:hover{background:var(--surface-2);}
 #searchResults .sr-title{font-weight:700;font-size:13px;}
 #searchResults .sr-sub{font-size:11.5px;color:var(--text-soft);}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
-.role-switch{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-m);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.role-switch{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);padding:7px 11px;border-radius:var(--radius-m);}
 .role-switch select{background:transparent;border:none;outline:none;font-weight:700;font-size:12.5px;}
-.icon-btn{position:relative;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);}
-.icon-btn:hover{background:var(--border);}
+.icon-btn{position:relative;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);transition:background .15s var(--ease),border-color .15s var(--ease);}
+.icon-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);}
 .dot{position:absolute;top:6px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);}
-.avatar{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;}
-#notifPanel{position:absolute;top:56px;right:22px;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);box-shadow:var(--shadow-lift);display:none;z-index:50;overflow:hidden;}
-#notifPanel .np-head{padding:12px 14px;font-weight:800;border-bottom:1px solid var(--border);font-size:13px;}
-#notifPanel .np-item{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12.5px;display:flex;gap:9px;align-items:flex-start;}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(155deg,var(--primary),var(--primary-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 3px 8px rgba(59,130,246,.3);}
+#notifPanel{position:absolute;top:58px;right:22px;width:320px;background:var(--glass);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-m);box-shadow:var(--shadow-lift);display:none;z-index:50;overflow:hidden;}
+#notifPanel .np-head{padding:13px 15px;font-weight:800;border-bottom:1px solid var(--border);font-size:13px;}
+#notifPanel .np-item{padding:11px 15px;border-bottom:1px solid var(--border);font-size:12.5px;display:flex;gap:9px;align-items:flex-start;transition:background .12s var(--ease);}
+#notifPanel .np-item:hover{background:var(--surface-2);}
 #notifPanel .np-item:last-child{border-bottom:none;}
 .np-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
 
-main.content{padding:22px;flex:1;}
+main.content{padding:24px;flex:1;}
 .page{display:none;}
-.page.active{display:block;animation:fadein .18s ease;}
-@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page.active{display:block;animation:fadein .35s var(--ease);}
+@keyframes fadein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.page.active .card,.page.active .table-card,.page.active .dash-hero{animation:fadein .45s var(--ease) backwards;}
+.page.active .grid > *:nth-child(1){animation-delay:.02s;}
+.page.active .grid > *:nth-child(2){animation-delay:.06s;}
+.page.active .grid > *:nth-child(3){animation-delay:.10s;}
+.page.active .grid > *:nth-child(4){animation-delay:.14s;}
 
-.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
-.page-head h1{font-size:21px;font-weight:800;}
-.page-head p{font-size:12.5px;color:var(--text-soft);margin-top:2px;}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.page-head h1{font-size:21px;font-weight:800;letter-spacing:-.2px;}
+.page-head p{font-size:12.5px;color:var(--text-soft);margin-top:3px;}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:var(--radius-s);font-weight:700;font-size:13px;transition:.15s;white-space:nowrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:var(--radius-s);font-weight:700;font-size:13px;transition:background .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease),transform .1s var(--ease);white-space:nowrap;}
 .btn svg{width:16px;height:16px;}
-.btn-primary{background:var(--primary);color:#fff;}
-.btn-primary:hover{background:var(--primary-dark);}
-.btn-outline{background:var(--surface);border:1px solid var(--border);color:var(--text);}
-.btn-outline:hover{background:var(--surface-2);}
-.btn-danger{background:var(--danger);color:#fff;}
-.btn-danger:hover{background:#B93524;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(59,130,246,.25);}
+.btn-primary:hover{background:var(--primary-dark);box-shadow:0 6px 16px rgba(59,130,246,.35);transform:translateY(-1px);}
+.btn-outline{background:rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{background:var(--surface);border-color:#CBD5E1;}
+.btn-danger{background:var(--danger);color:#fff;box-shadow:0 2px 6px rgba(239,68,68,.25);}
+.btn-danger:hover{background:#DC2626;}
 .btn-ghost{background:transparent;color:var(--text-soft);padding:6px 8px;}
-.btn-ghost:hover{color:var(--text);background:var(--surface-2);border-radius:var(--radius-s);}
-.btn-sm{padding:6px 10px;font-size:12px;}
+.btn-ghost:hover{color:var(--text);background:var(--surface-2);border-radius:8px;}
+.btn-sm{padding:7px 11px;font-size:12px;}
 .btn-block{width:100%;justify-content:center;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
 
-/* Cards / Grid */
-.grid{display:grid;gap:16px;}
+/* Cards / Grid — Frosted Bento */
+.grid{display:grid;gap:20px;}
 .grid-4{grid-template-columns:repeat(4,1fr);}
 .grid-3{grid-template-columns:repeat(3,1fr);}
 .grid-2{grid-template-columns:repeat(2,1fr);}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:18px;}
+.grid-main-side{grid-template-columns:2fr 1fr;}
+.card{
+  background:var(--glass);
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+  border:1px solid rgba(255,255,255,.6);
+  border-radius:var(--radius-l);padding:24px;box-shadow:var(--shadow);
+  transition:transform .2s var(--ease),box-shadow .2s var(--ease);
+}
+/* Hover/lift faqat bosiladigan (interaktiv) kartochkalarda — statik KPI/info
+   kartochkalarda hover effekti ishlatilmaydi. */
+.card[onclick]:hover,.card.is-clickable:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);cursor:pointer;}
 .stat-card{display:flex;flex-direction:column;gap:8px;}
 .stat-top{display:flex;align-items:center;justify-content:space-between;}
 .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
@@ -164,20 +215,23 @@ main.content{padding:22px;flex:1;}
 
 /* Dashboard stat kartochkalari — faqat Dashboard uchun scoped, .grid-4/.grid-3/.grid-2'ga tegmaydi */
 .dashboard-stats{grid-template-columns:repeat(4,1fr);}
-.stat-card{padding:14px;gap:6px;min-width:0;transition:.15s;}
-.stat-card[onclick]:hover{border-color:var(--primary);box-shadow:var(--shadow);}
+.stat-card{padding:16px;gap:7px;min-width:0;border-radius:var(--radius-l);transition:border-color .2s var(--ease),box-shadow .2s var(--ease),transform .2s var(--ease);}
+.stat-card[onclick]{cursor:pointer;}
+.stat-card[onclick]:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-4px);}
 .stat-top{min-width:0;}
-.stat-icon{width:32px;height:32px;border-radius:9px;flex-shrink:0;}
+.stat-icon{width:34px;height:34px;border-radius:10px;flex-shrink:0;}
 .stat-icon svg.icon{width:16px;height:16px;}
 .stat-label{font-size:11px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.stat-value{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.stat-delta{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-value{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-delta{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 7px;border-radius:20px;background:var(--surface-2);}
+.stat-delta.up{background:var(--primary-light);}
+.stat-delta.down{background:var(--danger-light);}
 @media(max-width:1180px){
   .dashboard-stats{grid-template-columns:repeat(3,1fr);}
 }
 @media(max-width:640px){
   .dashboard-stats{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .stat-card{padding:11px;gap:4px;}
+  .stat-card{padding:12px;gap:5px;}
   .stat-icon{width:28px;height:28px;border-radius:8px;}
   .stat-icon svg.icon{width:14px;height:14px;}
   .stat-value{font-size:15.5px;}
@@ -192,32 +246,33 @@ main.content{padding:22px;flex:1;}
 /* ---------- Dashboard hero KPI band (Square/Shopify/Loyverse style:
    one prominent "today" number + compact secondary KPIs in one strip,
    instead of many equal-weight colored cards) ---------- */
-.dash-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:22px 26px;display:flex;align-items:stretch;gap:30px;flex-wrap:wrap;}
+.dash-hero{background:var(--glass);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-l);padding:24px 28px;display:flex;align-items:stretch;gap:32px;flex-wrap:wrap;box-shadow:var(--shadow);transition:transform .2s var(--ease),box-shadow .2s var(--ease);}
+.dash-hero:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
 .dash-hero-main{display:flex;flex-direction:column;justify-content:center;min-width:170px;}
-.dash-hero-label{font-size:12.5px;font-weight:700;color:var(--text-soft);margin-bottom:8px;}
-.dash-hero-value{font-size:36px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px;color:var(--text);line-height:1;}
-.dash-hero-trend{font-size:12px;font-weight:700;margin-top:10px;display:inline-flex;align-items:center;gap:4px;width:fit-content;padding:4px 10px;border-radius:20px;}
+.dash-hero-label{font-size:12.5px;font-weight:700;color:var(--text-soft);margin-bottom:9px;text-transform:uppercase;letter-spacing:.3px;}
+.dash-hero-value{font-size:37px;font-weight:800;font-family:var(--mono);letter-spacing:-.6px;color:var(--text);line-height:1;}
+.dash-hero-trend{font-size:12px;font-weight:700;margin-top:11px;display:inline-flex;align-items:center;gap:4px;width:fit-content;padding:5px 11px;border-radius:20px;}
 .dash-hero-trend.up{background:var(--primary-light);color:var(--primary-dark);}
 .dash-hero-trend.down{background:var(--danger-light);color:#8E2C1F;}
 .dash-hero-secondary{display:flex;flex:1;min-width:260px;}
-.dash-hero-mini{flex:1;padding:0 22px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:6px;}
+.dash-hero-mini{flex:1;padding:0 24px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:6px;}
 .dash-hero-mini:first-child{border-left:none;padding-left:0;}
 .dash-hero-mini-label{font-size:11px;font-weight:700;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dash-hero-mini-value{font-size:19px;font-weight:800;font-family:var(--mono);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @media(max-width:900px){
-  .dash-hero{padding:18px;gap:16px;}
+  .dash-hero{padding:20px;gap:16px;}
   .dash-hero-secondary{flex-wrap:wrap;row-gap:14px;}
   .dash-hero-mini{flex:1 1 45%;min-width:45%;border-left:none;border-top:1px solid var(--border);padding:12px 0 0;}
   .dash-hero-mini:first-child{border-top:none;padding-top:0;}
 }
 @media(max-width:480px){
-  .dash-hero-value{font-size:27px;}
+  .dash-hero-value{font-size:28px;}
 }
 
-.section-title{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.section-title{font-size:15px;font-weight:800;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;letter-spacing:-.1px;}
 .chart-wrap{position:relative;height:230px;}
 
-.alert{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border-radius:var(--radius-m);font-size:12.5px;font-weight:600;margin-bottom:8px;}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:var(--radius-m);font-size:12.5px;font-weight:600;margin-bottom:8px;}
 .alert svg{width:16px;height:16px;flex-shrink:0;margin-top:1px;}
 .alert-danger{background:var(--danger-light);color:#8E2C1F;}
 .alert-warning{background:var(--warning-light);color:#8A5F10;}
@@ -225,90 +280,114 @@ main.content{padding:22px;flex:1;}
 .alert-ok{background:var(--primary-light);color:var(--primary-dark);}
 
 /* Tables */
-.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);overflow:hidden;}
-.table-toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-.table-toolbar input[type=text],.table-toolbar select{padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface-2);min-width:140px;}
+.table-card{background:var(--glass);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-l);overflow:hidden;box-shadow:var(--shadow);}
+.table-toolbar{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.table-toolbar input[type=text],.table-toolbar select{padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface-2);min-width:140px;transition:border-color .15s var(--ease);}
+.table-toolbar input[type=text]:focus,.table-toolbar select:focus{outline:none;border-color:var(--primary);background:var(--surface);}
 .table-scroll{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;min-width:640px;}
-thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-faint);font-weight:700;padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap;}
-tbody td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);font-weight:700;padding:11px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:13px 18px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
 tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .12s var(--ease);}
 tbody tr:hover{background:var(--surface-2);}
 .cell-strong{font-weight:700;}
 .cell-mono{font-family:var(--mono);font-size:12.5px;}
 .row-actions{display:flex;gap:6px;}
-.thumb{width:34px;height:34px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--text-soft);border:1px solid var(--border);}
+.thumb{width:34px;height:34px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--text-soft);border:1px solid var(--border);}
 
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3.5px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge-green{background:var(--primary-light);color:var(--primary-dark);}
 .badge-red{background:var(--danger-light);color:#8E2C1F;}
 .badge-yellow{background:var(--warning-light);color:#8A5F10;}
 .badge-gray{background:var(--surface-2);color:var(--text-soft);border:1px solid var(--border);}
 
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(15,20,17,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(13,20,16,.52);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;transition:opacity .15s var(--ease);}
 .modal-overlay.show{display:flex;}
-.modal{background:var(--surface);border-radius:var(--radius-l);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lift);}
+.modal{background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lift);animation:modalpop .18s var(--ease);}
+@keyframes modalpop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .modal.modal-lg{max-width:760px;}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;}
-.modal-head h3{font-size:16px;font-weight:800;}
-.modal-body{padding:20px;}
-.modal-foot{padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--surface);}
-.field{margin-bottom:14px;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2;}
+.modal-head h3{font-size:16px;font-weight:800;letter-spacing:-.1px;}
+.modal-body{padding:22px;}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--surface);}
+
+.field{margin-bottom:15px;}
 .field label{display:block;font-size:12px;font-weight:700;color:var(--text-soft);margin-bottom:6px;}
 .field input,.field select,.field textarea{
-  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface);outline:none;
+  width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface);outline:none;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);
 }
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,139,76,.12);}
+.field input::placeholder,.field textarea::placeholder{color:#B7C0BA;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12);}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
 /* Toast */
 #toastWrap{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;}
-.toast{background:var(--text);color:#fff;padding:12px 16px;border-radius:var(--radius-m);font-size:13px;font-weight:600;box-shadow:var(--shadow-lift);display:flex;align-items:center;gap:9px;animation:toastin .2s ease;}
+.toast{background:#1D2721;color:#fff;padding:13px 17px;border-radius:var(--radius-m);font-size:13px;font-weight:600;box-shadow:var(--shadow-lift);display:flex;align-items:center;gap:9px;animation:toastin .2s var(--ease);}
 .toast svg{width:16px;height:16px;}
 .toast.err{background:var(--danger);}
 @keyframes toastin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* POS */
-.pos-wrap{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start;}
+.pos-wrap{display:grid;grid-template-columns:65fr 35fr;gap:18px;align-items:start;}
 .pos-search{display:flex;gap:10px;margin-bottom:14px;}
 .pos-search .search-box{max-width:none;}
 .cat-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.cat-chip{padding:7px 14px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:12.5px;font-weight:700;color:var(--text-soft);}
+.cat-chip{padding:7px 15px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:12.5px;font-weight:700;color:var(--text-soft);transition:background .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);}
 .cat-chip.active{background:var(--primary);color:#fff;border-color:var(--primary);}
 .pos-products{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.pos-pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:12px;cursor:pointer;transition:.15s;}
-.pos-pcard:hover{border-color:var(--primary);box-shadow:var(--shadow);}
-.pos-pcard .thumb{width:100%;height:64px;border-radius:8px;font-size:22px;margin-bottom:8px;}
+.pos-pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:12px;cursor:pointer;transition:border-color .15s var(--ease),box-shadow .15s var(--ease),transform .15s var(--ease);}
+.pos-pcard:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.pos-pcard .thumb{width:100%;height:64px;border-radius:9px;font-size:22px;margin-bottom:8px;}
 .pos-pcard .pname{font-weight:700;font-size:12.5px;line-height:1.3;margin-bottom:4px;min-height:32px;}
 .pos-pcard .pprice{font-family:var(--mono);font-weight:800;color:var(--primary-dark);font-size:13px;}
 .pos-pcard .pstock{font-size:10.5px;color:var(--text-faint);margin-top:2px;}
 .cart-card{position:sticky;top:80px;}
+#mobileCartBar{display:none;}
+#mobileCartBackdrop{display:none;}
 .cart-items{max-height:280px;overflow-y:auto;margin-bottom:12px;}
 .cart-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}
 .cart-item .ci-name{font-weight:700;font-size:12.5px;flex:1;}
 .cart-item .ci-price{font-size:11px;color:var(--text-soft);font-family:var(--mono);}
 .qty-box{display:flex;align-items:center;gap:6px;}
-.qty-box button{width:22px;height:22px;border:1px solid var(--border);border-radius:5px;background:var(--surface-2);font-weight:800;}
+.qty-box button{width:23px;height:23px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-weight:800;transition:background .15s var(--ease),border-color .15s var(--ease);}
+.qty-box button:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);}
 .qty-box span{min-width:18px;text-align:center;font-weight:700;font-size:12.5px;}
 .cart-empty{text-align:center;color:var(--text-faint);padding:30px 0;font-size:12.5px;}
 .cart-totals{border-top:1px dashed var(--border);padding-top:10px;margin-top:6px;}
 .ct-row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px;color:var(--text-soft);}
 .ct-row.total{font-size:17px;font-weight:800;color:var(--text);margin-top:8px;}
-/* Smena hisoboti — bitta ustunli jadval (Tip / Summa), skrolni kamaytirish uchun */
-.report-table{width:100%;border-collapse:collapse;margin-bottom:2px;}
-.report-table th{text-align:left;font-size:10.5px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;padding:6px 2px;border-bottom:1px solid var(--border);}
+/* Smena hisoboti — rasmdagi kabi zebra-jadval ko'rinishi (karta emas) */
+.shift-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.shift-report-grid>div{min-width:0;}
+.report-table-wrap{border:1px solid var(--border);border-radius:var(--radius-m);overflow:hidden;background:var(--surface);min-width:0;}
+.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:0;}
+@media(max-width:900px){
+  .shift-report-grid{display:none;}
+}
+.report-table th{text-align:left;font-size:10.5px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;background:var(--surface-2);border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.report-table th:first-child{width:38%;}
 .report-table th:last-child{text-align:right;}
-.report-table td{padding:9px 2px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text);}
-.report-table td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap;}
+.report-table td{padding:10px 10px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text);overflow-wrap:break-word;word-break:break-word;}
+.report-table td:last-child{text-align:right;font-family:var(--mono);}
+.report-table tr:nth-child(even) td{background:var(--surface-2);}
 .report-table tr:last-child td{border-bottom:none;}
-.report-table tr.report-total td{font-weight:800;border-top:2px solid var(--border);border-bottom:none;padding-top:10px;}
+.report-table .rt-count{display:block;font-size:11px;color:var(--text-faint);margin-bottom:2px;font-family:var(--mono);white-space:nowrap;}
+.report-table tr.report-total td{font-weight:800;background:var(--surface-2);border-top:1px solid var(--border);border-bottom:none;}
 .report-table tr.report-neg td:last-child{color:var(--danger);}
+/* Smena operatsiyalari — jadval emas, doim vertikal karta ro'yxati (gorizontal skrollsiz) */
+.op-list{display:flex;flex-direction:column;gap:8px;}
+.op-row{border:1px solid var(--border);border-radius:var(--radius-m);padding:11px 13px;min-width:0;transition:border-color .15s var(--ease);}
+.op-row-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.op-row-amt{font-weight:800;font-size:13.5px;white-space:nowrap;}
+.op-row-desc{font-size:12.5px;color:var(--text-soft);margin-top:6px;overflow-wrap:break-word;word-break:break-word;}
+.op-row-time{font-size:11px;color:var(--text-faint);margin-top:4px;}
 .pay-types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
-.pay-type{padding:10px 6px;border:1.5px solid var(--border);border-radius:var(--radius-m);text-align:center;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.pay-type{padding:11px 6px;border:1.5px solid var(--border);border-radius:var(--radius-m);text-align:center;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:border-color .15s var(--ease),background .15s var(--ease);}
 .pay-type svg{width:18px;height:18px;}
 .pay-type.active{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);}
-.discount-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--primary);border-radius:8px;background:var(--primary-light);color:var(--primary-dark);font-weight:800;font-size:12.5px;cursor:pointer;transition:.15s;white-space:nowrap;}
+.discount-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--primary);border-radius:9px;background:var(--primary-light);color:var(--primary-dark);font-weight:800;font-size:12.5px;cursor:pointer;transition:.15s var(--ease);white-space:nowrap;}
 .discount-btn svg{width:14px;height:14px;}
 .discount-btn:hover{background:var(--primary);color:#fff;}
 .discount-btn:active{transform:scale(.97);}
@@ -316,8 +395,8 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* QR scanner */
 .scan-box{max-width:420px;margin:0 auto;text-align:center;}
-.scan-frame{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#12241A,#1E3A29);border-radius:var(--radius-l);display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:16px;overflow:hidden;}
-.scan-frame svg{width:44%;height:44%;color:rgba(255,255,255,.35);}
+.scan-frame{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#0F2418,#1B3B27);border-radius:var(--radius-l);display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-md);}
+.scan-frame svg{width:44%;height:44%;color:rgba(255,255,255,.32);}
 /* Skanerlash hududi — kamera tasvirining markazidagi "oyna". Bu faqat vizual
    yo'l-yo'riq: haqiqiy barcode detection ButUN kadr bo'yicha ishlaydi (hech
    qanday crop qilinmaydi), shuning uchun ramka tashqarisidagi kod ham
@@ -325,7 +404,7 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-frame::after{
   content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:82%;height:60%;border-radius:16px;
-  box-shadow:0 0 0 2000px rgba(6,14,10,.55);
+  box-shadow:0 0 0 2000px rgba(5,12,9,.55);
   pointer-events:none;z-index:2;
 }
 .scan-corner{position:absolute;width:30px;height:30px;border:3.5px solid var(--primary);z-index:3;border-radius:4px;}
@@ -333,7 +412,7 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-corner.tr{top:20%;right:9%;border-left:none;border-bottom:none;border-top-right-radius:12px;}
 .scan-corner.bl{bottom:20%;left:9%;border-right:none;border-top:none;border-bottom-left-radius:12px;}
 .scan-corner.br{bottom:20%;right:9%;border-left:none;border-top:none;border-bottom-right-radius:12px;}
-.scan-line{position:absolute;left:11%;right:11%;height:2px;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:scanmove 2.2s ease-in-out infinite;z-index:3;}
+.scan-line{position:absolute;left:11%;right:11%;height:2px;background:var(--primary);box-shadow:0 0 10px var(--primary);animation:scanmove 2.2s ease-in-out infinite;z-index:3;}
 @keyframes scanmove{0%{top:22%}50%{top:78%}100%{top:22%}}
 .scan-hint{font-size:11.5px;color:var(--text-faint);margin:-6px 0 12px;}
 
@@ -343,7 +422,8 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* Tabs */
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;}
-.tab{padding:10px 16px;font-weight:700;font-size:13px;color:var(--text-soft);border-bottom:2px solid transparent;cursor:pointer;}
+.tab{padding:10px 16px;font-weight:700;font-size:13px;color:var(--text-soft);border-bottom:2px solid transparent;cursor:pointer;transition:color .15s var(--ease),border-color .15s var(--ease);}
+.tab:hover{color:var(--text);}
 .tab.active{color:var(--primary-dark);border-color:var(--primary);}
 
 /* Empty state */
@@ -352,13 +432,13 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* Role perm table */
 .perm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-.perm-col{border:1px solid var(--border);border-radius:var(--radius-m);padding:14px;}
+.perm-col{border:1px solid var(--border);border-radius:var(--radius-m);padding:15px;}
 .perm-col h4{font-size:13px;font-weight:800;margin-bottom:10px;}
 .perm-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid var(--border);}
 .perm-row:last-child{border-bottom:none;}
-.switch{width:34px;height:20px;border-radius:20px;background:var(--border);position:relative;flex-shrink:0;}
+.switch{width:34px;height:20px;border-radius:20px;background:var(--border);position:relative;flex-shrink:0;transition:background .15s var(--ease);}
 .switch.on{background:var(--primary);}
-.switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;}
+.switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.2);}
 .switch.on::after{left:16px;}
 
 /* Mobile bottom nav */
@@ -374,26 +454,46 @@ tbody tr:hover{background:var(--surface-2);}
   #sidebar{transform:translateX(-100%);}
   #sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lift);}
   #main{margin-left:0;}
-  .burger{display:flex;width:38px;height:38px;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-s);}
+  .burger{display:flex;width:38px;height:38px;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-s);transition:background .15s var(--ease);}
+  .burger:hover{background:var(--surface-2);}
   .grid-3{grid-template-columns:1fr 1fr;}
-  main.content{padding:14px;padding-bottom:84px;}
+  main.content{padding:16px;padding-bottom:88px;}
   #mobileNav{
-    display:flex;position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--surface);
+    display:flex;position:fixed;bottom:0;left:0;right:0;height:66px;background:var(--surface);
     border-top:1px solid var(--border);z-index:35;justify-content:space-around;align-items:center;
-    box-shadow:0 -4px 12px rgba(0,0,0,.06);
+    box-shadow:0 -6px 18px rgba(17,32,23,.07);
   }
-  #mobileNav .mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--text-faint);flex:1;padding:6px 0;}
+  #mobileNav .mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--text-faint);flex:1;padding:6px 0;transition:color .15s var(--ease);}
   #mobileNav .mn-item.active{color:var(--primary);}
   #mobileNav .mn-item svg{width:19px;height:19px;}
-  #mobileNav .mn-scan{position:relative;background:var(--primary);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 4px 12px rgba(15,139,76,.4);}
+  #mobileNav .mn-scan{position:relative;background:linear-gradient(155deg,var(--primary),var(--primary-dark));color:#fff;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-24px;box-shadow:0 6px 16px rgba(59,130,246,.42);}
   #mobileNav .mn-scan svg{width:24px;height:24px;}
   #mobileNav .mn-cart-badge{position:absolute;top:-3px;right:-4px;background:#E4483A;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35);border:2px solid var(--surface);}
   .search-box{display:none;}
   #searchResults{left:14px;width:calc(100% - 28px);}
   #notifPanel{right:14px;width:calc(100% - 28px);}
+  /* Savat — mobil bottom sheet: ekranni egallamaydi, pastdagi "Savat — summa"
+     tugmasi bosilganda panel sifatida ko'tariladi. */
+  .pos-wrap .cart-card{
+    position:fixed;left:0;right:0;bottom:0;z-index:46;
+    max-height:78vh;overflow-y:auto;border-radius:20px 20px 0 0;
+    transform:translateY(110%);transition:transform .25s var(--ease);
+    box-shadow:0 -12px 40px rgba(15,23,42,.2);margin:0;
+  }
+  .pos-wrap .cart-card.mobile-sheet-open{transform:translateY(0);}
+  #mobileCartBar{
+    display:flex;position:fixed;left:12px;right:12px;bottom:78px;z-index:44;
+    background:var(--primary);color:#fff;border-radius:16px;padding:13px 18px;
+    align-items:center;justify-content:space-between;font-weight:700;font-size:13.5px;
+    box-shadow:0 10px 26px rgba(59,130,246,.4);cursor:pointer;
+  }
+  #mobileCartBackdrop{
+    position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:44;
+  }
+  #mobileCartBackdrop.show{display:block;}
 }
 @media(max-width:640px){
-  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}
+  .grid-4,.grid-3,.grid-2,.grid-main-side{grid-template-columns:1fr;}
   .pos-products{grid-template-columns:repeat(2,1fr);}
   .field-row{grid-template-columns:1fr;}
   .pay-types{grid-template-columns:1fr;}
@@ -422,13 +522,13 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-success-popup{
   position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);
   width:min(300px,82vw);min-height:250px;
-  background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.22);
+  background:#fff;border-radius:var(--radius-xl);box-shadow:0 20px 60px rgba(0,0,0,.25);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
   padding:20px 16px;box-sizing:border-box;z-index:9999;pointer-events:none;
-  opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease;
+  opacity:0;visibility:hidden;transition:opacity .18s var(--ease),transform .18s var(--ease);
 }
 .scan-success-popup.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
-.scan-success-img{width:140px;height:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:64px;border-radius:16px;background:var(--surface-2);overflow:hidden;}
+.scan-success-img{width:140px;height:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:64px;border-radius:var(--radius-l);background:var(--surface-2);overflow:hidden;}
 .scan-success-img img{width:100%;height:100%;object-fit:contain;}
 .scan-success-name{font-weight:800;font-size:15px;text-align:center;color:var(--text);line-height:1.25;}
 .scan-success-price{font-size:14px;font-weight:700;color:var(--primary);}
@@ -445,7 +545,7 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-frame video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--radius-l);z-index:1;}
 .scan-frame canvas{display:none;}
 #scanPlaceholder{display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;z-index:0;}
-.qty-box input[type=number]{width:56px;text-align:center;border:1px solid var(--border);border-radius:5px;padding:3px 2px;background:var(--surface);}
+.qty-box input[type=number]{width:56px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px 2px;background:var(--surface);}
 .pay-types{grid-template-columns:repeat(2,1fr);}
 .unit-tag{font-size:10.5px;font-weight:700;color:var(--text-faint);}
 .check-line{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--text-soft);cursor:pointer;}
@@ -454,7 +554,7 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-btn-lg{white-space:nowrap;font-weight:800;}
 @media (max-width:900px){
   .scan-btn-lg{padding:12px 16px;font-size:14px;}
-  #completeSaleBtn{position:sticky;bottom:8px;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+  #completeSaleBtn{position:sticky;bottom:8px;z-index:5;box-shadow:0 6px 18px rgba(17,32,23,.16);}
   .pay-types{grid-template-columns:repeat(2,1fr);}
 }
 
@@ -467,7 +567,7 @@ tbody tr:hover{background:var(--surface-2);}
 .compact-action-btn{white-space:nowrap;}
 .wh-stats-desktop{margin-bottom:16px;}
 
-.mobile-product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:10px 12px;display:flex;flex-direction:column;gap:4px;}
+.mobile-product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:11px 13px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s var(--ease);}
 .mobile-product-main{display:flex;align-items:center;gap:9px;}
 .mobile-product-main .thumb{width:36px;height:36px;font-size:17px;flex-shrink:0;}
 .mobile-product-name{font-weight:800;font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -481,14 +581,14 @@ tbody tr:hover{background:var(--surface-2);}
 .mobile-product-actions button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0;}
 .mobile-product-actions svg{width:15px;height:15px;}
 
-.mobile-stock-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:8px 12px;display:flex;flex-direction:column;gap:3px;}
+.mobile-stock-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:9px 13px;display:flex;flex-direction:column;gap:3px;}
 .mobile-stock-top{display:flex;align-items:center;gap:8px;}
 .mobile-stock-top .thumb{width:28px;height:28px;font-size:14px;flex-shrink:0;}
 .mobile-stock-name{font-weight:800;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mobile-stock-qty{font-weight:800;font-size:12px;font-family:var(--mono);white-space:nowrap;}
 .mobile-stock-row2{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:10px;color:var(--text-faint);padding-left:36px;}
 
-.mobile-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:9px 11px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:65px;}
+.mobile-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:65px;}
 .mobile-stat-box .msb-label{font-size:9.5px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.2px;}
 .mobile-stat-box .msb-val{font-size:14.5px;font-weight:800;font-family:var(--mono);}
 
@@ -499,8 +599,8 @@ tbody tr:hover{background:var(--surface-2);}
 .pd-row span:last-child{font-weight:700;text-align:right;}
 
 @media(max-width:640px){
-  #productsTable,#warehouseStockTable,.wh-stats-desktop{display:none;}
-  .mobile-product-list,.mobile-stock-list{display:flex;flex-direction:column;gap:7px;padding:8px;}
+  #productsTable,#warehouseStockTable,#ppTable,.wh-stats-desktop{display:none;}
+  .mobile-product-list,.mobile-stock-list{display:flex;flex-direction:column;gap:8px;padding:8px;}
   .mobile-stock-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
   .compact-action-btn{padding:8px 11px;font-size:11.5px;}
   .compact-action-btn svg{width:14px;height:14px;}
@@ -514,7 +614,7 @@ tbody tr:hover{background:var(--surface-2);}
    Desktopda (>640px) bu klass ko'rinmaydi, asl <table> o'zgarishsiz qoladi.
    ===================================================================== */
 .compact-op-list{display:none;}
-.compact-op-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+.compact-op-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:9px 11px;display:flex;flex-direction:column;gap:4px;}
 .compact-op-top{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--text-faint);font-weight:700;}
 .compact-op-top .cop-date{white-space:nowrap;}
 .compact-op-top .cop-check{font-family:var(--mono);white-space:nowrap;}
@@ -530,7 +630,7 @@ tbody tr:hover{background:var(--surface-2);}
 .compact-op-cancel svg{width:14px;height:14px;}
 @media(max-width:640px){
   #returnsTable,#cashReturnsTable{display:none;}
-  .compact-op-list{display:flex;flex-direction:column;gap:7px;}
+  .compact-op-list{display:flex;flex-direction:column;gap:8px;}
 }
 
 /* ================================================================
@@ -541,31 +641,32 @@ tbody tr:hover{background:var(--surface-2);}
 .dk-search-row input{flex:1;min-width:180px;}
 .dk-search-modern{align-items:stretch;}
 .dk-search-input-wrap{position:relative;flex:1;min-width:180px;display:flex;align-items:center;}
-.dk-search-input-wrap .dk-search-icon{position:absolute;left:12px;width:15px;height:15px;color:var(--text-faint,#7D9587);pointer-events:none;}
-.dk-search-input-wrap input{width:100%;box-sizing:border-box;padding:10px 34px;border:1.5px solid var(--border,#E1E5E2);border-radius:14px;font-size:13px;background:#fff;transition:border-color .15s ease,box-shadow .15s ease;}
-.dk-search-input-wrap input:focus{outline:none;border-color:var(--primary,#0F8B4C);box-shadow:0 0 0 3px rgba(15,139,76,.12);}
-.dk-search-clear{position:absolute;right:7px;width:22px;height:22px;border:none;background:#EEF1EF;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-faint,#7D9587);padding:0;}
+.dk-search-input-wrap .dk-search-icon{position:absolute;left:12px;width:15px;height:15px;color:var(--text-faint,#8B958E);pointer-events:none;}
+.dk-search-input-wrap input{width:100%;box-sizing:border-box;padding:10px 34px;border:1.5px solid var(--border,#E5E9E6);border-radius:14px;font-size:13px;background:#fff;transition:border-color .15s ease,box-shadow .15s ease;}
+.dk-search-input-wrap input:focus{outline:none;border-color:var(--primary,#3B82F6);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+.dk-search-clear{position:absolute;right:7px;width:22px;height:22px;border:none;background:#EEF1EF;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-faint,#8B958E);padding:0;transition:background .15s ease;}
+.dk-search-clear:hover{background:#E2E7E3;}
 .dk-search-clear svg{width:12px;height:12px;}
-.dk-search-count{font-size:12px;color:var(--text-faint,#7D9587);font-weight:700;margin:0 0 8px 2px;}
+.dk-search-count{font-size:12px;color:var(--text-faint,#8B958E);font-weight:700;margin:0 0 8px 2px;}
 .dk-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
-.dk-filter-row select{flex:1;min-width:150px;padding:9px 12px;border:1.5px solid var(--border,#E1E5E2);border-radius:12px;font-size:12.5px;background:#fff;color:var(--text-soft);}
+.dk-filter-row select{flex:1;min-width:150px;padding:9px 12px;border:1.5px solid var(--border,#E5E9E6);border-radius:12px;font-size:12.5px;background:#fff;color:var(--text-soft);}
 .dk-chip-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
-.dk-chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--border,#E1E5E2);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-soft);white-space:nowrap;}
-.dk-chip.active{background:var(--primary,#0F8B4C);border-color:var(--primary,#0F8B4C);color:#fff;}
-.dk-manage-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #EEF1EF;border-radius:12px;margin-bottom:7px;}
+.dk-chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border,#E5E9E6);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-soft);white-space:nowrap;transition:background .15s ease,color .15s ease,border-color .15s ease;}
+.dk-chip.active{background:var(--primary,#3B82F6);border-color:var(--primary,#3B82F6);color:#fff;}
+.dk-manage-row{display:flex;align-items:center;gap:10px;padding:10px 13px;border:1px solid var(--border,#E5E9E6);border-radius:12px;margin-bottom:7px;transition:border-color .15s ease;}
 .dk-manage-row .dk-manage-name{flex:1;font-weight:700;font-size:13px;}
-.dk-manage-row .dk-manage-count{font-size:11px;color:var(--text-faint,#7D9587);}
-.dk-cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.dk-manage-row .dk-manage-count{font-size:11px;color:var(--text-faint,#8B958E);}
+.dk-cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
 @media(min-width:641px){
   .dk-cat-grid{grid-template-columns:repeat(6,1fr);}
 }
 @media(min-width:1025px){
   .dk-cat-grid{grid-template-columns:repeat(8,1fr);}
 }
-.dk-cat-card{background:#fff;border:1px solid #EEF1EF;border-radius:16px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;text-align:center;transition:transform .15s ease,box-shadow .15s ease;}
-.dk-cat-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(18,36,26,.08);}
-.dk-cat-add{border:2px dashed #D8E3DC;background:transparent;color:var(--text-faint,#7D9587);justify-content:center;min-height:96px;}
-.dk-cat-icon{width:50px;height:50px;border-radius:14px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
+.dk-cat-card{background:#fff;border:1px solid var(--border,#E5E9E6);border-radius:16px;padding:13px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;text-align:center;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+.dk-cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(17,32,23,.09);border-color:#D4DCD7;}
+.dk-cat-add{border:2px dashed #D8E3DC;background:transparent;color:var(--text-faint,#8B958E);justify-content:center;min-height:96px;}
+.dk-cat-icon{width:50px;height:50px;border-radius:14px;background:var(--surface-2,#F7F9F8);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
 .dk-cat-icon img{width:100%;height:100%;object-fit:cover;border-radius:14px;}
 .dk-cat-name{font-size:11.5px;font-weight:700;line-height:1.25;word-break:break-word;}
 @media(max-width:430px){
@@ -578,9 +679,9 @@ tbody tr:hover{background:var(--surface-2);}
    ko'payadi — lekin mahsulot kartasi kategoriya kartasidan ixchamroq
    bo'lgani uchun bir oz kamroq ustunda, shunda kartalar haddan tashqari
    kichrayib ketmaydi. Kategoriya gridi bundan mustaqil va o'zgarishsiz. */
-.dk-prod-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;box-sizing:border-box;}
+.dk-prod-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;box-sizing:border-box;}
 @media(min-width:641px){
-  .dk-prod-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+  .dk-prod-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
 }
 @media(min-width:1025px){
   .dk-prod-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}
@@ -588,25 +689,25 @@ tbody tr:hover{background:var(--surface-2);}
 @media(min-width:1441px){
   .dk-prod-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;}
 }
-.dk-prod-card{position:relative;background:#fff;border:1px solid #EEF1EF;border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-.dk-prod-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(18,36,26,.08);}
-.dk-prod-img{position:relative;width:100%;aspect-ratio:4/3;border-radius:7px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;box-sizing:border-box;padding:3px;}
+.dk-prod-card{position:relative;background:#fff;border:1px solid var(--border,#E5E9E6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+.dk-prod-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(17,32,23,.09);border-color:#D4DCD7;}
+.dk-prod-img{position:relative;width:100%;aspect-ratio:4/3;border-radius:8px;background:var(--surface-2,#F7F9F8);display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;box-sizing:border-box;padding:3px;}
 .dk-prod-img img{width:100%;height:100%;object-fit:contain;object-position:center;}
-.dk-qr-badge{position:absolute;bottom:3px;right:3px;background:rgba(255,255,255,.92);border-radius:5px;padding:2px;display:flex;align-items:center;justify-content:center;line-height:0;}
-.dk-qr-badge svg{width:10px;height:10px;color:var(--primary,#0F8B4C);}
+.dk-qr-badge{position:absolute;bottom:3px;right:3px;background:rgba(255,255,255,.94);border-radius:6px;padding:2px;display:flex;align-items:center;justify-content:center;line-height:0;box-shadow:0 1px 3px rgba(17,32,23,.12);}
+.dk-qr-badge svg{width:10px;height:10px;color:var(--primary,#3B82F6);}
 .dk-prod-name{font-size:10.5px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;min-height:2.2em;}
-.dk-prod-meta{font-size:9px;color:var(--text-faint,#7D9587);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dk-prod-sale-btn{margin-top:2px;width:100%;border:none;border-radius:7px;padding:4px 2px;font-size:8.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;background:var(--primary,#0F8B4C);color:#fff;box-sizing:border-box;}
+.dk-prod-meta{font-size:9px;color:var(--text-faint,#8B958E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dk-prod-sale-btn{margin-top:2px;width:100%;border:none;border-radius:8px;padding:4px 2px;font-size:8.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;background:var(--primary,#3B82F6);color:#fff;box-sizing:border-box;transition:background .15s ease;}
 .dk-prod-sale-btn svg{width:10px;height:10px;}
-.dk-prod-sale-btn.active{background:var(--primary-light,#E3F3E8);color:var(--primary-dark,#0F8B4C);cursor:default;}
+.dk-prod-sale-btn.active{background:var(--primary-light,#EFF6FF);color:var(--primary-dark,#2563EB);cursor:default;}
 .dk-prod-disabled{opacity:.5;cursor:not-allowed;}
 .dk-prod-disabled:hover{transform:none;box-shadow:none;}
 .dk-prod-actions{position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:2;}
-.dk-prod-actions .btn-ghost{background:rgba(255,255,255,.9);width:21px;height:21px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;}
+.dk-prod-actions .btn-ghost{background:rgba(255,255,255,.92);width:21px;height:21px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;}
 .dk-prod-actions .btn-ghost svg{width:11px;height:11px;}
 .dk-scan-btn{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:40px;padding:0;border-radius:14px;}
 @media(max-width:640px){
-  .dk-prod-card{padding:4px;border-radius:10px;gap:3px;}
+  .dk-prod-card{padding:5px;border-radius:10px;gap:3px;}
   .dk-prod-img{padding:3px;border-radius:7px;}
   .dk-prod-name{font-size:10.5px;line-height:1.15;min-height:2.1em;}
   .dk-prod-meta{font-size:8.5px;}
@@ -614,14 +715,14 @@ tbody tr:hover{background:var(--surface-2);}
 .dk-barcode-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
 .dk-barcode-row input{flex:1;}
 /* "Mahsulot haqida" — QR-kod va Shtrix-kod bloklari bir xil o'lcham/uslubda ko'rinishi uchun */
-.dk-code-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;min-height:250px;padding:14px;background:#F3F7F4;border-radius:20px;text-align:center;overflow:hidden;box-sizing:border-box;}
+.dk-code-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;min-height:250px;padding:14px;background:var(--surface-2,#F7F9F8);border-radius:20px;text-align:center;overflow:hidden;box-sizing:border-box;}
 .dk-code-box-svg{width:85%;max-width:420px;height:auto;}
 .dk-img-upload{display:flex;align-items:center;gap:10px;}
-.dk-img-preview{width:56px;height:56px;border-radius:12px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
+.dk-img-preview{width:56px;height:56px;border-radius:12px;background:var(--surface-2,#F7F9F8);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
 .dk-img-preview img{width:100%;height:100%;object-fit:cover;}
-.dk-prod-img-preview{width:100%;height:120px;border-radius:14px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;box-sizing:border-box;padding:10px;}
+.dk-prod-img-preview{width:100%;height:120px;border-radius:14px;background:var(--surface-2,#F7F9F8);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;box-sizing:border-box;padding:10px;}
 .dk-prod-img-preview img{width:100%;height:100%;object-fit:contain;object-position:center;}
-.dk-readonly-cat{padding:9px 12px;background:#F3F7F4;border-radius:10px;font-weight:700;font-size:13px;}
+.dk-readonly-cat{padding:9px 12px;background:var(--surface-2,#F7F9F8);border-radius:10px;font-weight:700;font-size:13px;}
 @media(max-width:430px){
   .dk-cat-icon{width:44px;height:44px;font-size:20px;}
   .dk-cat-name{font-size:10.5px;}
@@ -636,16 +737,16 @@ tbody tr:hover{background:var(--surface-2);}
    ================================================================ */
 .tv-scan-btn{flex-shrink:0;width:44px;padding:0;border-radius:14px;display:flex;align-items:center;justify-content:center;}
 .tv-found-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
-.tv-found-card{display:flex;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--border,#EEF1EF);border-radius:12px;background:#fff;}
+.tv-found-card{display:flex;gap:10px;align-items:center;padding:10px 11px;border:1px solid var(--border,#E5E9E6);border-radius:12px;background:#fff;}
 .tv-found-info{flex:1;min-width:0;}
 .tv-found-name{font-size:12.5px;font-weight:700;line-height:1.25;}
-.tv-found-meta{font-size:10.5px;color:var(--text-faint,#7D9587);}
+.tv-found-meta{font-size:10.5px;color:var(--text-faint,#8B958E);}
 .tv-found-nums{font-size:11px;color:var(--text-soft);margin-top:2px;}
 .tv-found-nums strong{font-weight:700;}
-.tv-search-count{font-size:12px;color:var(--text-faint,#7D9587);font-weight:700;margin:14px 0 8px 2px;}
-.tv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;box-sizing:border-box;}
+.tv-search-count{font-size:12px;color:var(--text-faint,#8B958E);font-weight:700;margin:14px 0 8px 2px;}
+.tv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;box-sizing:border-box;}
 @media(min-width:641px){
-  .tv-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+  .tv-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
 }
 @media(min-width:1025px){
   .tv-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}
@@ -653,25 +754,25 @@ tbody tr:hover{background:var(--surface-2);}
 @media(min-width:1441px){
   .tv-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;}
 }
-.tv-card{position:relative;background:#fff;border:1px solid #EEF1EF;border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-.tv-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(18,36,26,.08);}
-.tv-img{position:relative;width:100%;aspect-ratio:4/3;border-radius:7px;background:#F3F7F4;display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;box-sizing:border-box;padding:3px;}
+.tv-card{position:relative;background:#fff;border:1px solid var(--border,#E5E9E6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+.tv-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(17,32,23,.09);border-color:#D4DCD7;}
+.tv-img{position:relative;width:100%;aspect-ratio:4/3;border-radius:8px;background:var(--surface-2,#F7F9F8);display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;box-sizing:border-box;padding:3px;}
 .tv-img img{width:100%;height:100%;object-fit:contain;object-position:center;}
 .tv-status-badge{position:absolute;top:4px;left:4px;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2;letter-spacing:.2px;}
-.tv-remove-btn{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.92);width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;z-index:2;}
+.tv-remove-btn{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.94);width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;z-index:2;box-shadow:0 1px 3px rgba(17,32,23,.12);}
 .tv-remove-btn svg{width:11px;height:11px;}
 .tv-name{font-size:10.5px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;min-height:2.2em;}
-.tv-meta{font-size:9px;color:var(--text-faint,#7D9587);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tv-price-row{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;font-weight:700;color:var(--primary,#0F8B4C);}
-.tv-price-row span:last-child{font-weight:600;color:var(--text-faint,#7D9587);font-size:9px;}
+.tv-meta{font-size:9px;color:var(--text-faint,#8B958E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tv-price-row{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;font-weight:700;color:var(--primary,#3B82F6);}
+.tv-price-row span:last-child{font-weight:600;color:var(--text-faint,#8B958E);font-size:9px;}
 @media(max-width:640px){
-  .tv-card{padding:4px;border-radius:10px;gap:3px;}
+  .tv-card{padding:5px;border-radius:10px;gap:3px;}
   .tv-name{font-size:10.5px;line-height:1.15;min-height:2.1em;}
   .tv-meta{font-size:8.5px;}
 }
 /* ---------- Inventarizatsiya (ombor tekshiruvi) ---------- */
-.inv-count-input{width:90px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface-2);text-align:right;font-weight:700;}
-.inv-count-input:focus{outline:2px solid var(--primary);background:#fff;}
+.inv-count-input{width:90px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--surface-2);text-align:right;font-weight:700;transition:border-color .15s var(--ease);}
+.inv-count-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12);background:#fff;}
 .inv-diff-pos{color:var(--primary);font-weight:800;}
 .inv-diff-neg{color:var(--danger);font-weight:800;}
 .inv-diff-zero{color:var(--text-faint);}
@@ -932,12 +1033,13 @@ function seedData(){
     warehouses: [{id:'wh_main', name:'Asosiy ombor', isDefault:true, createdAt:Date.now()}], // ko'p ombor tizimi — har bir partiya (batch) qaysi omborga tegishli ekanini warehouseId orqali biladi
     transfers: [], // {id, fromWhId, toWhId, productId, productName, qty, unit, date, note, status:'yuborildi'|'qabul_qilindi', createdAt, receivedAt}
     inventories: [], // {id, date, warehouseId, warehouseName, items:[{productId,name,unit,systemQty,countedQty,diff,cost}], totalDiffValue, user, note, createdAt}
+    purchaseLists: [], // {id, date, periodLabel, coverageLabel, items:[{productId,name,sku,currentStock,avgDaily,futureNeed,buyQty,unit}], createdBy} — "Xaridni rejalashtirish" bo'limida yaratilgan xarid ro'yxatlari tarixi
     cash: {history:[]},
     activity: [],
     roleRights: {
-      admin: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:true,debts:true,employees:true,cash:true,expenses:true,returns:true,delivery:true,reports:true,settings:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,dashboard:true},
-      sotuvchi: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:false,inventory:false,customers:true,debts:true,employees:false,cash:false,expenses:false,returns:true,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:15,cancelSale:false,dashboard:true},
-      omborchi: {sales:false,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:false,debts:false,employees:false,cash:false,expenses:false,returns:false,delivery:true,reports:false,settings:false,editPrice:false,maxDiscountPercent:0,cancelSale:false,dashboard:true},
+      admin: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:true,debts:true,employees:true,cash:true,expenses:true,returns:true,delivery:true,reports:true,purchasePlan:true,settings:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,dashboard:true},
+      sotuvchi: {sales:true,scanner:true,products:true,tovarlar:true,warehouse:false,inventory:false,customers:true,debts:true,employees:false,cash:false,expenses:false,returns:true,delivery:true,reports:false,purchasePlan:true,settings:false,editPrice:false,maxDiscountPercent:15,cancelSale:false,dashboard:true},
+      omborchi: {sales:false,scanner:true,products:true,tovarlar:true,warehouse:true,inventory:true,customers:false,debts:false,employees:false,cash:false,expenses:false,returns:false,delivery:true,reports:false,purchasePlan:false,settings:false,editPrice:false,maxDiscountPercent:0,cancelSale:false,dashboard:true},
     },
     saleCounter: 0,
     schemaV2Migrated: true,
@@ -1085,10 +1187,14 @@ function load(){
     if(!DB.warehouses.some(w=>w.isDefault)) DB.warehouses[0].isDefault = true;
     if(!DB.transfers) DB.transfers = [];
     if(!DB.inventories) DB.inventories = [];
+    if(!DB.purchaseLists) DB.purchaseLists = [];
     if(DB.roleRights){
       if(DB.roleRights.admin && DB.roleRights.admin.inventory===undefined) DB.roleRights.admin.inventory = true;
       if(DB.roleRights.omborchi && DB.roleRights.omborchi.inventory===undefined) DB.roleRights.omborchi.inventory = true;
       if(DB.roleRights.sotuvchi && DB.roleRights.sotuvchi.inventory===undefined) DB.roleRights.sotuvchi.inventory = false;
+      if(DB.roleRights.admin && DB.roleRights.admin.purchasePlan===undefined) DB.roleRights.admin.purchasePlan = true;
+      if(DB.roleRights.sotuvchi && DB.roleRights.sotuvchi.purchasePlan===undefined) DB.roleRights.sotuvchi.purchasePlan = true;
+      if(DB.roleRights.omborchi && DB.roleRights.omborchi.purchasePlan===undefined) DB.roleRights.omborchi.purchasePlan = false;
     }
     if(!DB.products) DB.products = [];
     DB.products.forEach(migrateProduct);
@@ -1128,9 +1234,9 @@ function load(){
     });
     if(!DB.roleRights) DB.roleRights = {admin:{},sotuvchi:{},omborchi:{}};
     const rrDefaults = {
-      admin:{delivery:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,tovarlar:true,dashboard:true},
-      sotuvchi:{delivery:true,editPrice:false,maxDiscountPercent:15,cancelSale:false,tovarlar:true,dashboard:true},
-      omborchi:{delivery:true,editPrice:false,maxDiscountPercent:0,cancelSale:false,tovarlar:true,dashboard:true},
+      admin:{delivery:true,editPrice:true,maxDiscountPercent:100,cancelSale:true,tovarlar:true,dashboard:true,purchasePlan:true},
+      sotuvchi:{delivery:true,editPrice:false,maxDiscountPercent:15,cancelSale:false,tovarlar:true,dashboard:true,purchasePlan:true},
+      omborchi:{delivery:true,editPrice:false,maxDiscountPercent:0,cancelSale:false,tovarlar:true,dashboard:true,purchasePlan:false},
     };
     Object.keys(rrDefaults).forEach(r=>{
       if(!DB.roleRights[r]) DB.roleRights[r]={};
@@ -1221,9 +1327,69 @@ const MENU = [
   {id:'expenses',label:'Xarajatlar',icon:'receipt'},
   {id:'returns',label:'Qaytarishlar',icon:'rotate-ccw'},
   {id:'reports',label:'Hisobotlar',icon:'bar-chart-3'},
+  {id:'purchasePlan',label:'Xaridni rejalashtirish',icon:'clipboard-list'},
   {id:'settings',label:'Sozlamalar',icon:'settings'},
 ];
 const MOBILE_MAIN = ['dashboard','tovarlar','scanner','debts','reports'];
+
+/* ----------------------------------------------------------------
+   CHAP MENYU — YANGI GURUHLANGAN STRUKTURA (2026-optimallashtirish)
+   Eski `MENU` massivi (yuqorida) o'zgartirilmadi — u hali ham sahifa
+   nomlarini (masalan permission ro'yxatida) qidirish uchun ishlatiladi.
+   Bu yerda faqat CHAP SIDEBAR uchun 10 ta asosiy bo'lim va ularning
+   ichidagi mavjud sahifalar (TAB sifatida) belgilanadi. Har bir "page"
+   — bu allaqachon mavjud bo'lgan haqiqiy sahifa id'si (RENDERERS,
+   canAccess, roleRights hammasi o'zgarishsiz shu id'lar bilan ishlaydi).
+   ---------------------------------------------------------------- */
+const MENU_GROUPS = [
+  {id:'dashboard',  label:'Dashboard',       icon:'layout-dashboard', pages:['dashboard']},
+  {id:'sales',      label:'Savdo',           icon:'shopping-cart',    pages:[{id:'sales',label:'Sotuv'},{id:'returns',label:'Qaytarishlar'}]},
+  {id:'products',   label:'Mahsulotlar',     icon:'package',          pages:[{id:'products',label:'Mahsulotlar'},{id:'tovarlar',label:'Tovarlar'}]},
+  {id:'warehouse',  label:'Ombor',           icon:'warehouse',        pages:[{id:'warehouse',label:'Qoldiq'},{id:'inventory',label:'Inventarizatsiya'}]},
+  {id:'customers',  label:'Mijozlar',        icon:'users',            pages:[{id:'customers',label:'Mijozlar'},{id:'debts',label:'Qarz / Nasiya'}]},
+  {id:'finance',    label:'Moliya',          icon:'wallet',           pages:[{id:'cash',label:'Kassa'},{id:'expenses',label:'Xarajatlar'},{id:'shiftHistory',label:'Smena tarixi'}]},
+  {id:'delivery',   label:"Yetkazib berish", icon:'truck',            pages:['delivery']},
+  {id:'employees',  label:'Xodimlar',        icon:'user-cog',         pages:['employees']},
+  {id:'reports',    label:'Hisobotlar',      icon:'bar-chart-3',      pages:[{id:'reports',label:'Hisobotlar'},{id:'purchasePlan',label:'Xaridni rejalashtirish'}]},
+  {id:'settings',   label:'Sozlamalar',      icon:'settings',         pages:['settings']},
+];
+// Har bir guruh ichidagi "page" yozuvini har doim {id,label} shakliga keltiradi.
+function menuGroupPages(g){ return g.pages.map(p=> typeof p==='string' ? {id:p,label:g.label} : p); }
+// Berilgan sahifa (masalan 'debts') qaysi asosiy guruhga tegishli ekanini topadi.
+function menuGroupOf(pageId){ return MENU_GROUPS.find(g=>menuGroupPages(g).some(p=>p.id===pageId)); }
+// Foydalanuvchi har bir guruh ichida oxirgi ko'rgan TABini eslab qoladi (faqat joriy sessiyada).
+let groupLastPage = {};
+// Mavjud badge/bildirishnoma hisoblash logikasi (17-band) o'zgartirilmadi — faqat parent bo'limga ko'chirildi.
+const MENU_BADGE_FN = {
+  products:  ()=> DB.products.filter(p=>p.qty<=p.minQty).length,
+  tovarlar:  ()=> DB.products.filter(p=>p.isForSale && p.qty===0).length,
+  debts:     ()=> DB.customers.filter(c=>c.debtTotal>0 && c.dueDate && c.dueDate<todayISO()).length,
+  delivery:  ()=> DB.deliveries.filter(d=>d.status!=='Yetkazildi').length,
+};
+function menuGroupBadge(g){
+  return menuGroupPages(g).reduce((sum,p)=> sum + (MENU_BADGE_FN[p.id] ? MENU_BADGE_FN[p.id]() : 0), 0);
+}
+// Sidebar'dagi asosiy bo'lim bosilganda — guruh ichidagi ruxsat berilgan
+// (va oxirgi ko'rilgan) sahifaga o'tadi. Mavjud nav()/canAccess() orqali ishlaydi.
+function navGroup(groupId){
+  const g = MENU_GROUPS.find(x=>x.id===groupId);
+  if(!g) return;
+  const allowed = menuGroupPages(g).filter(p=>canAccess(p.id));
+  if(!allowed.length){ toast("Sizda bu bo'limga ruxsat yo'q",true); return; }
+  const remembered = groupLastPage[groupId];
+  const target = (remembered && allowed.some(p=>p.id===remembered)) ? remembered : allowed[0].id;
+  nav(target);
+}
+// Sahifa ichidagi TAB qatorini chizadi (agar guruhda 1 tadan ortiq ruxsat
+// berilgan sahifa bo'lsa). Mavjud .tabs/.tab CSS klasslaridan foydalanadi
+// (Hisobotlar/Sozlamalar sahifalarida allaqachon ishlatilgan uslub).
+function renderGroupTabs(pageId){
+  const g = menuGroupOf(pageId);
+  if(!g) return '';
+  const allowed = menuGroupPages(g).filter(p=>canAccess(p.id));
+  if(allowed.length<=1) return '';
+  return `<div class="tabs">${allowed.map(p=>`<div class="tab ${p.id===pageId?'active':''}" onclick="nav('${p.id}')">${p.label}</div>`).join('')}</div>`;
+}
 
 function canAccess(page){ return DB.roleRights[currentRole][page] !== false || page==='dashboard'; }
 
@@ -1256,15 +1422,18 @@ function setRole(role){
 
 function renderMenu(){
   const list = document.getElementById('menuList');
-  list.innerHTML = MENU.map(m=>{
-    const allowed = m.id==='dashboard' ? true : DB.roleRights[currentRole][m.id];
-    const lowStock = m.id==='products' ? DB.products.filter(p=>p.qty<=p.minQty).length : 0;
-    const overdue = m.id==='debts' ? DB.customers.filter(c=>c.debtTotal>0 && c.dueDate && c.dueDate<todayISO()).length : 0;
-    const pendingDlv = m.id==='delivery' ? DB.deliveries.filter(d=>d.status!=='Yetkazildi').length : 0;
-    const tvAttention = m.id==='tovarlar' ? DB.products.filter(p=>p.isForSale && p.qty===0).length : 0;
-    const badge = lowStock? `<span class="badge">${lowStock}</span>` : (overdue?`<span class="badge">${overdue}</span>` : (pendingDlv?`<span class="badge">${pendingDlv}</span>` : (tvAttention?`<span class="badge">${tvAttention}</span>`:'')));
-    return `<div class="menu-item ${currentPage===m.id?'active':''} ${allowed?'':'menu-hidden'}" onclick="nav('${m.id}')">
-      ${icon(m.icon)}<span>${m.label}</span>${badge}
+  // Chap sidebar endi 10 ta ASOSIY bo'limni ko'rsatadi (eski 16 ta alohida
+  // tugma emas) — har biri bosilganda ichidagi mos sahifaga (yoki oxirgi
+  // ko'rilgan TABga) o'tadi. Ruxsat: guruh ichida kamida bitta ruxsat
+  // berilgan sahifa bo'lsa, asosiy bo'lim ko'rinadi (16-band).
+  const activeGroup = menuGroupOf(currentPage);
+  list.innerHTML = MENU_GROUPS.map(g=>{
+    const allowed = g.id==='dashboard' ? true : menuGroupPages(g).some(p=>canAccess(p.id));
+    const badgeCount = menuGroupBadge(g);
+    const badge = badgeCount ? `<span class="badge">${badgeCount}</span>` : '';
+    const isActive = activeGroup ? activeGroup.id===g.id : currentPage===g.id;
+    return `<div class="menu-item ${isActive?'active':''} ${allowed?'':'menu-hidden'}" onclick="navGroup('${g.id}')">
+      ${icon(g.icon)}<span>${g.label}</span>${badge}
     </div>`;
   }).join('');
   // mobile nav
@@ -1299,6 +1468,8 @@ function nav(page){
   if(!canAccess(page)){ toast("Sizda bu bo'limga ruxsat yo'q",true); return; }
   if(scanEngineActive) stopScanEngine();
   currentPage = page;
+  const g = menuGroupOf(page);
+  if(g) groupLastPage[g.id] = page; // guruh ichidagi oxirgi ko'rilgan TABni eslab qolish
   document.getElementById('sidebar').classList.remove('open');
   renderMenu();
   renderPage();
@@ -1399,11 +1570,13 @@ function renderDashboard(){
       <div class="dash-hero-value">${fmt(st.todayRevenue)}</div>
       <div class="dash-hero-trend up">${icon('trending-up')} +12% kechagiga nisbatan</div>
     </div>
-    <div class="dash-hero-secondary">
-      <div class="dash-hero-mini"><span class="dash-hero-mini-label">Sof foyda</span><span class="dash-hero-mini-value">${fmt(st.todayProfit)}</span></div>
-      <div class="dash-hero-mini"><span class="dash-hero-mini-label">Cheklar</span><span class="dash-hero-mini-value">${fmtNum(st.todaySalesCount)} ta</span></div>
-      <div class="dash-hero-mini"><span class="dash-hero-mini-label">O'rtacha chek</span><span class="dash-hero-mini-value">${fmtNum(avgCheck)}</span></div>
-    </div>
+  </div>
+
+  <div class="grid dashboard-stats" style="margin-bottom:16px;">
+    ${statCard('Foyda',fmt(st.todayProfit),'trending-up','var(--primary)','var(--primary-light)','Bugun','up')}
+    ${statCard('Cheklar',fmtNum(st.todaySalesCount)+' ta','receipt','var(--info)','var(--info-light)','Bugun','up')}
+    ${statCard("O'rtacha chek",fmtNum(avgCheck),'calculator','var(--secondary)','var(--secondary-light)','Bugun','up')}
+    ${statCard('Kassadagi naqd',fmt(st.cashIn),'wallet','var(--warning)','var(--warning-light)','Joriy smena','up','nav(\'cash\')')}
   </div>
 
   <div class="grid grid-2" style="margin:16px 0;align-items:start;">
@@ -1417,7 +1590,7 @@ function renderDashboard(){
     </div>
   </div>
 
-  <div class="grid grid-2" style="align-items:start;margin-bottom:16px;">
+  <div class="grid grid-main-side" style="align-items:start;margin-bottom:16px;">
     <div class="card">
       <div class="section-title">Ogohlantirishlar</div>
       ${lowStock.length===0 && overdue.length===0 && dueSoon.length===0 && st.expiringSoon.length===0 ? emptyAlert() : ''}
@@ -1484,24 +1657,37 @@ function renderDashboard(){
   </div>
 
   <div class="card">
-    <div class="section-title">Batafsil ko'rsatkichlar</div>
+    <div class="section-title">
+      Batafsil ko'rsatkichlar
+      <button class="btn-ghost btn-sm" onclick="dashToggleMore()" style="font-weight:700;">
+        <span id="dashMoreLabel">Barchasini ko'rish</span> ${icon('chevron-down')}
+      </button>
+    </div>
     <div class="grid dashboard-stats" style="gap:10px;">
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi kirimlar</span><span class="msb-val">${fmtNum(st.todayInMoves.length)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi sotuvlar</span><span class="msb-val">${fmtNum(st.todaySalesCount)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarishlar</span><span class="msb-val">${fmtNum(st.todayReturns.length)} ta</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarilgan summa</span><span class="msb-val">${fmt(st.todayReturnedAmount)}</span></div>
-      <div class="mobile-stat-box"><span class="msb-label">Operatsiyalar soni</span><span class="msb-val">${fmtNum(st.opsToday)} ta</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('warehouse')"><span class="msb-label">Ombor qiymati</span><span class="msb-val">${fmt(st.warehouseValue)}</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('debts')"><span class="msb-label">Jami qarz</span><span class="msb-val">${fmt(st.totalDebt)}</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('expenses')"><span class="msb-label">Bugungi xarajat</span><span class="msb-val">${fmt(st.todayExpense)}</span></div>
-      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('cash')"><span class="msb-label">Kassadagi naqd</span><span class="msb-val">${fmt(st.cashIn)}</span></div>
-      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('customers')"><span class="msb-label">Faol mijozlar</span><span class="msb-val">${fmtNum(DB.customers.length)}</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi kirimlar</span><span class="msb-val">${fmtNum(st.todayInMoves.length)} ta</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Operatsiyalar soni</span><span class="msb-val">${fmtNum(st.opsToday)} ta</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('products')"><span class="msb-label">Jami mahsulotlar</span><span class="msb-val">${fmtNum(st.totalProducts)} xil</span></div>
+    </div>
+    <div id="dashMoreStats" class="grid dashboard-stats" style="gap:10px;margin-top:10px;display:none;">
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarishlar</span><span class="msb-val">${fmtNum(st.todayReturns.length)} ta</span></div>
+      <div class="mobile-stat-box"><span class="msb-label">Bugungi qaytarilgan summa</span><span class="msb-val">${fmt(st.todayReturnedAmount)}</span></div>
+      <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('customers')"><span class="msb-label">Faol mijozlar</span><span class="msb-val">${fmtNum(DB.customers.length)}</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="openSalesHistoryModal()"><span class="msb-label">Jami sotuv summasi</span><span class="msb-val">${fmt(st.allSalesTotal)}</span></div>
       <div class="mobile-stat-box" style="cursor:pointer;" onclick="nav('returns')"><span class="msb-label">Sof savdo</span><span class="msb-val">${fmt(st.netSalesAll)}</span></div>
     </div>
   </div>
   `;
+}
+function dashToggleMore(){
+  const box = document.getElementById('dashMoreStats');
+  const label = document.getElementById('dashMoreLabel');
+  if(!box) return;
+  const show = box.style.display==='none';
+  box.style.display = show ? 'grid' : 'none';
+  if(label) label.textContent = show ? "Kamroq ko'rsatish" : "Barchasini ko'rish";
 }
 function statCard(label,val,ic,color,bg,delta,dir,onClickJs){
   const clickable = onClickJs ? ` style="cursor:pointer;" onclick="${onClickJs}"` : '';
@@ -1529,7 +1715,7 @@ function drawDashboardCharts(){
       days.push(d.toLocaleDateString('uz-UZ',{weekday:'short'}));
       revs.push(activeSales().filter(s=>s.date.slice(0,10)===key).reduce((a,s)=>a+s.total,0));
     }
-    new Chart(ctx1,{type:'bar',data:{labels:days,datasets:[{data:revs,backgroundColor:'#0F8B4C',borderRadius:6,maxBarThickness:34}]},
+    new Chart(ctx1,{type:'bar',data:{labels:days,datasets:[{data:revs,backgroundColor:'#3B82F6',borderRadius:6,maxBarThickness:34}]},
       options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'#EEF1EF'},ticks:{callback:v=>(v/1000)+'k'}},x:{grid:{display:false}}}}});
   }
   const ctx2 = document.getElementById('chartPayTypes');
@@ -1540,7 +1726,7 @@ function drawDashboardCharts(){
     const tezTolov = asales.filter(s=>s.paymentType==='tezTolov').reduce((a,s)=>a+s.total,0);
     const aralash = asales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+s.total,0);
     const qarz = asales.filter(s=>s.paymentType==='qarz').reduce((a,s)=>a+s.total,0);
-    new Chart(ctx2,{type:'doughnut',data:{labels:['Naqd','Karta',"Tez to'lov",'Aralash','Qarz'],datasets:[{data:[naqd,karta,tezTolov,aralash,qarz],backgroundColor:['#0F8B4C','#2563A6','#C7861B','#6B4FA0','#9C4221'],borderWidth:0}]},
+    new Chart(ctx2,{type:'doughnut',data:{labels:['Naqd','Karta',"Tez to'lov",'Aralash','Qarz'],datasets:[{data:[naqd,karta,tezTolov,aralash,qarz],backgroundColor:['#3B82F6','#2563A6','#C7861B','#6B4FA0','#9C4221'],borderWidth:0}]},
       options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},cutout:'65%'}});
   }
 }
@@ -3166,7 +3352,22 @@ function renderSales(){
       </div>
       <div id="payTrigger" style="margin-top:14px;"></div>
     </div>
+  </div>
+  <div id="mobileCartBackdrop" onclick="mobileCartToggle(false)"></div>
+  <div id="mobileCartBar" onclick="mobileCartToggle()">
+    <span>${icon('shopping-cart')} Savat</span>
+    <span id="mobileCartBarTotal">Savat bo'sh</span>
   </div>`;
+}
+/* Mobilda savat — bottom sheet. Faqat CSS class almashtiradi, savat
+   ma'lumotlari/hisob-kitobi (renderCart) butunlay o'zgarishsiz qoladi. */
+function mobileCartToggle(force){
+  const el = document.querySelector('.cart-card');
+  const bd = document.getElementById('mobileCartBackdrop');
+  if(!el) return;
+  const open = force!==undefined ? force : !el.classList.contains('mobile-sheet-open');
+  el.classList.toggle('mobile-sheet-open', open);
+  if(bd) bd.classList.toggle('show', open);
 }
 function posMatch(p,q){ return (p.name+' '+p.brand+' '+p.sku+' '+p.barcode+' '+p.qrCode+' '+(p.size||'')+' '+(p.unit||'')).toLowerCase().includes(q); }
 function posClearSearch(){
@@ -3184,7 +3385,7 @@ function posProdCardHtml(p){
       <div class="dk-prod-name">${p.name}</div>
       ${pkgLabel(p)?`<div class="dk-prod-meta" style="font-weight:700;">${pkgLabel(p)}</div>`:''}
       <div class="dk-prod-meta">${fmtNum(p.price)} so'm${moneyMode?'':' / '+p.unit}</div>
-      <div class="dk-prod-meta" style="${disabled?'color:var(--danger,#D64545);font-weight:700;':'font-weight:700;'}">${disabled? 'Tugagan' : fmtQty(p.qty)+' '+p.unit+' bor'}</div>
+      <div class="dk-prod-meta" style="${disabled?'color:var(--danger,#EF4444);font-weight:700;':'font-weight:700;'}">${disabled? 'Tugagan' : fmtQty(p.qty)+' '+p.unit+' bor'}</div>
       ${p.packSize?`<button class="btn-ghost btn-sm" style="margin-top:2px;" onclick="event.stopPropagation();calcPacks('${p.id}')">${icon('calculator')} ${p.packUnit||'quti'}</button>`:''}
     </div>`;
 }
@@ -3412,6 +3613,8 @@ function renderCart(){
   if(payTriggerBox){
     payTriggerBox.innerHTML = `<button class="btn btn-primary btn-block" id="openPaymentBtn" onclick="openPaymentModal()" ${cart.length?'':'disabled'}>${icon('credit-card')} TO'LOV <span style="opacity:.85;">— ${fmt(grand)}</span></button>`;
   }
+  const mobileBarTotal = document.getElementById('mobileCartBarTotal');
+  if(mobileBarTotal) mobileBarTotal.textContent = cart.length? `${cart.length} xil — ${fmt(grand)}` : "Savat bo'sh";
 
   renderPayExtra();
   mnUpdateCartBadge();
@@ -4339,6 +4542,7 @@ function renderWarehouse(){
       <button class="btn btn-outline compact-action-btn" onclick="openWarehouseManageModal()">${icon('building-2')} Omborlar</button>
       ${DB.warehouses.length>1 ? `<button class="btn btn-outline compact-action-btn" onclick="openTransferModal()">${icon('arrow-left-right')} Ko'chirish</button>` : ''}
       <button class="btn btn-outline compact-action-btn" onclick="openStockModal('out')">${icon('arrow-up-from-line')} Chiqim</button>
+      <button class="btn btn-outline compact-action-btn" onclick="openBulkStockInModal()">${icon('file-spreadsheet')} Excel orqali kirim</button>
       <button class="btn btn-primary compact-action-btn" onclick="openStockModal('in')">${icon('arrow-down-to-line')} Kirim</button>
     </div>
   </div>
@@ -4961,6 +5165,185 @@ function saveStockMove(dir){
   save(); closeModal(); toast("Saqlandi"); renderPage();
 }
 
+/* ================================================================
+   OMBOR — EXCEL ORQALI OMMAVIY KIRIM
+   Bitta-bitta Kirim (openStockInSearch/saveStockMove) o'zgarishsiz
+   qoladi. Bu — ularning USTIGA qo'shilgan, mustaqil funksiya: Excel
+   fayldan bir nechta qatorni o'qib, HAR BIRINI mavjud partiya (batch)
+   tizimiga xuddi qo'lda Kirim qilingandagidek yozadi.
+   MUHIM: faqat tizimda (Tovarlar bo'limida, isForSale=true) mavjud
+   mahsulotlarga kirim qilinadi — shtrix-kod/SKU topilmasa, o'sha qator
+   import qilinmaydi va foydalanuvchiga xatolik sifatida qaytariladi
+   (yangi mahsulot bu yerda YARATILMAYDI). */
+let bulkStockInPending = [];
+function dkDownloadStockInTemplate(){
+  if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
+  const rows = [
+    ['Shtrix-kod / SKU','Miqdor','Sotib olish narxi','Sotish narxi','Yetkazib beruvchi','Partiya'],
+    ['4780001234567',50,9000,12000,'Musaffo MCHJ','LOT-01'],
+    ['4780001234568',30,7000,9500,'',''],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:20},{wch:12},{wch:16},{wch:16},{wch:22},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kirim');
+  XLSX.writeFile(wb, 'ombor_kirim_shabloni.xlsx');
+}
+function openBulkStockInModal(){
+  if(!whProducts().length){ toast("Avval Tovarlar bo'limiga mahsulot qo'shing (Mahsulotlar bo'limidan SOTUVDA tugmasi orqali)",true); return; }
+  bulkStockInPending = [];
+  openModal(`
+    <div class="modal-head"><h3>${icon('file-spreadsheet')} Excel orqali kirim</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info">${icon('info')}<span>Majburiy ustunlar: <strong>Shtrix-kod / SKU</strong> va <strong>Miqdor</strong>. Faqat <u>Tovarlar</u> bo'limida allaqachon mavjud (SOTUVDA) mahsulotlarga kirim qilinadi — kod tizimda topilmasa, o'sha qator kirim qilinmaydi va pastda ro'yxat qilib ko'rsatiladi. Narx ustunlari bo'sh qoldirilsa — mahsulotning hozirgi narxi o'zi ishlatiladi. Yetkazib beruvchi va partiya — ixtiyoriy.</span></div>
+      <div style="margin-bottom:10px;"><button class="btn btn-outline btn-sm" onclick="dkDownloadStockInTemplate()">${icon('download')} Shablonni yuklab olish</button></div>
+      ${DB.warehouses.length>1 ? `<div class="field"><label>Qaysi omborga kirim qilinsin</label><select id="bulkIn_wh">${DB.warehouses.map(w=>`<option value="${w.id}" ${w.id===defaultWarehouseId()?'selected':''}>${w.name}</option>`).join('')}</select></div>` : ''}
+      <div class="field">
+        <label>Excel fayl (.xlsx)</label>
+        <input type="file" id="bulkIn_file" accept=".xlsx,.xls" onchange="bulkStockInHandleFile(this)">
+      </div>
+      <div id="bulkStockInStatus" style="font-size:12px;color:var(--text-faint);"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+    </div>
+  `, true);
+}
+function bulkStockInHandleFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('bulkStockInStatus');
+  if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
+  if(statusEl) statusEl.textContent = "Fayl o'qilmoqda...";
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      bulkStockInProcessRows(rows);
+    }catch(err){
+      if(statusEl) statusEl.textContent = '';
+      toast("Excel faylni o'qib bo'lmadi", true);
+    }
+  };
+  reader.onerror = ()=>{ if(statusEl) statusEl.textContent = ''; toast("Faylni o'qishda xatolik", true); };
+  reader.readAsArrayBuffer(file);
+}
+/* Miqdor ustuni uchun: dkParseExcelPrice'dan farqli — bo'sh yoki 0/manfiy
+   qiymat XATOLIK hisoblanadi (narxdan farqli, miqdor Kirim uchun majburiy). */
+function bulkParseQty(raw){
+  const s = String(raw!=null?raw:'').trim();
+  if(!s) return {ok:false, val:0};
+  const n = Number(String(s).replace(/\s/g,'').replace(/,/g,'.'));
+  if(isNaN(n) || n<=0) return {ok:false, val:0};
+  return {ok:true, val:n};
+}
+function bulkStockInProcessRows(rows){
+  let dataRows = rows.slice();
+  if(dataRows.length && typeof dataRows[0][0]==='string' && dataRows[0][0].toLowerCase().indexOf('shtrix')>=0){
+    dataRows = dataRows.slice(1);
+  }
+  const pool = whProducts(); // faqat SOTUVDA mahsulotlar — mavjud Kirim cheklovi bilan bir xil (saveStockMove'dagi isForSale tekshiruvi)
+  const validRows = [];
+  const errorRows = [];
+  dataRows.forEach((row,idx)=>{
+    const rowNum = idx+2;
+    const code = String(row[0]!=null?row[0]:'').trim();
+    const qtyRaw = row[1];
+    if(!code && (qtyRaw===''||qtyRaw==null)) return; // to'liq bo'sh qator — e'tiborsiz qoldiriladi
+    let error = '', product = null;
+    if(!code) error = "Shtrix-kod / SKU bo'sh";
+    else{
+      product = dkFindProductByCode(code, pool);
+      if(!product) error = "Mahsulot topilmadi (Tovarlarda yo'q)";
+    }
+    const qtyParsed = bulkParseQty(qtyRaw);
+    const costParsed = dkParseExcelPrice(row[2]);
+    const priceParsed = dkParseExcelPrice(row[3]);
+    if(!error && !qtyParsed.ok) error = "Miqdor noto'g'ri (musbat son bo'lishi kerak)";
+    if(!error && !costParsed.ok) error = "Sotib olish narxi noto'g'ri";
+    if(!error && !priceParsed.ok) error = "Sotish narxi noto'g'ri";
+    if(error){ errorRows.push({rowNum, code, error}); }
+    else{
+      validRows.push({rowNum, product, qty:qtyParsed.val, cost:costParsed.val, price:priceParsed.val,
+        supplier:String(row[4]!=null?row[4]:'').trim(), lot:String(row[5]!=null?row[5]:'').trim()});
+    }
+  });
+  bulkStockInRenderPreview(validRows, errorRows);
+}
+/* Tasdiqlangunga qadar DB.products'ga hech narsa yozilmaydi (Tovarlar
+   importidagi kabi avval tekshiruv, keyin tasdiqlash). */
+function bulkStockInRenderPreview(validRows, errorRows){
+  bulkStockInPending = validRows;
+  const total = validRows.length + errorRows.length;
+  openModal(`
+    <div class="modal-head"><h3>${icon('file-spreadsheet')} Ombor kirimi — tekshiruv</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <span class="badge badge-gray">Jami: ${total}</span>
+        <span class="badge badge-green">To'g'ri: ${validRows.length}</span>
+        <span class="badge badge-red">Xatolik: ${errorRows.length}</span>
+      </div>
+      ${errorRows.length? `
+      <div class="alert alert-danger" style="flex-direction:column;align-items:stretch;">
+        <div style="font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px;">${icon('x-circle')}<span>Kirim qilinmagan qatorlar (${errorRows.length})</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow:auto;">
+          ${errorRows.map(r=>`<div style="font-size:12px;">Qator ${r.rowNum}: <strong>${r.code||'(kodsiz)'}</strong> — ${r.error}</div>`).join('')}
+        </div>
+      </div>` : ''}
+      ${validRows.length? `
+      <div class="section-title" style="margin-top:14px;">Kirim qilinadigan mahsulotlar (${validRows.length})</div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Mahsulot</th><th>Miqdor</th><th>Sotib olish</th><th>Sotish</th></tr></thead>
+        <tbody>${validRows.map(r=>`<tr>
+          <td data-label="Mahsulot" class="cell-strong">${r.product.name}</td>
+          <td data-label="Miqdor" class="cell-mono">${fmtQty(r.qty)} ${r.product.unit}</td>
+          <td data-label="Sotib olish" class="cell-mono">${r.cost?fmtNum(r.cost):(r.product.cost?fmtNum(r.product.cost)+' (joriy)':'—')}</td>
+          <td data-label="Sotish" class="cell-mono">${r.price?fmtNum(r.price):(r.product.price?fmtNum(r.product.price)+' (joriy)':'—')}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : `<div class="empty-state">${icon('inbox')}<div>Kirim qilinadigan to'g'ri qator topilmadi</div></div>`}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Bekor qilish</button>
+      ${validRows.length? `<button class="btn btn-primary" onclick="bulkStockInConfirm()">${icon('check')} ${validRows.length} ta mahsulotga kirim qilish</button>` : ''}
+    </div>
+  `, true);
+}
+/* Faqat shu bosilgandagina DB'ga yoziladi. Har bir qator uchun xuddi
+   qo'lda Kirim qilingandagidek yangi partiya (batch) yaratiladi va
+   DB.stockMoves/activity'ga yoziladi — saveStockMove('in') bilan bir xil
+   ma'lumot shakli, faqat forma o'rniga Excel qatoridan olinadi. */
+function bulkStockInConfirm(){
+  const rows = bulkStockInPending || [];
+  if(!rows.length){ closeModal(); return; }
+  const whSel = document.getElementById('bulkIn_wh');
+  const whId = whSel ? whSel.value : defaultWarehouseId();
+  const sellerId = currentSellerId();
+  const dateVal = todayISO();
+  rows.forEach(r=>{
+    const p = r.product;
+    if(!p.batches) p.batches = [];
+    const lot = r.lot || generateLotCode();
+    // Qo'lda Kirim qilishdagi kabi: Excelda narx ustuni bo'sh qoldirilsa,
+    // mahsulotning HOZIRGI narxi o'zi ishlatiladi (0 deb yozilmaydi).
+    const cost = r.cost || p.cost || 0;
+    const price = r.price || p.price || 0;
+    const batch = {id:uid('lot'), productId:p.id, sellerId, lot, qty:r.qty, cost, price, expiry:null,
+      supplier:r.supplier||'', note:"Excel orqali ommaviy kirim", date:dateVal, createdAt:Date.now(), warehouseId:whId};
+    p.batches.push(batch);
+    p.qty = roundQty(p.qty + r.qty);
+    if(cost) p.cost = cost;
+    if(price) p.price = price;
+    DB.stockMoves.unshift({dir:'in',productId:p.id,productName:p.name,size:p.size||'',pkgUnit:p.pkgUnit||null,qty:r.qty,unit:p.unit,date:new Date(dateVal).toISOString(),
+      reason:'Kirim', supplier:r.supplier||'', note:"Excel import", lot, cost, price, warehouseId:whId, warehouseName:whName(whId)});
+    logActivity(`${p.name} — ${whName(whId)}ga Excel orqali kirim qildi (${fmtQty(r.qty)} ${p.unit}, partiya ${lot})`);
+  });
+  bulkStockInPending = [];
+  save(); closeModal(); toast(`${rows.length} ta mahsulotga kirim qilindi`); renderPage();
+}
+
 /* ---------------- Partiya (LOT) srok yorlig'i: QR + chop etish ----------------
    Har bir kirim partiyasi uchun ALOHIDA QR kod (mahsulotning umumiy QR-kodidan farqli)
    — productId, sellerId, lotId, lot, expiry ma'lumotlarini o'z ichiga oladi. Skanerlanganda
@@ -5309,7 +5692,7 @@ function tvStatus(p){
   return {label:'Yetarli',cls:'green'};
 }
 function tvStatusColor(cls){
-  return cls==='red' ? 'var(--danger,#D64545)' : cls==='yellow' ? 'var(--warning,#E0A82E)' : cls==='green' ? 'var(--primary,#0F8B4C)' : 'var(--text-faint,#7D9587)';
+  return cls==='red' ? 'var(--danger,#EF4444)' : cls==='yellow' ? 'var(--warning,#F59E0B)' : cls==='green' ? 'var(--primary,#3B82F6)' : 'var(--text-faint,#94A3B8)';
 }
 function renderTovarlar(){
   const items = DB.products.filter(p=>p.isForSale);
@@ -5960,14 +6343,27 @@ function shiftCashierName(){
 function computeShiftFigures(shift){
   const sales = activeSales().filter(s=>s.shiftId===shift.id);
   const returns = confirmedReturns().filter(r=>r.shiftId===shift.id);
-  const naqdSavdo = sales.filter(s=>s.paymentType==='naqd').reduce((a,s)=>a+s.paidNow,0) + sales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cashPart||0),0);
-  const kartaSavdo = sales.filter(s=>s.paymentType==='karta').reduce((a,s)=>a+s.total,0) + sales.filter(s=>s.paymentType==='aralash').reduce((a,s)=>a+(s.cardPart||0),0);
-  const tezTolovSavdo = sales.filter(s=>s.paymentType==='tezTolov').reduce((a,s)=>a+s.total,0);
-  const qarzSavdo = sales.filter(s=>s.paymentType==='qarz').reduce((a,s)=>a+s.total,0);
+  const naqdSales = sales.filter(s=>s.paymentType==='naqd');
+  const kartaSales = sales.filter(s=>s.paymentType==='karta');
+  const tezTolovSales = sales.filter(s=>s.paymentType==='tezTolov');
+  const qarzSales = sales.filter(s=>s.paymentType==='qarz');
+  const aralashSales = sales.filter(s=>s.paymentType==='aralash');
+  const naqdSavdo = naqdSales.reduce((a,s)=>a+s.paidNow,0) + aralashSales.reduce((a,s)=>a+(s.cashPart||0),0);
+  const kartaSavdo = kartaSales.reduce((a,s)=>a+s.total,0) + aralashSales.reduce((a,s)=>a+(s.cardPart||0),0);
+  const tezTolovSavdo = tezTolovSales.reduce((a,s)=>a+s.total,0);
+  const qarzSavdo = qarzSales.reduce((a,s)=>a+s.total,0);
+  const naqdSavdoCount = naqdSales.length + aralashSales.filter(s=>(s.cashPart||0)>0).length;
+  const kartaSavdoCount = kartaSales.length + aralashSales.filter(s=>(s.cardPart||0)>0).length;
+  const tezTolovSavdoCount = tezTolovSales.length;
+  const qarzSavdoCount = qarzSales.length;
   const jamiSavdo = sales.reduce((a,s)=>a+s.total,0);
-  const naqdQaytarilgan = returns.filter(r=>r.method==='naqd').reduce((a,r)=>a+returnAmount(r),0);
-  const kartaQaytarilgan = returns.filter(r=>r.method==='karta').reduce((a,r)=>a+returnAmount(r),0);
-  const tezTolovQaytarilgan = returns.filter(r=>r.method==='tezTolov').reduce((a,r)=>a+returnAmount(r),0);
+  const naqdReturns = returns.filter(r=>r.method==='naqd');
+  const kartaReturns = returns.filter(r=>r.method==='karta');
+  const tezTolovReturns = returns.filter(r=>r.method==='tezTolov');
+  const naqdQaytarilgan = naqdReturns.reduce((a,r)=>a+returnAmount(r),0);
+  const kartaQaytarilgan = kartaReturns.reduce((a,r)=>a+returnAmount(r),0);
+  const tezTolovQaytarilgan = tezTolovReturns.reduce((a,r)=>a+returnAmount(r),0);
+  const naqdQaytCount = naqdReturns.length, kartaQaytCount = kartaReturns.length, tezTolovQaytCount = tezTolovReturns.length;
   const qaytarishJami = returns.reduce((a,r)=>a+returnAmount(r),0);
   const sofSavdo = jamiSavdo - qaytarishJami;
   const kirimJami = (shift.cashIncomes||[]).reduce((a,x)=>a+x.amount,0);
@@ -5976,6 +6372,7 @@ function computeShiftFigures(shift){
   const expectedCash = (shift.openingCash||0) + naqdSavdo - naqdQaytarilgan + kirimJami - chiqimJami - inkassatsiyaJami;
   const operatsiyalarSoni = sales.length + returns.length;
   return {sales,returns,naqdSavdo,kartaSavdo,tezTolovSavdo,qarzSavdo,jamiSavdo,naqdQaytarilgan,kartaQaytarilgan,tezTolovQaytarilgan,
+    naqdSavdoCount,kartaSavdoCount,tezTolovSavdoCount,qarzSavdoCount,naqdQaytCount,kartaQaytCount,tezTolovQaytCount,
     qaytarishJami,sofSavdo,kirimJami,chiqimJami,inkassatsiyaJami,expectedCash,operatsiyalarSoni};
 }
 
@@ -6004,10 +6401,32 @@ function renderCash(){
     ${statCard('Sof savdo',fmt(f.sofSavdo),'trending-up','var(--primary)','var(--primary-light)','Qaytarish chegirilgan','up')}
     ${statCard('Qaytarishlar',fmt(f.qaytarishJami),'rotate-ccw','var(--danger)','var(--danger-light)','Smena davomida','down')}
   </div>
-  <div class="grid grid-3" style="margin-bottom:16px;">
-    ${statCard('Naqd savdolar',fmt(f.naqdSavdo),'banknote','var(--primary)','var(--primary-light)','','up')}
-    ${statCard('Karta savdolar',fmt(f.kartaSavdo),'credit-card','var(--info)','var(--info-light)','','up')}
-    ${statCard("Tez to'lov savdolar",fmt(f.tezTolovSavdo),'zap','var(--warning)','var(--warning-light)','','up')}
+  <div class="shift-report-grid" style="align-items:start;margin-bottom:16px;">
+    <div>
+      <div class="section-title">Savdo — to'lov turlari bo'yicha</div>
+      <div class="report-table-wrap"><table class="report-table">
+        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+        <tbody>
+          <tr><td>Naqd</td><td><span class="rt-count">${f.naqdSavdoCount} ta</span>${fmt(f.naqdSavdo)}</td></tr>
+          <tr><td>Karta</td><td><span class="rt-count">${f.kartaSavdoCount} ta</span>${fmt(f.kartaSavdo)}</td></tr>
+          <tr><td>Tez to'lov</td><td><span class="rt-count">${f.tezTolovSavdoCount} ta</span>${fmt(f.tezTolovSavdo)}</td></tr>
+          <tr><td>Qarz/Nasiya</td><td><span class="rt-count">${f.qarzSavdoCount} ta</span>${fmt(f.qarzSavdo)}</td></tr>
+          <tr class="report-total"><td>Jami</td><td>${fmt(f.jamiSavdo)}</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <div class="section-title">Qaytarishlar — to'lov turlari bo'yicha</div>
+      <div class="report-table-wrap"><table class="report-table">
+        <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
+        <tbody>
+          <tr class="report-neg"><td>Naqd</td><td><span class="rt-count">${f.naqdQaytCount} ta</span>−${fmt(f.naqdQaytarilgan)}</td></tr>
+          <tr class="report-neg"><td>Karta</td><td><span class="rt-count">${f.kartaQaytCount} ta</span>−${fmt(f.kartaQaytarilgan)}</td></tr>
+          <tr class="report-neg"><td>Tez to'lov</td><td><span class="rt-count">${f.tezTolovQaytCount} ta</span>−${fmt(f.tezTolovQaytarilgan)}</td></tr>
+          <tr class="report-total report-neg"><td>Jami</td><td>−${fmt(f.qaytarishJami)}</td></tr>
+        </tbody>
+      </table></div>
+    </div>
   </div>
   <div class="card" style="margin-bottom:16px;">
     <div class="section-title">Kassa harakatlari</div>
@@ -6024,17 +6443,17 @@ function renderCash(){
   </div>
   <div class="card">
     <div class="section-title">Smena operatsiyalari (${f.operatsiyalarSoni})</div>
-    <div class="table-scroll"><table>
-      <thead><tr><th>Vaqt</th><th>Turi</th><th>Tavsif</th><th>Summa</th></tr></thead>
-      <tbody>
-        ${ops.length? ops.map(o=>`<tr>
-          <td data-label="Vaqt">${new Date(o.date).toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}</td>
-          <td data-label="Turi"><span class="badge badge-gray">${o.label}</span></td>
-          <td data-label="Tavsif">${o.desc}</td>
-          <td data-label="Summa" class="cell-mono" style="color:${o.sign<0?'var(--danger)':'inherit'}">${o.sign<0?'−':'+'}${fmtNum(o.amount)}</td>
-        </tr>`).join('') : emptyRow(4,"Hali operatsiya yo'q")}
-      </tbody>
-    </table></div>
+    <div class="op-list">
+      ${ops.length? ops.map(o=>`
+        <div class="op-row">
+          <div class="op-row-top">
+            <span class="badge badge-gray">${o.label}</span>
+            <span class="cell-mono op-row-amt" style="color:${o.sign<0?'var(--danger)':'var(--primary)'}">${o.sign<0?'−':'+'}${fmtNum(o.amount)}</span>
+          </div>
+          <div class="op-row-desc">${o.desc}</div>
+          <div class="op-row-time">${new Date(o.date).toLocaleString('uz-UZ')}</div>
+        </div>`).join('') : `<div class="empty-state">${icon('inbox')}<div>Hali operatsiya yo'q</div></div>`}
+    </div>
   </div>
   <div style="margin-top:16px;"><button class="btn btn-outline btn-block" onclick="nav('shiftHistory')">${icon('history')} Smena tarixi</button></div>`;
 }
@@ -6162,6 +6581,8 @@ function finalizeCloseShift(actual){
     id:shift.id, number:shift.number, openedAt:shift.openedAt, closedAt:new Date().toISOString(),
     openedBy:shift.openedBy, closedBy:closedByName, openingCash:shift.openingCash||0,
     naqdSavdo:f.naqdSavdo, kartaSavdo:f.kartaSavdo, tezTolovSavdo:f.tezTolovSavdo, qarzSavdo:f.qarzSavdo,
+    naqdSavdoCount:f.naqdSavdoCount, kartaSavdoCount:f.kartaSavdoCount, tezTolovSavdoCount:f.tezTolovSavdoCount, qarzSavdoCount:f.qarzSavdoCount,
+    naqdQaytCount:f.naqdQaytCount, kartaQaytCount:f.kartaQaytCount, tezTolovQaytCount:f.tezTolovQaytCount,
     jamiSavdo:f.jamiSavdo, naqdQaytarilgan:f.naqdQaytarilgan, kartaQaytarilgan:f.kartaQaytarilgan, tezTolovQaytarilgan:f.tezTolovQaytarilgan,
     qaytarishJami:f.qaytarishJami, sofSavdo:f.sofSavdo, operatsiyalarSoni:f.operatsiyalarSoni,
     kirimJami:f.kirimJami, chiqimJami:f.chiqimJami, inkassatsiyaJami:f.inkassatsiyaJami,
@@ -6225,31 +6646,31 @@ function openShiftDetailModal(id){
       <div class="section-title" style="margin-top:14px;">Kassa qoldig'i</div>
       <div class="ct-row"><span>Boshlang'ich naqd</span><span>${fmt(h.openingCash)}</span></div>
 
-      <div class="grid grid-2" style="align-items:start;margin-top:14px;gap:16px;">
+      <div class="shift-report-grid" style="align-items:start;margin-top:14px;">
         <div>
           <div class="section-title">Savdo — to'lov turlari bo'yicha</div>
-          <table class="report-table">
+          <div class="report-table-wrap"><table class="report-table">
             <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
             <tbody>
-              <tr><td>Naqd</td><td>${fmt(h.naqdSavdo)}</td></tr>
-              <tr><td>Karta</td><td>${fmt(h.kartaSavdo)}</td></tr>
-              <tr><td>Tez to'lov</td><td>${fmt(h.tezTolovSavdo)}</td></tr>
-              <tr><td>Qarz/Nasiya</td><td>${fmt(h.qarzSavdo)}</td></tr>
+              <tr><td>Naqd</td><td>${h.naqdSavdoCount!=null?`<span class="rt-count">${h.naqdSavdoCount} ta</span>`:''}${fmt(h.naqdSavdo)}</td></tr>
+              <tr><td>Karta</td><td>${h.kartaSavdoCount!=null?`<span class="rt-count">${h.kartaSavdoCount} ta</span>`:''}${fmt(h.kartaSavdo)}</td></tr>
+              <tr><td>Tez to'lov</td><td>${h.tezTolovSavdoCount!=null?`<span class="rt-count">${h.tezTolovSavdoCount} ta</span>`:''}${fmt(h.tezTolovSavdo)}</td></tr>
+              <tr><td>Qarz/Nasiya</td><td>${h.qarzSavdoCount!=null?`<span class="rt-count">${h.qarzSavdoCount} ta</span>`:''}${fmt(h.qarzSavdo)}</td></tr>
               <tr class="report-total"><td>Jami</td><td>${fmt(h.jamiSavdo)}</td></tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div>
           <div class="section-title">Qaytarishlar — to'lov turlari bo'yicha</div>
-          <table class="report-table">
+          <div class="report-table-wrap"><table class="report-table">
             <thead><tr><th>Tip</th><th>Summa</th></tr></thead>
             <tbody>
-              <tr class="report-neg"><td>Naqd</td><td>−${fmt(h.naqdQaytarilgan)}</td></tr>
-              <tr class="report-neg"><td>Karta</td><td>−${fmt(h.kartaQaytarilgan)}</td></tr>
-              <tr class="report-neg"><td>Tez to'lov</td><td>−${fmt(h.tezTolovQaytarilgan)}</td></tr>
+              <tr class="report-neg"><td>Naqd</td><td>${h.naqdQaytCount!=null?`<span class="rt-count">${h.naqdQaytCount} ta</span>`:''}−${fmt(h.naqdQaytarilgan)}</td></tr>
+              <tr class="report-neg"><td>Karta</td><td>${h.kartaQaytCount!=null?`<span class="rt-count">${h.kartaQaytCount} ta</span>`:''}−${fmt(h.kartaQaytarilgan)}</td></tr>
+              <tr class="report-neg"><td>Tez to'lov</td><td>${h.tezTolovQaytCount!=null?`<span class="rt-count">${h.tezTolovQaytCount} ta</span>`:''}−${fmt(h.tezTolovQaytarilgan)}</td></tr>
               <tr class="report-total report-neg"><td>Jami</td><td>−${fmt(h.qaytarishJami)}</td></tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
 
@@ -7151,15 +7572,430 @@ document.getElementById('notifBtn').addEventListener('click',()=>{
 /* ================================================================
    ROUTER
    ================================================================ */
+/* ================================================================
+   XARIDNI REJALASHTIRISH (Purchase planning)
+   O'tgan davrdagi real DB.sales (aktiv, ya'ni bekor qilinmagan) va
+   DB.returns (tasdiqlangan) asosida har bir SOTUVDA (isForSale)
+   mahsulot uchun: o'rtacha kunlik sotuv, qoldiq necha kunga
+   yetishi, kelajakdagi tanlangan qamrov davri uchun kerakli
+   miqdor va xarid qilish kerak bo'lgan miqdorni hisoblaydi.
+   Hech qanday yangi fake ma'lumot yaratilmaydi — faqat mavjud
+   DB.products / DB.sales / DB.returns o'qiladi. Og'ir hisob-kitob
+   faqat "Hisoblash" tugmasi bosilganda bajariladi (performance).
+   ================================================================ */
+let ppSalesPeriod = '30';      // '7' | '14' | '30' | '60' | 'custom'
+let ppCustomFrom = '';
+let ppCustomTo = '';
+let ppCoveragePeriod = '7';    // '3' | '7' | '14' | '30' | 'custom'
+let ppCustomCoverageDays = '';
+let ppFilterTab = 'all';       // all | need | enough | out | nosales
+let ppSearchQuery = '';
+let ppCategoryFilter = '';
+let ppBrandFilter = '';
+let ppCalculated = false;
+let ppResults = [];
+let ppCalcMeta = null;         // {error} yoki {error:null, range:{from,to,days}, coverageDays}
+
+function ppPeriodDays(period){
+  return {'7':7,'14':14,'30':30,'60':60}[period] || null;
+}
+function ppGetDateRange(){
+  if(ppSalesPeriod!=='custom'){
+    const days = ppPeriodDays(ppSalesPeriod);
+    const to = new Date(); to.setHours(23,59,59,999);
+    const from = new Date(); from.setDate(from.getDate()-(days-1)); from.setHours(0,0,0,0);
+    return {from, to, days};
+  }
+  if(!ppCustomFrom || !ppCustomTo) return null;
+  const from = new Date(ppCustomFrom+'T00:00:00');
+  const to = new Date(ppCustomTo+'T23:59:59');
+  if(isNaN(from.getTime()) || isNaN(to.getTime()) || from>to) return null;
+  const days = Math.floor((to-from)/86400000)+1;
+  return {from, to, days};
+}
+function ppGetCoverageDays(){
+  if(ppCoveragePeriod!=='custom') return Number(ppCoveragePeriod);
+  const v = Number(ppCustomCoverageDays);
+  return (v>0) ? v : null;
+}
+function ppPeriodLabel(){
+  const map = {'7':'Oxirgi 7 kun','14':'Oxirgi 14 kun','30':'Oxirgi 30 kun','60':'Oxirgi 60 kun'};
+  if(ppSalesPeriod==='custom') return `${ppCustomFrom||'?'} — ${ppCustomTo||'?'}`;
+  return map[ppSalesPeriod] || '';
+}
+function ppCoverageLabel(){
+  const map = {'3':'3 kun','7':'7 kun','14':'14 kun','30':'30 kun'};
+  if(ppCoveragePeriod==='custom') return `${ppCustomCoverageDays||'?'} kun`;
+  return map[ppCoveragePeriod] || '';
+}
+function ppStatusLabel(st){
+  return st==='yetarli' ? 'Yetarli' : st==='kerak' ? 'Tez orada tugaydi' : st==='tugagan' ? 'Tugagan' : "Sotuv yo'q";
+}
+function ppStatusColor(st){
+  return st==='yetarli' ? 'green' : st==='kerak' ? 'yellow' : st==='tugagan' ? 'red' : 'gray';
+}
+
+/* Asosiy hisob-kitob — faqat "Hisoblash" bosilganda ishga tushadi. */
+function ppCalculate(){
+  const range = ppGetDateRange();
+  if(!range){ ppCalcMeta = {error:"Sotuv davri noto'g'ri kiritilgan."}; ppCalculated=true; ppResults=[]; return; }
+  const coverageDays = ppGetCoverageDays();
+  if(!coverageDays || coverageDays<=0){ ppCalcMeta = {error:"Qamrov davri noto'g'ri kiritilgan."}; ppCalculated=true; ppResults=[]; return; }
+
+  const items = DB.products.filter(p=>p.isForSale);
+
+  // Sotilgan miqdorni productId bo'yicha aggregate qilish (faqat aktiv, bekor qilinmagan sotuvlar)
+  const soldMap = {};
+  activeSales().forEach(s=>{
+    const d = new Date(s.date);
+    if(d<range.from || d>range.to) return;
+    (s.items||[]).forEach(it=>{
+      if(!it.productId) return;
+      soldMap[it.productId] = (soldMap[it.productId]||0) + it.qty;
+    });
+  });
+  // Tasdiqlangan qaytarishlarni ayirib, sof sotuvni chiqarish
+  confirmedReturns().forEach(r=>{
+    if(!r.productId) return;
+    const d = new Date(r.date);
+    if(d<range.from || d>range.to) return;
+    soldMap[r.productId] = (soldMap[r.productId]||0) - r.qty;
+  });
+
+  ppResults = items.map(p=>{
+    const soldQty = Math.max(0, roundQty(soldMap[p.id]||0));
+    const hasSales = soldQty>0;
+    const avgDaily = hasSales ? soldQty/range.days : 0;
+    const currentStock = p.qty;
+    const daysLeft = hasSales ? (avgDaily>0 ? currentStock/avgDaily : Infinity) : null;
+    const futureNeedRaw = hasSales ? avgDaily*coverageDays : null;
+    const futureNeed = futureNeedRaw!=null ? (requiresWholeQty(p) ? Math.ceil(futureNeedRaw) : roundQty(futureNeedRaw)) : null;
+    const buyQtyRaw = hasSales ? Math.max(0, futureNeedRaw-currentStock) : 0;
+    const buyQty = hasSales ? (requiresWholeQty(p) ? Math.ceil(buyQtyRaw) : roundQty(buyQtyRaw)) : 0;
+
+    let status;
+    if(currentStock<=0) status='tugagan';
+    else if(!hasSales) status='sotuvyoq';
+    else if(daysLeft>=coverageDays) status='yetarli';
+    else status='kerak';
+
+    let endDate = null;
+    if(hasSales && avgDaily>0 && isFinite(daysLeft)){
+      const dt = new Date(); dt.setDate(dt.getDate()+Math.floor(daysLeft));
+      endDate = dt.toISOString().slice(0,10);
+    }
+    return {
+      productId:p.id, name:p.name, sku:p.sku, barcode:p.barcode, unit:p.unit,
+      category:p.category, brand:p.brand, emoji:p.emoji,
+      currentStock, soldQty, avgDaily, daysLeft, futureNeed, buyQty, status, endDate
+    };
+  });
+  ppCalcMeta = {error:null, range, coverageDays};
+  ppCalculated = true;
+}
+function ppOnCalculate(){
+  ppCalculate();
+  renderPage();
+}
+function ppFilteredResults(){
+  let list = ppResults.slice();
+  if(ppFilterTab==='need') list = list.filter(r=>r.buyQty>0);
+  else if(ppFilterTab==='enough') list = list.filter(r=>r.status==='yetarli');
+  else if(ppFilterTab==='out') list = list.filter(r=>r.status==='tugagan');
+  else if(ppFilterTab==='nosales') list = list.filter(r=>r.status==='sotuvyoq');
+  if(ppCategoryFilter) list = list.filter(r=>r.category===ppCategoryFilter);
+  if(ppBrandFilter) list = list.filter(r=>r.brand===ppBrandFilter);
+  const q = dkNormQuery(ppSearchQuery);
+  if(q) list = list.filter(r=>(r.name||'').toLowerCase().includes(q) || (r.sku||'').toLowerCase().includes(q) || (r.barcode||'').toLowerCase().includes(q));
+  return list;
+}
+
+function renderPurchasePlan(){
+  return `
+  <div class="page-head">
+    <div><h1>Xaridni rejalashtirish</h1><p>O'tgan davrdagi real sotuvga qarab kerakli xarid miqdorini avtomatik hisoblang</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="ppExportExcel()">${icon('file-spreadsheet')} Excel</button>
+      <button class="btn btn-outline" onclick="ppExportPdf()">${icon('file-text')} PDF</button>
+      <button class="btn btn-outline" onclick="ppPrint()">${icon('printer')} Chop etish</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="section-title">Hisoblash parametrlari</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Sotuv davri</label>
+        <select onchange="ppSalesPeriod=this.value;renderPage()">
+          ${[['7','Oxirgi 7 kun'],['14','Oxirgi 14 kun'],['30','Oxirgi 30 kun'],['60','Oxirgi 60 kun'],['custom','Maxsus davr']].map(o=>`<option value="${o[0]}" ${ppSalesPeriod===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Qamrov davri</label>
+        <select onchange="ppCoveragePeriod=this.value;renderPage()">
+          ${[['3','3 kun'],['7','7 kun'],['14','14 kun'],['30','30 kun'],['custom','Maxsus']].map(o=>`<option value="${o[0]}" ${ppCoveragePeriod===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    ${ppSalesPeriod==='custom' ? `
+    <div class="field-row">
+      <div class="field"><label>Boshlanish sanasi</label><input type="date" value="${ppCustomFrom}" onchange="ppCustomFrom=this.value"></div>
+      <div class="field"><label>Tugash sanasi</label><input type="date" value="${ppCustomTo}" onchange="ppCustomTo=this.value"></div>
+    </div>` : ''}
+    ${ppCoveragePeriod==='custom' ? `
+    <div class="field"><label>Necha kunlik zaxira kerak?</label><input type="number" min="1" value="${ppCustomCoverageDays}" onchange="ppCustomCoverageDays=this.value"></div>` : ''}
+    <button class="btn btn-primary" style="margin-top:6px;" onclick="ppOnCalculate()">${icon('calculator')} Hisoblash</button>
+    ${ppCalcMeta && ppCalcMeta.error ? `<div class="alert alert-danger" style="margin-top:10px;">${icon('alert-triangle')}<span>${ppCalcMeta.error}</span></div>` : ''}
+  </div>
+
+  ${!ppCalculated
+    ? `<div class="empty-state">${icon('calculator')}<div>Parametrlarni tanlab, "Hisoblash" tugmasini bosing</div></div>`
+    : (ppCalcMeta && ppCalcMeta.error ? '' : renderPurchasePlanResults())}
+  `;
+}
+
+function renderPurchasePlanResults(){
+  if(!ppResults.length){
+    return `<div class="empty-state">${icon('inbox')}<div>Tanlangan davrda sotuv ma'lumotlari topilmadi.</div></div>`;
+  }
+  const totalSold = ppResults.reduce((a,r)=>a+r.soldQty,0);
+  const avgDailyTotal = ppCalcMeta.range.days>0 ? totalSold/ppCalcMeta.range.days : 0;
+  const needList = ppResults.filter(r=>r.buyQty>0).sort((a,b)=>b.buyQty-a.buyQty);
+  const totalBuy = needList.reduce((a,r)=>a+r.buyQty,0);
+
+  return `
+  <div class="grid grid-4 wh-stats-desktop">
+    ${statCard('Tanlangan davr sotuvlari', fmtQty(totalSold), 'trending-up','var(--info)','var(--info-light)', ppPeriodLabel(),'up')}
+    ${statCard("O'rtacha kunlik sotuv", fmtQty(avgDailyTotal)+'/kun', 'activity','var(--primary)','var(--primary-light)','Kuniga','up')}
+    ${statCard('Xarid kerak mahsulotlar', needList.length+' ta','shopping-cart','var(--warning)','var(--warning-light)', ppCoverageLabel()+' uchun','down')}
+    ${statCard('Jami xarid miqdori', fmtQty(totalBuy), 'package-plus','var(--danger)','var(--danger-light)','Umumiy','down')}
+  </div>
+  <div class="mobile-stock-stats">
+    <div class="mobile-stat-box"><span class="msb-label">Sotuv</span><span class="msb-val">${fmtQty(totalSold)}</span></div>
+    <div class="mobile-stat-box"><span class="msb-label">Kunlik o'rtacha</span><span class="msb-val">${fmtQty(avgDailyTotal)}</span></div>
+    <div class="mobile-stat-box"><span class="msb-label">Xarid kerak</span><span class="msb-val">${needList.length} ta</span></div>
+    <div class="mobile-stat-box"><span class="msb-label">Jami xarid</span><span class="msb-val">${fmtQty(totalBuy)}</span></div>
+  </div>
+
+  ${needList.length ? `
+  <div class="card" style="margin-bottom:16px;">
+    <div class="section-title">${icon('shopping-cart')} Bugun nimani xarid qilish kerak? (${needList.length} ta)</div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Mahsulot</th><th>Qoldiq</th><th>Kunlik sotuv</th><th>${ppCoverageLabel()} ehtiyoj</th><th>Xarid</th></tr></thead>
+      <tbody>${needList.slice(0,10).map(r=>`<tr>
+        <td data-label="Mahsulot" class="cell-strong">${r.name}</td>
+        <td data-label="Qoldiq" class="cell-mono">${fmtQty(r.currentStock)} ${r.unit}</td>
+        <td data-label="Kunlik" class="cell-mono">${fmtQty(r.avgDaily)} ${r.unit}</td>
+        <td data-label="Ehtiyoj" class="cell-mono">${fmtQty(r.futureNeed)} ${r.unit}</td>
+        <td data-label="Xarid" class="cell-mono" style="font-weight:800;color:var(--danger);">${fmtQty(r.buyQty)} ${r.unit}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    ${needList.length>10 ? `<div style="font-size:11.5px;color:var(--text-faint);margin-top:8px;">Va yana ${needList.length-10} ta mahsulot — to'liq ro'yxat pastdagi jadvalda</div>` : ''}
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="ppOpenOrderListModal()">${icon('clipboard-list')} Xarid ro'yxatini yaratish</button>
+  </div>` : `<div class="alert alert-ok" style="margin-bottom:16px;">${icon('check-circle2')}<span>Hozircha xarid qilish kerak bo'lgan mahsulotlar yo'q.</span></div>`}
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="dk-search-row" style="margin-bottom:12px;overflow-x:auto;">
+      <div style="display:flex;gap:6px;">
+        ${[['all','Barchasi'],['need','Xarid kerak'],['enough','Yetarli'],['out','Tugagan'],['nosales',"Sotuv yo'q"]].map(t=>`<button class="btn ${ppFilterTab===t[0]?'btn-primary':'btn-outline'}" style="white-space:nowrap;" onclick="ppFilterTab='${t[0]}';renderPage()">${t[1]}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Qidirish</label><input type="text" value="${ppSearchQuery}" placeholder="Mahsulot, SKU yoki shtrix-kod" oninput="ppSearchQuery=this.value;ppRenderTableOnly()"></div>
+      <div class="field"><label>Kategoriya</label><select onchange="ppCategoryFilter=this.value;renderPage()">
+        <option value="">Barcha kategoriyalar</option>
+        ${(DB.categories||[]).map(c=>`<option value="${c}" ${ppCategoryFilter===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Brend</label><select onchange="ppBrandFilter=this.value;renderPage()">
+        <option value="">Barcha brendlar</option>
+        ${(DB.brands||[]).map(b=>`<option value="${b.name}" ${ppBrandFilter===b.name?'selected':''}>${b.name}</option>`).join('')}
+      </select></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-toolbar"><div class="section-title" style="margin:0;">Mahsulotlar (${ppFilteredResults().length})</div></div>
+    <div class="table-scroll"><table id="ppTable">
+      <thead><tr><th>Mahsulot</th><th>SKU / Shtrix-kod</th><th>Hozirgi qoldiq</th><th>${ppPeriodLabel()} sotuvi</th><th>Kunlik o'rtacha</th><th>Qamrov</th><th>Kelajak uchun kerak</th><th>Xarid qilish kerak</th><th>Taxminiy tugash</th><th>Holat</th></tr></thead>
+      <tbody id="ppTableBody">${ppTableRowsHtml()}</tbody>
+    </table></div>
+    <div class="mobile-stock-list" id="ppMobileList">${ppMobileCardsHtml()}</div>
+  </div>
+  <div style="font-size:11px;color:var(--text-faint);margin-top:8px;">${icon('info')} Prognoz o'tgan davrdagi o'rtacha sotuv asosida hisoblangan.</div>
+  `;
+}
+
+function ppTableRowsHtml(){
+  const list = ppFilteredResults();
+  if(!list.length) return emptyRow(10,"Mos mahsulot topilmadi");
+  return list.map(r=>`<tr>
+    <td data-label="Mahsulot"><div style="display:flex;align-items:center;gap:10px;"><div class="thumb">${r.emoji||'📦'}</div><span class="cell-strong">${r.name}</span></div></td>
+    <td data-label="SKU/Shtrix" class="cell-mono">${[r.sku,r.barcode].filter(Boolean).join(' / ')||'—'}</td>
+    <td data-label="Qoldiq" class="cell-mono">${fmtQty(r.currentStock)} ${r.unit}</td>
+    <td data-label="Sotuv" class="cell-mono">${fmtQty(r.soldQty)} ${r.unit}</td>
+    <td data-label="Kunlik" class="cell-mono">${r.soldQty>0 ? fmtQty(r.avgDaily)+' '+r.unit+'/kun' : "Sotuv yo'q"}</td>
+    <td data-label="Qamrov" class="cell-mono">${r.daysLeft==null ? '—' : (isFinite(r.daysLeft) ? fmtQty(r.daysLeft)+' kun' : '∞')}</td>
+    <td data-label="Kerak" class="cell-mono">${r.futureNeed==null ? '—' : fmtQty(r.futureNeed)+' '+r.unit}</td>
+    <td data-label="Xarid" class="cell-mono" style="font-weight:800;${r.buyQty>0?'color:var(--danger);':''}">${fmtQty(r.buyQty)} ${r.unit}</td>
+    <td data-label="Tugash">${r.endDate ? fmtDateUZ(r.endDate) : '—'}</td>
+    <td data-label="Holat"><span class="badge badge-${ppStatusColor(r.status)}">${ppStatusLabel(r.status)}</span></td>
+  </tr>`).join('');
+}
+function ppMobileCardsHtml(){
+  const list = ppFilteredResults();
+  if(!list.length) return `<div class="empty-state">${icon('inbox')}<div>Mos mahsulot topilmadi</div></div>`;
+  return list.map(r=>`
+  <div class="mobile-stock-card">
+    <div class="mobile-stock-top">
+      <div class="thumb">${r.emoji||'📦'}</div>
+      <div class="mobile-stock-name">${r.name}</div>
+      <span class="badge badge-${ppStatusColor(r.status)}" style="padding:1px 7px;font-size:9px;">${ppStatusLabel(r.status)}</span>
+    </div>
+    <div class="mobile-stock-row2"><span>Qoldiq: ${fmtQty(r.currentStock)} ${r.unit}</span><span>Kunlik: ${r.soldQty>0 ? fmtQty(r.avgDaily)+' '+r.unit : '—'}</span></div>
+    <div class="mobile-stock-row2"><span>${ppCoverageLabel()} ehtiyoj: ${r.futureNeed==null ? '—' : fmtQty(r.futureNeed)+' '+r.unit}</span><span style="font-weight:800;${r.buyQty>0?'color:var(--danger);':''}">Xarid: ${fmtQty(r.buyQty)} ${r.unit}</span></div>
+    <div class="mobile-stock-row2"><span>${r.daysLeft==null ? "Sotuv yo'q" : (isFinite(r.daysLeft) ? fmtQty(r.daysLeft)+' kunga yetadi' : '∞')}</span><span>${r.endDate ? 'Tugash: '+fmtDateUZ(r.endDate) : ''}</span></div>
+  </div>`).join('');
+}
+function ppRenderTableOnly(){
+  const tb = document.getElementById('ppTableBody'); if(tb) tb.innerHTML = ppTableRowsHtml();
+  const ml = document.getElementById('ppMobileList'); if(ml) ml.innerHTML = ppMobileCardsHtml();
+  lucide.createIcons();
+}
+
+/* ---------------- Xarid ro'yxatini yaratish ---------------- */
+function ppOpenOrderListModal(){
+  const list = ppResults.filter(r=>r.buyQty>0).sort((a,b)=>b.buyQty-a.buyQty);
+  if(!list.length){ toast("Xarid qilish kerak bo'lgan mahsulot yo'q"); return; }
+  const totalQty = list.reduce((a,r)=>a+r.buyQty,0);
+  openModal(`
+    <div class="modal-head"><h3>${icon('clipboard-list')} Xarid ro'yxati (${list.length} ta)</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="table-scroll"><table>
+        <thead><tr><th>Mahsulot</th><th>SKU</th><th>Qoldiq</th><th>Kunlik</th><th>Kerak</th><th>Xarid</th></tr></thead>
+        <tbody>${list.map(r=>`<tr>
+          <td data-label="Mahsulot" class="cell-strong">${r.name}</td>
+          <td data-label="SKU" class="cell-mono">${r.sku||'—'}</td>
+          <td data-label="Qoldiq" class="cell-mono">${fmtQty(r.currentStock)} ${r.unit}</td>
+          <td data-label="Kunlik" class="cell-mono">${fmtQty(r.avgDaily)}</td>
+          <td data-label="Kerak" class="cell-mono">${fmtQty(r.futureNeed)}</td>
+          <td data-label="Xarid" class="cell-mono cell-strong">${fmtQty(r.buyQty)} ${r.unit}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+      <div style="margin-top:10px;font-size:12.5px;color:var(--text-soft);">Jami xarid miqdori: <strong>${fmtQty(totalQty)}</strong></div>
+    </div>
+    <div class="modal-foot" style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="ppSaveOrderList()">${icon('save')} Saqlash</button>
+      <button class="btn btn-outline" onclick="ppExportExcel()">${icon('file-spreadsheet')} Excel</button>
+      <button class="btn btn-primary" onclick="closeModal()">Yopish</button>
+    </div>
+  `, true);
+}
+function ppSaveOrderList(){
+  const list = ppResults.filter(r=>r.buyQty>0).sort((a,b)=>b.buyQty-a.buyQty);
+  if(!list.length) return;
+  const entry = {
+    id:uid('pl'), date:new Date().toISOString(), periodLabel:ppPeriodLabel(), coverageLabel:ppCoverageLabel(),
+    items:list.map(r=>({productId:r.productId,name:r.name,sku:r.sku,currentStock:r.currentStock,avgDaily:r.avgDaily,futureNeed:r.futureNeed,buyQty:r.buyQty,unit:r.unit})),
+    createdBy: (document.getElementById('roleSelect').selectedOptions[0].textContent.split('—')[1]||'').trim()
+  };
+  if(!DB.purchaseLists) DB.purchaseLists = [];
+  DB.purchaseLists.unshift(entry);
+  logActivity(`Xarid ro'yxati yaratildi: ${list.length} ta mahsulot, jami ${fmtQty(list.reduce((a,r)=>a+r.buyQty,0))}`);
+  save();
+  toast("Xarid ro'yxati saqlandi");
+  closeModal();
+}
+
+/* ---------------- Export: Excel / PDF / Chop etish ---------------- */
+function ppExportRows(){
+  return ppFilteredResults().map(r=>[
+    ppPeriodLabel(), ppCoverageLabel(), todayISO(), r.name, r.sku||'', r.currentStock, r.soldQty,
+    r.avgDaily ? Number(r.avgDaily.toFixed(2)) : 0,
+    (r.futureNeed!=null ? r.futureNeed : '—'),
+    r.buyQty, ppStatusLabel(r.status)
+  ]);
+}
+function ppExportExcel(){
+  if(!ppCalculated || (ppCalcMeta && ppCalcMeta.error)){ toast("Avval hisoblang", true); return; }
+  if(typeof XLSX==='undefined'){ toast("Excel kutubxonasi yuklanmadi, internet aloqasini tekshiring", true); return; }
+  const header = ['Sotuv davri','Qamrov davri','Sana','Mahsulot','SKU','Qoldiq','Sotuv',"O'rtacha kunlik sotuv",'Kerakli miqdor','Xarid miqdori','Holat'];
+  const rows = [header, ...ppExportRows()];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:26},{wch:14},{wch:9},{wch:9},{wch:14},{wch:12},{wch:12},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Xarid rejasi');
+  XLSX.writeFile(wb, `xarid_rejasi_${todayISO()}.xlsx`);
+}
+function ppExportPdf(){
+  if(!ppCalculated || (ppCalcMeta && ppCalcMeta.error)){ toast("Avval hisoblang", true); return; }
+  if(typeof window.jspdf==='undefined'){ toast("PDF kutubxonasi yuklanmadi — internet aloqasini tekshiring", true); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt',format:'a4',orientation:'landscape'});
+  const cols = [
+    {label:'Mahsulot', x:30, w:140}, {label:'SKU', x:172, w:60}, {label:'Qoldiq', x:234, w:50},
+    {label:'Sotuv', x:286, w:50}, {label:"Kunlik o'rtacha", x:338, w:60}, {label:'Kerak', x:400, w:55},
+    {label:'Xarid', x:457, w:55}, {label:'Holat', x:514, w:80}
+  ];
+  let y = 46;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text("Xaridni rejalashtirish", 30, 28);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Sotuv davri: ${ppPeriodLabel()}   Qamrov: ${ppCoverageLabel()}   Sana: ${fmtDateUZ(todayISO())}`, 30, 40);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  cols.forEach(c=>doc.text(c.label, c.x, y));
+  doc.setFont('helvetica','normal'); y+=6; doc.line(30,y,594,y); y+=12;
+  ppFilteredResults().forEach(r=>{
+    if(y>560){ doc.addPage(); y=40; doc.setFont('helvetica','bold'); cols.forEach(c=>doc.text(c.label,c.x,y)); doc.setFont('helvetica','normal'); y+=6; doc.line(30,y,594,y); y+=12; }
+    const name = r.name.length>26 ? r.name.slice(0,26)+'…' : r.name;
+    doc.text(name, cols[0].x, y);
+    doc.text(r.sku||'—', cols[1].x, y);
+    doc.text(`${fmtQty(r.currentStock)}`, cols[2].x, y);
+    doc.text(`${fmtQty(r.soldQty)}`, cols[3].x, y);
+    doc.text(r.soldQty>0 ? fmtQty(r.avgDaily) : '—', cols[4].x, y);
+    doc.text(r.futureNeed!=null ? fmtQty(r.futureNeed) : '—', cols[5].x, y);
+    doc.text(`${fmtQty(r.buyQty)}`, cols[6].x, y);
+    doc.text(ppStatusLabel(r.status), cols[7].x, y);
+    y+=14;
+  });
+  doc.save(`xarid_rejasi_${todayISO()}.pdf`);
+}
+function ppPrint(){
+  if(!ppCalculated || (ppCalcMeta && ppCalcMeta.error)){ toast("Avval hisoblang", true); return; }
+  const w = window.open('','_blank');
+  if(!w){ toast("Chop etish oynasi ochilmadi (brauzer popupni bloklagan bo'lishi mumkin)", true); return; }
+  const rows = ppFilteredResults().map(r=>`<tr>
+    <td>${r.name}</td><td>${r.sku||'—'}</td><td>${fmtQty(r.currentStock)} ${r.unit}</td>
+    <td>${fmtQty(r.soldQty)} ${r.unit}</td><td>${r.soldQty>0?fmtQty(r.avgDaily):'—'}</td>
+    <td>${r.futureNeed!=null?fmtQty(r.futureNeed):'—'}</td><td>${fmtQty(r.buyQty)} ${r.unit}</td>
+    <td>${ppStatusLabel(r.status)}</td></tr>`).join('');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Xaridni rejalashtirish</title>
+  <style>
+    *{box-sizing:border-box;} body{font-family:Arial,Helvetica,sans-serif;padding:24px;color:#111;}
+    h1{font-size:18px;margin:0 0 4px;} p{font-size:12px;color:#555;margin:0 0 16px;}
+    table{width:100%;border-collapse:collapse;font-size:11.5px;}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
+    th{background:#f3f4f6;}
+  </style></head><body>
+  <h1>Xaridni rejalashtirish</h1>
+  <p>Sotuv davri: ${ppPeriodLabel()} · Qamrov davri: ${ppCoverageLabel()} · Sana: ${fmtDateUZ(todayISO())}</p>
+  <table><thead><tr><th>Mahsulot</th><th>SKU</th><th>Qoldiq</th><th>Sotuv</th><th>Kunlik o'rtacha</th><th>Kerak</th><th>Xarid</th><th>Holat</th></tr></thead>
+  <tbody>${rows}</tbody></table>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 200);
+}
+
 const RENDERERS = {
   dashboard:renderDashboard, sales:renderSales, scanner:renderScanner, products:renderProducts,
   tovarlar:renderTovarlar,
   warehouse:renderWarehouse, inventory:renderInventory, customers:renderCustomers, debts:renderDebts, delivery:renderDeliveries,
   employees:renderEmployees, cash:renderCash, shiftHistory:renderShiftHistory, expenses:renderExpenses, returns:renderReturns,
-  reports:renderReports, settings:renderSettings,
+  reports:renderReports, purchasePlan:renderPurchasePlan, settings:renderSettings,
 };
 function renderPage(){
-  document.getElementById('content').innerHTML = `<div class="page active">${RENDERERS[currentPage]()}</div>`;
+  const groupTabsHtml = renderGroupTabs(currentPage);
+  document.getElementById('content').innerHTML = `<div class="page active">${groupTabsHtml}${RENDERERS[currentPage]()}</div>`;
   lucide.createIcons();
   if(currentPage==='dashboard') drawDashboardCharts();
   if(currentPage==='sales' && DB.currentShift){ renderPosGrid(); renderPayTypes(); renderCart(); }
