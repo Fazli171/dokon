@@ -344,8 +344,6 @@ tbody tr:hover{background:var(--surface-2);}
 .pos-pcard .pprice{font-family:var(--mono);font-weight:800;color:var(--primary-dark);font-size:13px;}
 .pos-pcard .pstock{font-size:10.5px;color:var(--text-faint);margin-top:2px;}
 .cart-card{position:sticky;top:80px;}
-#mobileCartBar{display:none;}
-#mobileCartBackdrop{display:none;}
 .cart-items{max-height:280px;overflow-y:auto;margin-bottom:12px;}
 .cart-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}
 .cart-item .ci-name{font-weight:700;font-size:12.5px;flex:1;}
@@ -415,6 +413,12 @@ tbody tr:hover{background:var(--surface-2);}
 .scan-line{position:absolute;left:11%;right:11%;height:2px;background:var(--primary);box-shadow:0 0 10px var(--primary);animation:scanmove 2.2s ease-in-out infinite;z-index:3;}
 @keyframes scanmove{0%{top:22%}50%{top:78%}100%{top:22%}}
 .scan-hint{font-size:11.5px;color:var(--text-faint);margin:-6px 0 12px;}
+/* Ketma-ket skanerlashda 1.5s LOCK holati — popup ko'rinib turgan vaqtda
+   skaner vizual ravishda "kutish" holatiga o'tadi (harakat to'xtaydi, rang
+   ko'karadi), foydalanuvchiga keyingi skan hali qabul qilinmayotgani aniq bo'ladi. */
+.scan-frame.locked{filter:saturate(.7) brightness(.82);}
+.scan-frame.locked .scan-line{animation-play-state:paused;opacity:.3;background:var(--secondary);box-shadow:0 0 10px var(--secondary);}
+.scan-frame.locked .scan-corner{border-color:var(--secondary);opacity:.55;}
 
 /* Debt status */
 .debt-progress{width:100%;height:6px;background:var(--border);border-radius:6px;overflow:hidden;}
@@ -472,25 +476,17 @@ tbody tr:hover{background:var(--surface-2);}
   .search-box{display:none;}
   #searchResults{left:14px;width:calc(100% - 28px);}
   #notifPanel{right:14px;width:calc(100% - 28px);}
-  /* Savat — mobil bottom sheet: ekranni egallamaydi, pastdagi "Savat — summa"
-     tugmasi bosilganda panel sifatida ko'tariladi. */
+  /* Savat — mobilda alohida oyna/floating tugma emas, savdo sahifasining
+     doimiy qismi: mahsulotlar ro'yxati ostida, sahifaning oddiy oqimida
+     joylashadi. Ichki (nested) scroll yo'q — butun sahifa bitta scroll
+     bilan harakatlanadi, savat ustidan alohida panel sifatida chiqmaydi.
+     renderCart()/hisob-kitob logikasiga tegilmagan. */
   .pos-wrap .cart-card{
-    position:fixed;left:0;right:0;bottom:0;z-index:46;
-    max-height:78vh;overflow-y:auto;border-radius:20px 20px 0 0;
-    transform:translateY(110%);transition:transform .25s var(--ease);
-    box-shadow:0 -12px 40px rgba(15,23,42,.2);margin:0;
+    position:static;
+    max-height:none;overflow-y:visible;
+    border-radius:16px;margin-top:14px;
+    box-shadow:none;
   }
-  .pos-wrap .cart-card.mobile-sheet-open{transform:translateY(0);}
-  #mobileCartBar{
-    display:flex;position:fixed;left:12px;right:12px;bottom:78px;z-index:44;
-    background:var(--primary);color:#fff;border-radius:16px;padding:13px 18px;
-    align-items:center;justify-content:space-between;font-weight:700;font-size:13.5px;
-    box-shadow:0 10px 26px rgba(59,130,246,.4);cursor:pointer;
-  }
-  #mobileCartBackdrop{
-    position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:44;
-  }
-  #mobileCartBackdrop.show{display:block;}
 }
 @media(max-width:640px){
   .grid-4,.grid-3,.grid-2,.grid-main-side{grid-template-columns:1fr;}
@@ -3332,7 +3328,7 @@ function renderSales(){
       <div id="posGrid"></div>
     </div>
     <div class="card cart-card">
-      <div class="section-title">Savat <span id="cartCount" style="font-weight:700;color:var(--text-faint);"></span></div>
+      <div class="section-title" style="margin-bottom:10px;">Savat <span id="cartCount" style="font-weight:700;color:var(--text-faint);"></span></div>
 
       <div class="field" style="margin-bottom:10px;">
         <label>Mijoz (ixtiyoriy, qarzda majburiy)</label>
@@ -3352,22 +3348,7 @@ function renderSales(){
       </div>
       <div id="payTrigger" style="margin-top:14px;"></div>
     </div>
-  </div>
-  <div id="mobileCartBackdrop" onclick="mobileCartToggle(false)"></div>
-  <div id="mobileCartBar" onclick="mobileCartToggle()">
-    <span>${icon('shopping-cart')} Savat</span>
-    <span id="mobileCartBarTotal">Savat bo'sh</span>
   </div>`;
-}
-/* Mobilda savat — bottom sheet. Faqat CSS class almashtiradi, savat
-   ma'lumotlari/hisob-kitobi (renderCart) butunlay o'zgarishsiz qoladi. */
-function mobileCartToggle(force){
-  const el = document.querySelector('.cart-card');
-  const bd = document.getElementById('mobileCartBackdrop');
-  if(!el) return;
-  const open = force!==undefined ? force : !el.classList.contains('mobile-sheet-open');
-  el.classList.toggle('mobile-sheet-open', open);
-  if(bd) bd.classList.toggle('show', open);
 }
 function posMatch(p,q){ return (p.name+' '+p.brand+' '+p.sku+' '+p.barcode+' '+p.qrCode+' '+(p.size||'')+' '+(p.unit||'')).toLowerCase().includes(q); }
 function posClearSearch(){
@@ -3613,9 +3594,6 @@ function renderCart(){
   if(payTriggerBox){
     payTriggerBox.innerHTML = `<button class="btn btn-primary btn-block" id="openPaymentBtn" onclick="openPaymentModal()" ${cart.length?'':'disabled'}>${icon('credit-card')} TO'LOV <span style="opacity:.85;">— ${fmt(grand)}</span></button>`;
   }
-  const mobileBarTotal = document.getElementById('mobileCartBarTotal');
-  if(mobileBarTotal) mobileBarTotal.textContent = cart.length? `${cart.length} xil — ${fmt(grand)}` : "Savat bo'sh";
-
   renderPayExtra();
   mnUpdateCartBadge();
   lucide.createIcons();
@@ -4197,6 +4175,26 @@ function cancelScanProductModal(){
   if(resume) openSalesScanModal();
 }
 let saleScanLast = {code:null,time:0};
+/* Ketma-ket skanerlash LOCK holati: SCAN → savatga qo'shiladi → popup (1.5s) → LOCK
+   (yangi skanlar qabul qilinmaydi) → popup yopiladi → UNLOCK → keyingi SCAN qabul
+   qilinadi. saleScanLocked=true bo'lganda decode natijalari butunlay e'tiborga olinmaydi. */
+let saleScanLocked = false;
+let saleScanLockTimer = null;
+const SALE_SCAN_LOCK_MS = 1500; // showScanProductPopup bilan bir xil — popup qancha ko'rinsa, LOCK ham shuncha davom etadi
+function saleScanSetLocked(locked){
+  saleScanLocked = locked;
+  const frame = document.getElementById('saleScanFrame');
+  if(frame) frame.classList.toggle('locked', locked);
+  const st = document.getElementById('saleScanStatus');
+  if(st) st.textContent = locked
+    ? "Qabul qilindi — keyingi skanerlash uchun kuting..."
+    : "Kamera faol — mahsulotni ramka ichiga tuting";
+}
+function saleScanLockAfterAdd(){
+  if(saleScanLockTimer) clearTimeout(saleScanLockTimer);
+  saleScanSetLocked(true);
+  saleScanLockTimer = setTimeout(()=>{ saleScanSetLocked(false); }, SALE_SCAN_LOCK_MS);
+}
 function openSalesScanModal(){
   openModal(`
     <div class="modal-head"><h3>${icon('scan-line')} Tezkor skaner</h3><button class="btn-ghost" onclick="closeSalesScan()">${icon('x')}</button></div>
@@ -4214,10 +4212,13 @@ function openSalesScanModal(){
     </div>
   `);
   saleScanLast = {code:null,time:0};
+  if(saleScanLockTimer){ clearTimeout(saleScanLockTimer); saleScanLockTimer=null; }
+  saleScanLocked = false;
   const video = document.getElementById('saleScanVideo');
   video.style.display='block';
   document.getElementById('saleScanPlaceholder').style.display='none';
   startScanEngine(video, (code)=>{
+    if(saleScanLocked) return; /* LOCK faol — yangi skanlar butunlay e'tiborga olinmaydi */
     const now = Date.now();
     if(code===saleScanLast.code && now-saleScanLast.time<1200) return;
     saleScanLast = {code, time:now};
@@ -4233,23 +4234,33 @@ function openSalesScanModal(){
     }
     if(canSellByMoney(p)){
       /* Qadoqsiz (kg/litr) mahsulotda aniq miqdor/summa kerak — tasdiqlash oynasi ochiladi,
-         yopilgach skanerlash davom etadi (returnToScan:true) */
+         yopilgach skanerlash davom etadi (returnToScan:true). Kamera to'xtatilgani uchun
+         alohida LOCK kerak emas — modal yopilib openSalesScanModal() qayta chaqirilganda
+         LOCK holati avtomatik tozalanadi. */
       stopScanEngine();
       openScanProductModal(p, {returnToScan:true});
       return;
     }
-    /* Oddiy mahsulot — darhol savatga qo'shiladi (qayta skanerlansa +1), kamera ishlashda davom etadi */
+    /* Oddiy mahsulot — darhol savatga qo'shiladi, popup ko'rsatiladi va SKANER 1.5s LOCK qilinadi.
+       LOCK tugagach avtomatik UNLOCK bo'lib, keyingi SCAN qabul qilina boshlaydi. */
     const beforeQty = cartFind(p.id)?.qty || 0;
     addToCart(p.id);
     const afterQty = cartFind(p.id)?.qty || 0;
     if(box) box.innerHTML = `<div class="alert alert-ok">${icon('check-circle2')}<span>${p.name} savatga qo'shildi</span></div>`;
-    if(afterQty>beforeQty) showScanProductPopup(p, roundQty(afterQty-beforeQty));
+    if(afterQty>beforeQty){
+      showScanProductPopup(p, roundQty(afterQty-beforeQty));
+      saleScanLockAfterAdd();
+    }
   }, (err)=>{
-    const st=document.getElementById('saleScanStatus'); if(st) st.textContent = "Xato: "+err;
+    const st=document.getElementById('saleScanStatus'); if(st && !saleScanLocked) st.textContent = "Xato: "+err;
   });
   const st=document.getElementById('saleScanStatus'); if(st) st.textContent = "Kamera faol — mahsulotni ramka ichiga tuting";
 }
-function closeSalesScan(){ stopScanEngine(); closeModal(); if(currentPage==='sales') renderCart(); }
+function closeSalesScan(){
+  if(saleScanLockTimer){ clearTimeout(saleScanLockTimer); saleScanLockTimer=null; }
+  saleScanLocked = false;
+  stopScanEngine(); closeModal(); if(currentPage==='sales') renderCart();
+}
 
 /* Keyboard-wedge: USB/Bluetooth barcode scanners type fast + Enter.
    "Skanerdan keyin avtomatik Enter" (Sozlamalar > Umumiy, getScannerAutoEnter())
