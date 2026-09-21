@@ -1194,6 +1194,8 @@ th[data-sort=asc] .sort-ic path:nth-child(1),th[data-sort=desc] .sort-ic path:nt
 .oh-select:focus{outline:none;border-color:var(--primary);}
 .oh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .oh-chips .dh-chip{white-space:nowrap;}
+.oh-subchips{margin-top:-4px;}
+.oh-subchips .dh-chip{padding:5px 12px;font-size:12px;}
 .oh-summary{font-size:12.5px;color:var(--text-soft);margin:0 2px 4px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;}
 .oh-summary b{color:var(--text);font-family:var(--mono);}
 .oh-dot{color:var(--text-faint);}
@@ -2551,11 +2553,13 @@ th[data-sort=asc] .sort-ic path:nth-child(1),th[data-sort=desc] .sort-ic path:nt
 .mh-grid.list-mode .mh-price{font-size:13px;}
 .mh-grid.list-mode .mh-price-row .badge{font-size:10.5px;padding:3px 9px;}
 /* Brend kartochkalari — Mahsulotlar bo'limi 1-daraja (BRENDLAR RO'YXATI) */
-.bc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%;box-sizing:border-box;}
+.bc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;box-sizing:border-box;}
 @media(min-width:641px){.bc-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}}
 @media(min-width:1025px){.bc-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}}
 @media(min-width:1400px){.bc-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}}
-.bc-card{position:relative;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border,#E5E9E6);border-radius:16px;padding:13px 14px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden;}
+.bc-card{position:relative;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border,#E5E9E6);border-radius:16px;padding:13px 14px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;min-width:0;max-width:100%;box-sizing:border-box;overflow:visible;}
+/* ⋮ menyu ochiq karta keyingi kartalar USTIDA ko'rinsin (aks holda keyingi brend orqasida qolib ketadi) */
+.bc-card.menu-open{z-index:50;}
 .bc-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-2px);}
 .bc-logo{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;background:var(--surface-2,#F7F9F8);color:var(--primary);overflow:hidden;}
 .bc-logo svg{width:20px;height:20px;}
@@ -2566,11 +2570,21 @@ th[data-sort=asc] .sort-ic path:nth-child(1),th[data-sort=desc] .sort-ic path:nt
 .bc-menu-wrap{position:relative;flex-shrink:0;}
 .bc-arrow{flex-shrink:0;color:var(--text-faint,#8B958E);display:flex;align-items:center;}
 .bc-arrow svg{width:18px;height:18px;}
-@media(max-width:480px){
-  .bc-card{padding:11px 12px;gap:9px;border-radius:13px;}
-  .bc-logo{width:38px;height:38px;font-size:15px;}
+.bc-menu-wrap .mh-menu{min-width:150px;top:30px;}
+.bc-menu-wrap .mh-menu-btn{width:30px;height:30px;border-radius:9px;}
+.bc-menu-wrap .mh-menu-btn svg{width:18px;height:18px;}
+@media(max-width:640px){
+  /* 2 ustunli mobil ko'rinish: har bir karta ichida logo + ⋮ tepada, nom + son pastda */
+  .bc-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"logo menu" "info arrow";align-items:center;row-gap:8px;column-gap:6px;padding:10px 10px 11px 12px;border-radius:14px;}
+  .bc-logo{grid-area:logo;width:38px;height:38px;font-size:15px;}
+  .bc-menu-wrap{grid-area:menu;align-self:start;justify-self:end;margin:-2px -2px 0 0;}
+  .bc-info{grid-area:info;}
+  .bc-arrow{grid-area:arrow;}
+  .bc-arrow svg{width:16px;height:16px;}
   .bc-name{font-size:13px;}
   .bc-count{font-size:11px;}
+  /* "Brendsiz" kartada menyu yo'q — o'qcha yuqori o'ng burchakka */
+  .bc-card.no-menu .bc-arrow{grid-area:menu;align-self:start;justify-self:end;margin-top:4px;}
 }
 /* Yaroqlilik muddati belgisi — mahsulot kartochkalarida/ro'yxatlarida (faqat
    tez orada tugaydigan/tugagan holatlarda ko'rinadi) */
@@ -2728,9 +2742,13 @@ tbody tr.yq-row-ok td:first-child{box-shadow:inset 3px 0 0 var(--primary);}
    AI OVOZLI CHAT — mikrofon, "Ovozli javob" toggle, holat qatori (aiv- / ai-voice- prefikslari)
    Mavjud dizayn o'zgaruvchilari (--primary, --surface, --danger ...) ishlatiladi.
    ============================================================ */
-.ai-voice-bar{flex-shrink:0;display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--surface);}
-.ai-voice-toggle{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:4px 0;cursor:pointer;
+.ai-voice-bar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--surface);}
+.ai-voice-toggle{display:flex;align-items:center;gap:8px;flex:1;min-width:0;background:none;border:none;padding:4px 0;cursor:pointer;
   font-family:var(--font);font-size:12px;font-weight:600;color:var(--text-soft);text-align:left;touch-action:manipulation;}
+.ai-lang-switch{display:flex;flex-shrink:0;border:1px solid var(--border-strong);border-radius:var(--radius-s);overflow:hidden;}
+.ai-lang-btn{background:var(--surface-2);border:none;padding:4px 9px;font-family:var(--font);font-size:11px;font-weight:800;color:var(--text-faint);cursor:pointer;touch-action:manipulation;}
+.ai-lang-btn+.ai-lang-btn{border-left:1px solid var(--border-strong);}
+.ai-lang-btn.active{background:var(--primary);color:#fff;}
 .ai-voice-toggle .aiv-vt-ic{display:flex;color:var(--text-faint);}
 .ai-voice-toggle .aiv-vt-ic svg{width:15px;height:15px;}
 .ai-voice-toggle .aiv-vt-ic .aiv-off{display:flex;}
@@ -2791,20 +2809,21 @@ tbody tr.yq-row-ok td:first-child{box-shadow:inset 3px 0 0 var(--primary);}
 .ai-input-wrap.aiv-speaking .ai-voice-act .aiv-i-stop,.ai-input-wrap.aiv-speaking .ai-voice-act .aiv-act-label{display:inline;}
 .ai-input-wrap.aiv-speaking .ai-voice-act svg.aiv-i-stop{display:block;}
 
-/* har bir AI javobi ostidagi "ovozda o'qish" tugmasi */
-.ai-say-btn{margin-top:3px;width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--text-faint);display:flex;
-  align-items:center;justify-content:center;cursor:pointer;padding:0;touch-action:manipulation;transition:background .15s,color .15s;}
-.ai-say-btn:hover{background:var(--primary-light);color:var(--primary-dark);}
-.ai-say-btn.playing{background:var(--primary-light);color:var(--primary-dark);}
-.ai-say-btn svg{width:15px;height:15px;}
-.ai-say-btn .aiv-i-stop{display:none;}
+/* har bir AI javobi ostidagi "O'qib berish" tugmasi (holatlar: oddiy → loading → playing) */
+.ai-say-btn{margin-top:4px;height:28px;padding:0 11px 0 9px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text-faint);display:inline-flex;
+  align-items:center;gap:6px;cursor:pointer;touch-action:manipulation;font-family:var(--font);font-size:12px;font-weight:700;line-height:1;transition:background .15s,color .15s,border-color .15s;}
+.ai-say-btn:hover,.ai-say-btn.playing,.ai-say-btn.loading{background:var(--primary-light);color:var(--primary-dark);border-color:rgba(var(--primary-rgb),.3);}
+.ai-say-btn svg{width:15px;height:15px;flex-shrink:0;}
+.ai-say-btn .aiv-i-stop,.ai-say-btn .aiv-say-spin{display:none;}
 .ai-say-btn.playing .aiv-i-stop{display:block;}
-.ai-say-btn.playing .aiv-i-vol{display:none;}
+.ai-say-btn.playing .aiv-i-vol,.ai-say-btn.loading .aiv-i-vol{display:none;}
+.ai-say-btn.loading .aiv-say-spin{display:block;}
+.aiv-say-spin{width:13px;height:13px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--primary);animation:aiv-spin .7s linear infinite;flex-shrink:0;}
 
 @keyframes aiv-pulse{0%{box-shadow:0 0 0 0 rgba(var(--danger-rgb),.55);}70%{box-shadow:0 0 0 8px rgba(var(--danger-rgb),0);}100%{box-shadow:0 0 0 0 rgba(var(--danger-rgb),0);}}
 @keyframes aiv-spin{to{transform:rotate(360deg);}}
 @keyframes aiv-eq{0%,100%{transform:scaleY(.3);}50%{transform:scaleY(1);}}
-@media (prefers-reduced-motion:reduce){.ai-voice-pill .aiv-ind,.ai-voice-pill .aiv-eq i{animation:none;}}
+@media (prefers-reduced-motion:reduce){.ai-voice-pill .aiv-ind,.ai-voice-pill .aiv-eq i,.aiv-say-spin{animation:none;}}
 
 @media(max-width:900px){
   .ai-fab{bottom:82px;right:16px;}
@@ -3695,6 +3714,10 @@ body.theme-dark :where(.btn-danger,.k2-close-btn,.k2-close-btn *){color:var(--on
       <span class="aiv-vt-label">Ovozli javob: <b id="aiVoiceToggleState">OFF</b></span>
       <span class="aiv-vt-sw"></span>
     </button>
+    <div class="ai-lang-switch" id="aiLangSwitch" role="group" aria-label="Javob tili / Язык ответа">
+      <button type="button" class="ai-lang-btn" id="aiLangBtnUz" onclick="aiSetLang('uz')" title="Javoblarni o'zbek tilida ber">UZ</button>
+      <button type="button" class="ai-lang-btn" id="aiLangBtnRu" onclick="aiSetLang('ru')" title="Отвечать на русском">RU</button>
+    </div>
   </div>
   <div class="ai-body" id="aiBody"></div>
   <div class="ai-quick" id="aiQuick"></div>
@@ -4524,7 +4547,7 @@ function mnUpdateCartBadge(){
 }
 
 function nav(page, keepDay){
-  if(page==='shiftHistory'){ ohOpen('cash'); return; } // "Smena tarixi" alohida sahifa emas — Amaliyotlar tarixi → Kassa filtrida
+  if(page==='shiftHistory'){ ohOpen('cash','shift'); return; } // "Smena tarixi" alohida sahifa emas — Amaliyotlar tarixi → Kassa filtrida
   if(page==='dailyHistory'){ ohOpen('all'); return; }  // "Kunlik tarix" alohida sahifa emas — Amaliyotlar tarixi ichida
   if(!keepDay) dhOpenKey = null;                       // Amaliyotlar tarixi ichidagi "Kun hisoboti" ko'rinishidan chiqiladi
   if(!canAccess(page)){ toast("Sizda bu bo'limga ruxsat yo'q",true); return; }
@@ -5340,7 +5363,7 @@ function dkBrandCardHtml(b, count, isUnassigned){
       </div>
     </div>`;
   return `
-  <div class="bc-card" onclick="dkOpenBrand('${b.id}')">
+  <div class="bc-card${dkBcOpenMenuId===b.id?' menu-open':''}${isUnassigned?' no-menu':''}" onclick="dkOpenBrand('${b.id}')">
     <div class="bc-logo">${dkBrandLogoInner(b,isUnassigned)}</div>
     <div class="bc-info">
       <div class="bc-name">${b.name}</div>
@@ -14490,12 +14513,12 @@ function calculateResult(intent,entities,data){
   switch(intent){
     case 'daily_sales': {
       const r = data.range;
-      aiRememberRange('Bugungi savdo', r.total, 'daily_sales');
+      aiRememberRange(aiRangeLabel('daily_sales'), r.total, 'daily_sales');
       return {total:r.total, count:r.count, avg: r.count? r.total/r.count : 0, profit:r.profit};
     }
     case 'monthly_sales': {
       const r = data.range;
-      aiRememberRange('Shu oylik savdo', r.total, 'monthly_sales');
+      aiRememberRange(aiRangeLabel('monthly_sales'), r.total, 'monthly_sales');
       return {total:r.total, count:r.count, avg: r.count? r.total/r.count : 0, profit:r.profit};
     }
     case 'low_stock': return {products:data.products};
@@ -14527,7 +14550,7 @@ function calculateResult(intent,entities,data){
       if(!entities.period) return {ambiguous:true};
       const todayISOv = aiTodayISO();
       let r;
-      if(entities.period==='today'){ r = aiRangeNet(todayISOv,todayISOv); aiRememberRange('Bugungi foyda', r.profit, 'profit_today'); }
+      if(entities.period==='today'){ r = aiRangeNet(todayISOv,todayISOv); aiRememberRange(aiRangeLabel('profit_today'), r.profit, 'profit_today'); }
       else if(entities.period==='week') r = aiRangeNet(aiDaysAgoISO(6),todayISOv);
       else r = aiRangeNet(aiDaysAgoISO(29),todayISOv);
       return {period:entities.period, profit:r.profit, revenue:r.total};
@@ -14563,11 +14586,11 @@ function calculateResult(intent,entities,data){
       const y = aiDaysAgoISO(1);
       if(entities.profit || aiCtx.lastRangeKind==='profit_today' || aiCtx.lastRangeKind==='profit_yesterday'){
         const r = aiRangeNet(y,y);
-        aiRememberRange('Kechagi foyda', r.profit, 'profit_yesterday');
+        aiRememberRange(aiRangeLabel('profit_yesterday'), r.profit, 'profit_yesterday');
         return {kind:'profit', profit:r.profit, revenue:r.total};
       }
       const r = aiRangeNet(y,y);
-      aiRememberRange('Kechagi savdo', r.total, 'range_yesterday');
+      aiRememberRange(aiRangeLabel('range_yesterday'), r.total, 'range_yesterday');
       return {kind:'sales', total:r.total, count:r.count, profit:r.profit};
     }
     case 'range_diff': {
@@ -14578,94 +14601,225 @@ function calculateResult(intent,entities,data){
   }
 }
 
-const AI_PERIOD_LABEL = {today:'Bugungi', week:'Shu haftalik', month:'Shu oylik'};
+/* ---------------- AI JAVOB TILI: O'ZBEKCHA yoki RUSCHA (foydalanuvchi UZ/RU tugmasi bilan tanlaydi) ----------------
+   Foydalanuvchi savoli har doim o'zbekcha matn sifatida tahlil qilinadi (intent aniqlash o'zgarmaydi), lekin
+   AI JAVOBI endi AI_LANG ('uz' yoki 'ru') ga qarab tanlanadi. Bu FAQAT ko'rsatish qatlami: raqamlar
+   (fmtNum/fmtQty), mahsulot va mijoz nomlari, sanalar — bazadagi haqiqiy qiymatlar, ular o'zgarmaydi.
+   Faqat valyuta so'zi, o'lchov birligi, xarajat turi va jumla shabloni tilga qarab o'zgaradi. */
+let AI_LANG = 'uz';                       // 'uz' yoki 'ru' — joriy javob tili
+try{ const savedLang = localStorage.getItem('dk_ai_lang'); if(savedLang==='ru'||savedLang==='uz') AI_LANG = savedLang; }catch(e){}
+function aiPaintLangSwitch(){
+  const bUz = document.getElementById('aiLangBtnUz'), bRu = document.getElementById('aiLangBtnRu');
+  if(bUz) bUz.classList.toggle('active', AI_LANG==='uz');
+  if(bRu) bRu.classList.toggle('active', AI_LANG==='ru');
+}
+function aiSetLang(lang){
+  if(lang!=='uz' && lang!=='ru') return;
+  AI_LANG = lang;
+  try{ localStorage.setItem('dk_ai_lang', lang); }catch(e){}
+  aiPaintLangSwitch();
+}
+aiPaintLangSwitch();   // sahifa yuklanganda saqlangan til bo'yicha UZ/RU tugmasini darhol belgilaydi
+
+const aiRuMoney = n => fmtNum(n) + ' сум';                       // fmt() bilan bir xil raqam, faqat "so'm" o'rniga "сум"
+const aiRuNum = n => fmtQty(n).replace('.', ',');                // 1.5 → 1,5
+function aiRuPlural(n, f){                                       // 1 коробка / 2 коробки / 5 коробок
+  if(n % 1 !== 0) return f[1];
+  const a = Math.abs(n) % 100, b = a % 10;
+  if(a > 10 && a < 20) return f[2];
+  if(b === 1) return f[0];
+  if(b >= 2 && b <= 4) return f[1];
+  return f[2];
+}
+const AI_RU_UNITS = {
+  dona:'шт.', kg:'кг', g:'г', litr:'л', ml:'мл', metr:'м', 'm²':'м²', 'm³':'м³', boshqa:'ед.',
+  quti:['коробка','коробки','коробок'], pachka:['пачка','пачки','пачек'], banka:['банка','банки','банок'],
+  butilka:['бутылка','бутылки','бутылок'], qop:['мешок','мешка','мешков'], komplekt:['комплект','комплекта','комплектов'], rulon:['рулон','рулона','рулонов']
+};
+function aiRuUnit(unit, qty){
+  const u = AI_RU_UNITS[String(unit==null?'':unit).toLowerCase()];
+  if(u === undefined) return dhEsc(unit);                        // noma'lum birlik — bazadagi qiymat o'zgarishsiz
+  return Array.isArray(u) ? aiRuPlural(Number(qty)||0, u) : u;
+}
+const aiRuQty = (qty, unit) => aiRuNum(qty) + ' ' + aiRuUnit(unit, qty);
+const AI_RU_EXP = {'Ijara':'Аренда','Elektr':'Электричество','Yuk tashish':'Грузоперевозка','Transport':'Транспорт','Ish haqi':'Зарплата','Boshqa':'Прочее'};
+const aiRuExpCat = t => AI_RU_EXP[t] || dhEsc(t);
+
+/* ---- o'zbekcha ko'rsatish (Uzbek grammatikasida ot sanoq bilan turlanmaydi — bitta so'z yetarli) ---- */
+const aiUzMoney = n => fmtNum(n) + " so'm";
+const aiUzNum = n => fmtQty(n);
+const AI_UZ_UNITS = {
+  dona:'dona', kg:'kg', g:'g', litr:'litr', ml:'ml', metr:'m', 'm²':'m²', 'm³':'m³', boshqa:'birlik',
+  quti:'quti', pachka:'pachka', banka:'banka', butilka:'butilka', qop:'qop', komplekt:'komplekt', rulon:'rulon'
+};
+function aiUzUnit(unit){
+  const u = AI_UZ_UNITS[String(unit==null?'':unit).toLowerCase()];
+  return u===undefined ? dhEsc(unit) : u;
+}
+const aiUzQty = (qty, unit) => aiUzNum(qty) + ' ' + aiUzUnit(unit);
+const aiUzExpCat = t => dhEsc(t);                                 // DB.expenses.type allaqachon o'zbekcha
+
+/* ---- tilga qarab dispatch qiluvchi umumiy formatlash funksiyalari — generateResponse shularni ishlatadi ---- */
+function aiMoney(n){ return AI_LANG==='uz' ? aiUzMoney(n) : aiRuMoney(n); }
+function aiNum(n){ return AI_LANG==='uz' ? aiUzNum(n) : aiRuNum(n); }
+function aiQty(qty,unit){ return AI_LANG==='uz' ? aiUzQty(qty,unit) : aiRuQty(qty,unit); }
+function aiUnitLabel(unit,qty){ return AI_LANG==='uz' ? aiUzUnit(unit) : aiRuUnit(unit,qty); }
+function aiExpCat(t){ return AI_LANG==='uz' ? aiUzExpCat(t) : aiRuExpCat(t); }
+
+/* Tugma yorlig'i (ruscha ko'rinishi mumkin) → chatga yuboriladigan o'zbekcha matn (intent aniqlash o'zbekcha) */
+const AI_CHIP_SEND = {'Сегодня':'Bugun', 'На этой неделе':'Shu hafta', 'За этот месяц':'Shu oy'};
+const AI_PROFIT_CHIPS = { uz:['Bugun','Shu hafta','Shu oy'], ru:['Сегодня','На этой неделе','За этот месяц'] };
+
+const AI_PERIOD_LABEL = {today:'Прибыль за сегодня', week:'Прибыль за эту неделю', month:'Прибыль за месяц (30 дней)'};
+const AI_PERIOD_LABEL_UZ = {today:'Bugungi foyda', week:'Shu haftalik foyda', month:'Oylik foyda (30 kun)'};
+
+/* aiRememberRange uchun tilga mos yorliqlar — 'range_diff' javobida keyinroq shu til bilan ko'rsatiladi */
+const AI_RANGE_LABELS = {
+  ru: { daily_sales:'Продажи за сегодня', monthly_sales:'Продажи за месяц', profit_today:'Прибыль за сегодня', profit_yesterday:'Прибыль за вчера', range_yesterday:'Продажи за вчера' },
+  uz: { daily_sales:'Bugungi savdo', monthly_sales:'Oylik savdo', profit_today:'Bugungi foyda', profit_yesterday:'Kechagi foyda', range_yesterday:'Kechagi savdo' }
+};
+function aiRangeLabel(key){ return (AI_RANGE_LABELS[AI_LANG]||AI_RANGE_LABELS.ru)[key] || key; }
+
+const AI_NOTFOUND_MSG = { uz:"Bunday tovar topilmadi. Boshqa nom yoki shtrix-kodni sinab ko'ring.", ru:'Такой товар не найден. Попробуйте другое название или штрихкод.' };
+const AI_NOTFORSALE_MSG = { uz:'<br>ℹ️ Bu tovar hozir sotilmayapti.', ru:'<br>ℹ️ Этот товар сейчас не продаётся.' };
 
 /* Bir nechta mos mahsulot topilganda: raqamlangan ro'yxat + tugmalar (foydalanuvchi tanlaydi, AI taxmin qilmaydi) */
 function aiAmbiguousResponse(result){
   const opts = result.options||[];
   const list = opts.map((p,i)=>`${i+1}. ${dhEsc(aiProdLabel(p))}`).join('<br>');
-  const more = result.more>0 ? `<br><br>…va yana ${result.more} ta mos mahsulot bor. Nomini aniqroq yozing (masalan, hajmi bilan).` : '';
-  return {html:`Qaysi mahsulotni nazarda tutyapsiz?<br><br>${list}${more}<br><br><span style="font-size:11px;color:var(--text-faint)">Raqamini yozing yoki tugmani bosing.</span>`, chips:opts.map(p=>aiProdLabel(p))};
+  const isUz = AI_LANG==='uz';
+  const more = result.more>0
+    ? (isUz ? `<br><br>…yana ${result.more} ta mos tovar bor. Nomni aniqlashtiring (masalan, hajmi bilan).`
+            : `<br><br>…и ещё ${result.more} подходящих товаров. Уточните название (например, с объёмом).`)
+    : '';
+  const head = isUz ? 'Qaysi tovarni nazarda tutyapsiz?' : 'Какой товар вы имеете в виду?';
+  const hint = isUz ? 'Raqamni kiriting yoki tugmani bosing.' : 'Введите номер или нажмите на кнопку.';
+  return {html:`${head}<br><br>${list}${more}<br><br><span style="font-size:11px;color:var(--text-faint)">${hint}</span>`, chips:opts.map(p=>aiProdLabel(p))};
 }
 
 function generateResponse(intent,entities,result){
+  const isUz = AI_LANG==='uz';
+  const notFound = AI_NOTFOUND_MSG[AI_LANG];
+  const notForSaleTag = AI_NOTFORSALE_MSG[AI_LANG];
   switch(intent){
     case 'daily_sales':
-      return {html:`📊 <strong>Bugungi savdo</strong><br><br>Savdo aylanmasi: <strong>${fmt(result.total)}</strong><br>Savdolar soni: ${result.count} ta<br>O'rtacha chek: ${fmt(result.avg||0)}<br><br>💰 Foyda: <strong>${fmt(result.profit)}</strong>`};
+      return {html: isUz
+        ? `📊 <strong>Bugungi savdo</strong><br><br>Bugun siz <strong>${aiMoney(result.total)}</strong> summaga tovar sottingiz.<br>Savdolar soni: ${result.count}<br>O'rtacha chek: ${aiMoney(result.avg||0)}<br><br>💰 Foyda: <strong>${aiMoney(result.profit)}</strong>`
+        : `📊 <strong>Продажи за сегодня</strong><br><br>Сегодня вы продали товаров на <strong>${aiMoney(result.total)}</strong>.<br>Количество продаж: ${result.count}<br>Средний чек: ${aiMoney(result.avg||0)}<br><br>💰 Прибыль: <strong>${aiMoney(result.profit)}</strong>`};
     case 'monthly_sales':
-      return {html:`📊 <strong>Shu oylik savdo (oxirgi 30 kun)</strong><br><br>Savdo aylanmasi: <strong>${fmt(result.total)}</strong><br>Savdolar soni: ${result.count} ta<br>O'rtacha chek: ${fmt(result.avg||0)}<br><br>💰 Foyda: <strong>${fmt(result.profit)}</strong>`};
+      return {html: isUz
+        ? `📊 <strong>Oylik savdo (oxirgi 30 kun)</strong><br><br>Aylanma: <strong>${aiMoney(result.total)}</strong><br>Savdolar soni: ${result.count}<br>O'rtacha chek: ${aiMoney(result.avg||0)}<br><br>💰 Foyda: <strong>${aiMoney(result.profit)}</strong>`
+        : `📊 <strong>Продажи за месяц (последние 30 дней)</strong><br><br>Оборот: <strong>${aiMoney(result.total)}</strong><br>Количество продаж: ${result.count}<br>Средний чек: ${aiMoney(result.avg||0)}<br><br>💰 Прибыль: <strong>${aiMoney(result.profit)}</strong>`};
     case 'low_stock': {
-      if(!result.products.length) return {html:`✅ Hozircha kam qolgan tovarlar yo'q.`};
-      const rows = result.products.map(p=>`• ${aiProdLabel(p)} — qoldiq: <strong>${fmtQty(p.qty)} ${p.unit}</strong> (min: ${fmtQty(p.minQty)})`).join('<br>');
-      return {html:`⚠️ <strong>Kam qolgan tovarlar</strong><br><br>${rows}`};
+      if(!result.products.length) return {html: isUz ? `✅ Kam qolgan tovarlar hozircha yo'q.` : `✅ Товаров с низким остатком пока нет.`};
+      const rows = result.products.map(p => isUz
+        ? `• ${aiProdLabel(p)} — qoldiq: <strong>${aiQty(p.qty,p.unit)}</strong> (min.: ${aiNum(p.minQty)})`
+        : `• ${aiProdLabel(p)} — остаток: <strong>${aiQty(p.qty,p.unit)}</strong> (мин.: ${aiNum(p.minQty)})`).join('<br>');
+      return {html: isUz ? `⚠️ <strong>Kam qolgan tovarlar</strong><br><br>${rows}` : `⚠️ <strong>Товары с низким остатком</strong><br><br>${rows}`};
     }
     case 'top_products': {
-      if(!result.top.length) return {html:`Oxirgi 30 kunda savdo ma'lumotlari yo'q.`};
-      const rows = result.top.map((t,i)=>`${i+1}. ${t[0]} — ${fmtQty(t[1])} dona`).join('<br>');
-      return {html:`🏆 <strong>Eng ko'p sotilgan tovarlar (30 kun)</strong><br><br>${rows}`};
+      if(!result.top.length) return {html: isUz ? `Oxirgi 30 kunda savdo ma'lumotlari yo'q.` : `За последние 30 дней данных о продажах нет.`};
+      const rows = result.top.map((t,i)=>`${i+1}. ${t[0]} — ${aiNum(t[1])} ${isUz?'dona':'шт.'}`).join('<br>');
+      return {html: isUz ? `🏆 <strong>Eng ko'p sotilgan tovarlar (30 kun)</strong><br><br>${rows}` : `🏆 <strong>Самые продаваемые товары (30 дней)</strong><br><br>${rows}`};
     }
     case 'product_sales': {
-      if(result.notfound) return {html:`Bunday mahsulot topilmadi. Boshqa nom yoki shtrix-kod bilan urinib ko'ring.`};
+      if(result.notfound) return {html:notFound};
       if(result.ambiguous) return aiAmbiguousResponse(result);
-      return {html:`🧾 <strong>${dhEsc(result.label)}</strong><br><br>Sotilgan (30 kun): <strong>${fmtQty(result.qty)} dona</strong><br>Tushum: <strong>${fmt(result.revenue)}</strong>`};
+      return {html: isUz
+        ? `🧾 <strong>${dhEsc(result.label)}</strong><br><br>Sotilgan (30 kun): <strong>${aiNum(result.qty)} dona</strong><br>Tushum: <strong>${aiMoney(result.revenue)}</strong>`
+        : `🧾 <strong>${dhEsc(result.label)}</strong><br><br>Продано (30 дней): <strong>${aiNum(result.qty)} шт.</strong><br>Выручка: <strong>${aiMoney(result.revenue)}</strong>`};
     }
     case 'product_stock': {
-      if(result.notfound) return {html:`Bunday mahsulot topilmadi. Boshqa nom yoki shtrix-kod bilan urinib ko'ring.`};
+      if(result.notfound) return {html:notFound};
       if(result.ambiguous) return aiAmbiguousResponse(result);
-      const warn = (!result.notForSale && result.qty<=result.minQty) ? `<br>⚠️ Minimal qoldiqdan kam!` : '';
-      const off = result.notForSale ? `<br>ℹ️ Bu mahsulot hozir sotuvda emas.` : '';
-      return {html:`📦 <strong>${dhEsc(result.name)}</strong> — <strong>${fmtQty(result.qty)} ${dhEsc(result.unit)}</strong> qoldi.${warn}${off}`};
+      const warn = (!result.notForSale && result.qty<=result.minQty) ? (isUz ? `<br>⚠️ Qoldiq minimal darajadan past!` : `<br>⚠️ Остаток ниже минимального!`) : '';
+      const off = result.notForSale ? notForSaleTag : '';
+      return {html: isUz
+        ? `📦 <strong>${dhEsc(result.name)}</strong> — qoldi <strong>${aiQty(result.qty,result.unit)}</strong>.${warn}${off}`
+        : `📦 <strong>${dhEsc(result.name)}</strong> — осталось <strong>${aiQty(result.qty,result.unit)}</strong>.${warn}${off}`};
     }
     case 'product_price': {
-      if(result.notfound) return {html:`Bunday mahsulot topilmadi. Boshqa nom yoki shtrix-kod bilan urinib ko'ring.`};
+      if(result.notfound) return {html:notFound};
       if(result.ambiguous) return aiAmbiguousResponse(result);
-      const off = result.notForSale ? `<br>ℹ️ Bu mahsulot hozir sotuvda emas.` : '';
-      return {html:`💲 <strong>${dhEsc(result.name)}</strong><br><br>Sotuv narxi: <strong>${fmt(result.price)}</strong> (1 ${dhEsc(result.unit)} uchun)${off}`};
+      const off = result.notForSale ? notForSaleTag : '';
+      return {html: isUz
+        ? `💲 <strong>${dhEsc(result.name)}</strong><br><br>Sotish narxi: <strong>${aiMoney(result.price)}</strong> (1 ${aiUnitLabel(result.unit,1)} narxi)${off}`
+        : `💲 <strong>${dhEsc(result.name)}</strong><br><br>Цена продажи: <strong>${aiMoney(result.price)}</strong> (за единицу: ${aiUnitLabel(result.unit,1)})${off}`};
     }
     case 'profit': {
       if(result.ambiguous){
-        return {html:`Qaysi davr uchun foydani ko'rsatayin?`, chips:['Bugun','Shu hafta','Shu oy']};
+        return {html: isUz ? `Qaysi davr uchun foydani ko'rsatay?` : `За какой период показать прибыль?`, chips:AI_PROFIT_CHIPS[AI_LANG]};
       }
-      return {html:`💰 <strong>${AI_PERIOD_LABEL[result.period]} foyda</strong><br><br>Tushum: ${fmt(result.revenue)}<br>Foyda: <strong>${fmt(result.profit)}</strong>`};
+      return {html: isUz
+        ? `💰 <strong>${AI_PERIOD_LABEL_UZ[result.period]}</strong><br><br>Tushum: ${aiMoney(result.revenue)}<br>Foyda: <strong>${aiMoney(result.profit)}</strong>`
+        : `💰 <strong>${AI_PERIOD_LABEL[result.period]}</strong><br><br>Выручка: ${aiMoney(result.revenue)}<br>Прибыль: <strong>${aiMoney(result.profit)}</strong>`};
     }
     case 'expenses': {
-      if(!result.items.length) return {html:`Oxirgi 30 kunda xarajat qayd etilmagan.`};
-      const rows = result.items.map(e=>`• ${e.category} — ${fmt(e.amount)}`).join('<br>');
-      return {html:`🧾 <strong>Xarajatlar (oxirgi 30 kun)</strong><br><br>${rows}<br><br>Jami: <strong>${fmt(result.total)}</strong>`};
+      if(!result.items.length) return {html: isUz ? `Oxirgi 30 kunda xarajatlar qayd etilmagan.` : `За последние 30 дней расходов не зафиксировано.`};
+      const rows = result.items.map(e=>`• ${aiExpCat(e.category)} — ${aiMoney(e.amount)}`).join('<br>');
+      return {html: isUz
+        ? `🧾 <strong>Xarajatlar (oxirgi 30 kun)</strong><br><br>${rows}<br><br>Jami: <strong>${aiMoney(result.total)}</strong>`
+        : `🧾 <strong>Расходы (последние 30 дней)</strong><br><br>${rows}<br><br>Итого: <strong>${aiMoney(result.total)}</strong>`};
     }
     case 'debts': {
-      if(!result.customers.length) return {html:`✅ Hozircha qarzdorlar yo'q.`};
-      const rows = result.customers.map(c=>`• ${c.name} — <strong>${fmt(c.debtTotal)}</strong>${c.dueDate?` (muddat: ${c.dueDate})`:''}`).join('<br>');
-      return {html:`📋 <strong>Qarzdorlar</strong><br><br>${rows}<br><br>Jami qarz: <strong>${fmt(result.total)}</strong>`};
+      if(!result.customers.length) return {html: isUz ? `✅ Qarzdorlar hozircha yo'q.` : `✅ Должников пока нет.`};
+      const rows = result.customers.map(c => isUz
+        ? `• ${c.name} — <strong>${aiMoney(c.debtTotal)}</strong>${c.dueDate?` (muddat: ${c.dueDate})`:''}`
+        : `• ${c.name} — <strong>${aiMoney(c.debtTotal)}</strong>${c.dueDate?` (срок: ${c.dueDate})`:''}`).join('<br>');
+      return {html: isUz
+        ? `📋 <strong>Qarzdorlar</strong><br><br>${rows}<br><br>Umumiy qarz: <strong>${aiMoney(result.total)}</strong>`
+        : `📋 <strong>Должники</strong><br><br>${rows}<br><br>Общий долг: <strong>${aiMoney(result.total)}</strong>`};
     }
     case 'customers':
-      return {html:`👥 <strong>Mijozlar</strong><br><br>Jami mijozlar: <strong>${result.count}</strong><br>Qarzdor mijozlar: ${result.withDebt}`};
+      return {html: isUz
+        ? `👥 <strong>Mijozlar</strong><br><br>Jami mijozlar: <strong>${result.count}</strong><br>Qarzdor mijozlar: ${result.withDebt}`
+        : `👥 <strong>Клиенты</strong><br><br>Всего клиентов: <strong>${result.count}</strong><br>Клиентов с долгом: ${result.withDebt}`};
     case 'returns':
-      if(!result.count) return {html:`↩️ Oxirgi 30 kunda qaytarish bo'lmagan.`};
-      return {html:`↩️ <strong>Qaytarishlar (30 kun)</strong><br><br>Soni: ${result.count} ta<br>Jami summa: <strong>${fmt(result.total)}</strong>`};
+      if(!result.count) return {html: isUz ? `↩️ Oxirgi 30 kunda qaytarishlar bo'lmagan.` : `↩️ За последние 30 дней возвратов не было.`};
+      return {html: isUz
+        ? `↩️ <strong>Qaytarishlar (30 kun)</strong><br><br>Soni: ${result.count}<br>Umumiy summa: <strong>${aiMoney(result.total)}</strong>`
+        : `↩️ <strong>Возвраты (30 дней)</strong><br><br>Количество: ${result.count}<br>Общая сумма: <strong>${aiMoney(result.total)}</strong>`};
     case 'purchase_planning': {
-      if(!result.suggestions.length) return {html:`✅ Hozircha shoshilinch xarid qilish kerak bo'lgan tovar yo'q.`};
-      const rows = result.suggestions.map((s,i)=>`${i+1}. ${s.name}<br>&nbsp;&nbsp;Qoldiq: ${fmtQty(s.qty)} ${s.unit}<br>&nbsp;&nbsp;O'rtacha kunlik sotuv: ${fmtQty(s.avgDaily)} ${s.unit}<br>&nbsp;&nbsp;Tavsiya: <strong>${fmtQty(s.rec)} ${s.unit}</strong>`).join('<br><br>');
-      return {html:`🛒 <strong>Xarid qilish tavsiyasi</strong><br><br>${rows}`};
+      if(!result.suggestions.length) return {html: isUz ? `✅ Hozircha shoshilinch xarid talab etilmaydi.` : `✅ Срочных закупок пока не требуется.`};
+      const rows = result.suggestions.map((s,i) => isUz
+        ? `${i+1}. ${s.name}<br>&nbsp;&nbsp;Qoldiq: ${aiQty(s.qty,s.unit)}<br>&nbsp;&nbsp;Kunlik o'rtacha savdo: ${aiQty(s.avgDaily,s.unit)}<br>&nbsp;&nbsp;Xarid qilish tavsiya etiladi: <strong>${aiQty(s.rec,s.unit)}</strong>`
+        : `${i+1}. ${s.name}<br>&nbsp;&nbsp;Остаток: ${aiQty(s.qty,s.unit)}<br>&nbsp;&nbsp;Средние продажи в день: ${aiQty(s.avgDaily,s.unit)}<br>&nbsp;&nbsp;Рекомендуется закупить: <strong>${aiQty(s.rec,s.unit)}</strong>`).join('<br><br>');
+      return {html: isUz ? `🛒 <strong>Xarid bo'yicha tavsiyalar</strong><br><br>${rows}` : `🛒 <strong>Рекомендации по закупке</strong><br><br>${rows}`};
     }
     case 'cash_balance': {
-      if(result.none) return {html:`Hozircha yopilgan yoki ochiq smena topilmadi.`};
+      if(result.none) return {html: isUz ? `Hozircha na ochiq, na yopiq smena bor.` : `Пока нет ни открытой, ни закрытой смены.`};
       if(result.active){
-        return {html:`💵 <strong>Kassa balansi</strong> <span style="font-size:11px;color:var(--text-faint)">(joriy smena)</span><br><br>Naqd: ${fmt(result.naqd)}<br>Karta: ${fmt(result.karta)}<br><br>Jami: <strong>${fmt(result.naqd+result.karta)}</strong>`};
+        return {html: isUz
+          ? `💵 <strong>Kassa balansi</strong> <span style="font-size:11px;color:var(--text-faint)">(joriy smena)</span><br><br>Naqd: ${aiMoney(result.naqd)}<br>Karta: ${aiMoney(result.karta)}<br><br>Jami: <strong>${aiMoney(result.naqd+result.karta)}</strong>`
+          : `💵 <strong>Баланс кассы</strong> <span style="font-size:11px;color:var(--text-faint)">(текущая смена)</span><br><br>Наличные: ${aiMoney(result.naqd)}<br>Карта: ${aiMoney(result.karta)}<br><br>Итого: <strong>${aiMoney(result.naqd+result.karta)}</strong>`};
       }
-      return {html:`💵 <strong>Kassa balansi</strong> <span style="font-size:11px;color:var(--text-faint)">(oxirgi yopilgan smena)</span><br><br>Naqd: ${fmt(result.naqd)}<br>Karta: ${fmt(result.karta)}<br><br>Jami: <strong>${fmt(result.naqd+result.karta)}</strong><br><br>ℹ️ Hozir ochiq smena yo'q.`};
+      return {html: isUz
+        ? `💵 <strong>Kassa balansi</strong> <span style="font-size:11px;color:var(--text-faint)">(oxirgi yopilgan smena)</span><br><br>Naqd: ${aiMoney(result.naqd)}<br>Karta: ${aiMoney(result.karta)}<br><br>Jami: <strong>${aiMoney(result.naqd+result.karta)}</strong><br><br>ℹ️ Hozir ochiq smena yo'q.`
+        : `💵 <strong>Баланс кассы</strong> <span style="font-size:11px;color:var(--text-faint)">(последняя закрытая смена)</span><br><br>Наличные: ${aiMoney(result.naqd)}<br>Карта: ${aiMoney(result.karta)}<br><br>Итого: <strong>${aiMoney(result.naqd+result.karta)}</strong><br><br>ℹ️ Сейчас открытой смены нет.`};
     }
     case 'range_yesterday': {
-      if(result.kind==='profit') return {html:`💰 <strong>Kechagi foyda</strong><br><br>Tushum: ${fmt(result.revenue)}<br>Foyda: <strong>${fmt(result.profit)}</strong>`};
-      return {html:`📊 <strong>Kechagi savdo</strong><br><br>Savdo aylanmasi: <strong>${fmt(result.total)}</strong><br>Savdolar soni: ${result.count} ta<br>💰 Foyda: <strong>${fmt(result.profit)}</strong>`};
+      if(result.kind==='profit') return {html: isUz
+        ? `💰 <strong>Kechagi foyda</strong><br><br>Tushum: ${aiMoney(result.revenue)}<br>Foyda: <strong>${aiMoney(result.profit)}</strong>`
+        : `💰 <strong>Прибыль за вчера</strong><br><br>Выручка: ${aiMoney(result.revenue)}<br>Прибыль: <strong>${aiMoney(result.profit)}</strong>`};
+      return {html: isUz
+        ? `📊 <strong>Kechagi savdo</strong><br><br>Aylanma: <strong>${aiMoney(result.total)}</strong><br>Savdolar soni: ${result.count}<br>💰 Foyda: <strong>${aiMoney(result.profit)}</strong>`
+        : `📊 <strong>Продажи за вчера</strong><br><br>Оборот: <strong>${aiMoney(result.total)}</strong><br>Количество продаж: ${result.count}<br>💰 Прибыль: <strong>${aiMoney(result.profit)}</strong>`};
     }
     case 'range_diff': {
-      if(result.diff===0) return {html:`Farq yo'q — ikkalasi ham bir xil: ${fmt(aiCtx.lastRangeValue)}.`};
-      const word = result.diff>0 ? "ko'p" : "kam";
-      return {html:`${result.lastLabel} ${(result.prevLabel||'').toLowerCase()}ga nisbatan <strong>${fmt(Math.abs(result.diff))} so'mga ${word}</strong>.`};
+      if(result.diff===0) return {html: isUz
+        ? `Farq yo'q — ikkala qiymat ham bir xil: ${aiMoney(aiCtx.lastRangeValue)}.`
+        : `Разницы нет — оба значения одинаковы: ${aiMoney(aiCtx.lastRangeValue)}.`};
+      if(isUz){
+        const word = result.diff>0 ? "ko'p" : 'kam';
+        return {html:`${result.lastLabel} — ${(result.prevLabel||'').toLowerCase()}ga qaraganda <strong>${aiMoney(Math.abs(result.diff))} ${word}</strong>.`};
+      }
+      const word = result.diff>0 ? "больше" : "меньше";
+      return {html:`${result.lastLabel} — на <strong>${aiMoney(Math.abs(result.diff))} ${word}</strong>, чем ${(result.prevLabel||'').toLowerCase()}.`};
     }
     default:
-      return {html:`Kechirasiz, savolingizni to'liq tushunmadim 🙏<br>Quyidagi tezkor savollardan birini tanlashingiz yoki savolni boshqacha yozishingiz mumkin.`};
+      return {html: isUz
+        ? `Kechirasiz, savolingizni to'liq tushunmadim 🙏<br>Quyidagi tezkor savollardan birini tanlang yoki savolni boshqacha ifodalang.`
+        : `Извините, я не до конца понял ваш вопрос 🙏<br>Выберите один из быстрых вопросов ниже или переформулируйте вопрос.`};
   }
 }
 
@@ -14699,7 +14853,10 @@ let aiChatStarted = false;
 function openAIChat(){
   document.getElementById('aiPanel').classList.add('ai-open');
   document.getElementById('aiFabBtn').classList.add('ai-hide');
-  if(!aiChatStarted){ aiChatStarted = true; aiRenderQuickActions(); aiAppendBotHtml(`Assalomu alaykum! 👋 Men Do'kon Uz AI yordamchisiman. Savdo, foyda, qoldiq yoki qarzlar haqida so'rashingiz mumkin.`); }
+  aiPaintLangSwitch();
+  if(!aiChatStarted){ aiChatStarted = true; aiRenderQuickActions(); aiAppendBotHtml(AI_LANG==='uz'
+    ? `Assalomu alaykum! 👋 Men Do'kon Uz AI-yordamchisiman. Savdo, foyda, qoldiq yoki qarzlar haqida so'rashingiz mumkin.`
+    : `Здравствуйте! 👋 Я AI-помощник Do'kon Uz. Вы можете спросить о продажах, прибыли, остатках или долгах.`); }
   const inp = document.getElementById('aiInput'); if(inp) setTimeout(()=>inp.focus(),150);
 }
 function closeAIChat(){
@@ -14731,9 +14888,12 @@ function aiAppendBotHtml(html,chips){
   body.appendChild(row); body.scrollTop = body.scrollHeight;
 }
 function aiChipClick(label){
+  label = AI_CHIP_SEND[label] || label;   // ruscha tugma yorlig'i → o'zbekcha savol matni
   if(label==='Barcode orqali qidirish'){
     aiAppendUserHtml(label);
-    aiShowTypingThen(()=>aiAppendBotHtml(`Barcode skaner orqali mahsulotni tanlash uchun "Skanner" bo'limidan foydalaning. Demo rejimida bu yerda faol emas.`));
+    aiShowTypingThen(()=>aiAppendBotHtml(AI_LANG==='uz'
+      ? `Tovarni shtrix-kod orqali tanlash uchun «Skaner» bo'limidan foydalaning. Demo-rejimda u bu yerda faol emas.`
+      : `Чтобы выбрать товар по штрихкоду, воспользуйтесь разделом «Сканер». В демо-режиме здесь он не активен.`));
     return;
   }
   aiHandleUserMessage(label);
@@ -14780,17 +14940,17 @@ function aiReportAnalysis(tab){
   const last7 = aiRangeNet(aiDaysAgoISO(6),todayISOv);
   const prev7 = aiRangeNet(aiDaysAgoISO(13),aiDaysAgoISO(7));
   const diffPct = prev7.total>0 ? Math.round(((last7.total-prev7.total)/prev7.total)*100) : (last7.total>0 ? 100 : 0);
-  const trend = diffPct>=0 ? `📈 oxirgi 7 kunda savdo <strong>${diffPct}%</strong> ga o'sdi` : `📉 oxirgi 7 kunda savdo <strong>${Math.abs(diffPct)}%</strong> ga pasaydi`;
+  const trend = diffPct>=0 ? `📈 за последние 7 дней продажи выросли на <strong>${diffPct}%</strong>` : `📉 за последние 7 дней продажи снизились на <strong>${Math.abs(diffPct)}%</strong>`;
   const last30Sales = aiSalesForRange(aiDaysAgoISO(29),todayISOv);
   const top = aiTopProducts(last30Sales,3);
   const worst = aiTopProducts(last30Sales,50).slice(-3).reverse();
   const expTotal = DB.expenses.filter(e=>{ const d=e.date.slice(0,10); return d>=aiDaysAgoISO(29) && d<=todayISOv; }).reduce((a,e)=>a+e.amount,0);
   const profitAll = aiSumProfit(last30Sales);
-  return `📊 <strong>Hisobot tahlili</strong><br><br>${trend}<br><br>`+
-    (top.length ? `🏆 Eng ko'p sotilgan: ${top.map(t=>t[0]).join(', ')}<br>` : `🏆 Oxirgi 30 kunda savdo bo'lmagan<br>`)+
-    (worst.length ? `🔻 Eng kam sotilgan: ${worst.map(t=>t[0]).join(', ')}<br><br>` : `<br>`)+
-    `💰 Umumiy foyda (30 kun): <strong>${fmt(profitAll)}</strong><br>`+
-    `🧾 Xarajatlar (30 kun): <strong>${fmt(expTotal)}</strong>`;
+  return `📊 <strong>Анализ отчёта</strong><br><br>${trend}<br><br>`+
+    (top.length ? `🏆 Больше всего продано: ${top.map(t=>t[0]).join(', ')}<br>` : `🏆 За последние 30 дней продаж не было<br>`)+
+    (worst.length ? `🔻 Меньше всего продано: ${worst.map(t=>t[0]).join(', ')}<br><br>` : `<br>`)+
+    `💰 Общая прибыль (30 дней): <strong>${aiRuMoney(profitAll)}</strong><br>`+
+    `🧾 Расходы (30 дней): <strong>${aiRuMoney(expTotal)}</strong>`;
 }
 
 /* ================================================================
@@ -15116,6 +15276,7 @@ const OH_PERIODS = [
 ];
 const OH_PAGE = 40;
 let ohFilter = 'all';
+let ohCashSub = 'all';   // Kassa filtri ichida: 'all' | 'shift' (Smena tarixi) | 'collection' (Inkassatsiya)
 let ohSearch = '';
 let ohPeriod = 'all';
 let ohLimit = OH_PAGE;
@@ -15129,8 +15290,9 @@ const OH_ACT_COVERED = /^(Savdo yakunladi|Savdoni bekor qildi|Qaytarish|Xarajat 
 function ohAllowedCats(){ return OH_CATS.filter(c=>canAccess(c.right)).map(c=>c.id); }
 
 /* Boshqa sahifalardan (masalan Kassa) tegishli filtr bilan ochish */
-function ohOpen(cat){
-  ohFilter = cat || 'all'; ohSearch = ''; ohPeriod = 'all'; ohLimit = OH_PAGE;
+function ohOpen(cat, sub){
+  ohFilter = cat || 'all'; ohCashSub = (ohFilter==='cash' && (sub==='shift'||sub==='collection')) ? sub : 'all';
+  ohSearch = ''; ohPeriod = 'all'; ohLimit = OH_PAGE;
   nav('opsHistory');
 }
 
@@ -15245,7 +15407,7 @@ function ohBuildEntries(){
     const isCur = !!DB.currentShift && h.id===DB.currentShift.id;
     const openT = Date.parse(h.openedAt);
     if(!isNaN(openT)){
-      add({cat:'cash', ts:openT, title:`Smena #${h.number} ochildi`, ic:'play', tone:'green',
+      add({cat:'cash', csub:'shift', ts:openT, title:`Smena #${h.number} ochildi`, ic:'play', tone:'green',
         badge: isCur ? ['Ochiq','green'] : ['Ochilgan','gray'],
         desc:`Boshlang'ich kassa: ${fmt(h.openingCash||0)}`, sub:'', who:h.openedBy||'',
         amount:null, open: isCur ? ()=>nav('cash') : ()=>openShiftDetailModal(h.id)});
@@ -15253,7 +15415,7 @@ function ohBuildEntries(){
     const closeT = Date.parse(h.closedAt);
     if(h.closedAt && !isNaN(closeT)){
       const diff = h.diff||0;
-      add({cat:'cash', ts:closeT, title:`Smena #${h.number} yopildi`, ic:'lock', tone:'purple',
+      add({cat:'cash', csub:'shift', ts:closeT, title:`Smena #${h.number} yopildi`, ic:'lock', tone:'purple',
         badge:['Yopilgan','gray'],
         desc:`Kassa farqi: ${diff===0?'0':(diff<0?'−':'+')+fmt(Math.abs(diff))}`,
         sub:`Sof savdo (smena bo'yicha) · ${h.operatsiyalarSoni!=null?h.operatsiyalarSoni+' ta amal':''}`.replace(/ · $/,''),
@@ -15264,7 +15426,7 @@ function ohBuildEntries(){
       (arr||[]).forEach(c=>{
         const ts = Date.parse(c.date); if(isNaN(ts)) return;
         const note = c.note || title;
-        add({cat:'cash', ts, title, ic, tone, badge:['Bajarilgan','green'],
+        add({cat:'cash', csub: metric==='collection' ? 'collection' : 'shift', ts, title, ic, tone, badge:['Bajarilgan','green'],
           desc:note, sub:`Smena #${h.number}`, who:c.who||'', amount:c.amount, sign, metric,
           open:cashOp({date:c.date, label, desc:dhEsc(`${note} (Smena #${h.number}${c.who?', '+c.who:''})`), amount:c.amount, sign, kind:'cash', refId:null})});
       });
@@ -15279,7 +15441,7 @@ function ohBuildEntries(){
     if(!r || r.shiftId || !(r.amount>0)) return;
     const ts = Date.parse(r.date); if(isNaN(ts)) return;
     const note = (r.note ? r.note+' — ' : '') + 'Kunlik inkassatsiya ('+k+')';
-    add({cat:'cash', ts, title:'Inkassatsiya', ic:'briefcase', tone:'orange', badge:['Bajarilgan','green'],
+    add({cat:'cash', csub:'collection', ts, title:'Inkassatsiya', ic:'briefcase', tone:'orange', badge:['Bajarilgan','green'],
       desc:note, sub:'Kunlik (smenasiz)', who:r.who||'', amount:r.amount, sign:-1, metric:'collection',
       open:cashOp({date:r.date, label:'Inkassatsiya', desc:dhEsc(note), amount:r.amount, sign:-1, kind:'collection', refId:null})});
   });
@@ -15293,11 +15455,11 @@ function ohBuildEntries(){
       open:()=>openExpenseModal(e.id)});
   });
 
-  /* --- Qarz to'lovlari (mijoz tarixidagi method'li 'tolov' yozuvlari) — pul kirimi sifatida Kassada ham ko'rinadi --- */
+  /* --- Qarz to'lovlari (mijoz tarixidagi method'li 'tolov' yozuvlari) — faqat "Qarz to'lovlari" bo'limida (Kassada ko'rinmaydi) --- */
   debtPayments().forEach(p=>{
     const ts = Date.parse(p.date); if(isNaN(ts)) return;
     const sh = p.shiftId ? shiftById[p.shiftId] : null;
-    add({cat:'debt', also:['cash'], ts, title:"Qarz to'lovi", ic:'wallet', tone:'green',
+    add({cat:'debt', ts, title:"Qarz to'lovi", ic:'wallet', tone:'green',
       badge:['Qabul qilindi','green'], desc:p.note || debtPayMethodLabel(p.method), sub:p.customerName||'',
       who: sh ? (sh.openedBy||sh.closedBy||'') : '', amount:p.amount, sign:1, metric:'debtpay',
       open:()=>openCustomerProfile(p.customerId)});
@@ -15370,7 +15532,7 @@ function ohBuildEntries(){
     const ts = Date.parse(h.date); if(isNaN(ts)) return;
     const isDebt = h.type==='qarz';
     const title = isDebt ? 'Qarz yozildi' : 'Qarz hisobi tuzatildi';
-    add({cat:'customer', hideAll:true, ts, title, ic:'users', tone:'orange', badge:['Bajarilgan','green'],
+    add({cat:'customer', also:['debt'], hideAll:true, ts, title, ic:'users', tone:'orange', badge:['Bajarilgan','green'],
       desc:h.note||'', sub:c.name, who:'', amount:h.amount, sign:0,
       fields:fld([['Sana',dhEsc(ohFull(ts))], ['Mijoz',dhEsc(c.name)], ['Amal',dhEsc(title)], ['Summa',fmt(h.amount||0)], ['Izoh',dhEsc(h.note)]]),
       actions:[{label:'Mijoz profili', ic:'user', js:`closeModal();openCustomerProfile(${ohJs(c.id)})`}]});
@@ -15414,13 +15576,21 @@ function ohCompute(){
   base.sort((a,b)=> (b.ts-a.ts) || (a.seq-b.seq));
   const counts = {all: base.filter(e=>!e.hideAll).length};
   allowed.forEach(id=>{ counts[id] = base.filter(e=>e.cat===id || e.also.includes(id)).length; });
-  return {allowed, counts, list: base.filter(e=>ohIn(e, ohFilter))};
+  const cashSub = {all:0, shift:0, collection:0};
+  base.forEach(e=>{ if(e.cat==='cash'){ cashSub.all++; if(e.csub) cashSub[e.csub]++; } });
+  return {allowed, counts, cashSub, list: base.filter(e=>ohIn(e, ohFilter) && (ohFilter!=='cash' || ohCashSub==='all' || e.csub===ohCashSub))};
 }
 
 /* ---------------- Ko'rinish ---------------- */
 function ohChipsHtml(r){
   const chip = (id,label)=>`<div class="dh-chip ${ohFilter===id?'active':''}" onclick="ohSetFilter('${id}')">${label}<b>${r.counts[id]||0}</b></div>`;
   return chip('all','Barchasi') + OH_CATS.filter(c=>r.allowed.includes(c.id)).map(c=>chip(c.id,c.label)).join('');
+}
+/* Kassa filtri tanlanganda: Hammasi / Smena tarixi / Inkassatsiya — alohida ko'rish uchun */
+function ohSubChipsHtml(r){
+  if(ohFilter!=='cash') return '';
+  const chip = (id,label)=>`<div class="dh-chip ${ohCashSub===id?'active':''}" onclick="ohSetCashSub('${id}')">${label}<b>${(r.cashSub||{})[id]||0}</b></div>`;
+  return chip('all','Hammasi') + chip('shift','Smena tarixi') + chip('collection','Inkassatsiya');
 }
 function ohSummaryHtml(r){
   const t = {};
@@ -15431,7 +15601,7 @@ function ohSummaryHtml(r){
   else if(ohFilter==='returns') put('Qaytarish jami','return','−');
   else if(ohFilter==='expenses') put('Xarajat jami','expense','−');
   else if(ohFilter==='debt') put("To'lovlar jami",'debtpay','+');
-  else if(ohFilter==='cash'){ put('Kirim','cashin','+'); put('Chiqim','cashout','−'); put('Inkassatsiya','collection','−'); put("Qarz to'lovlari",'debtpay','+'); }
+  else if(ohFilter==='cash'){ put('Kirim','cashin','+'); put('Chiqim','cashout','−'); put('Inkassatsiya','collection','−'); }
   return `<div class="oh-summary">${parts.join('<span class="oh-dot">·</span>')}</div>`;
 }
 function ohAmountHtml(e){
@@ -15515,18 +15685,21 @@ function renderOpsHistory(){
     </select>
   </div>
   <div class="oh-chips" id="ohChips">${ohChipsHtml(r)}</div>
+  <div class="oh-chips oh-subchips" id="ohSubChips" style="display:${ohFilter==='cash'?'flex':'none'}">${ohSubChipsHtml(r)}</div>
   <div id="ohSummary">${ohSummaryHtml(r)}</div>
   <div id="ohList">${ohListHtml(r)}</div>`;
 }
 /* Qidiruv/filtr o'zgarganda faqat ro'yxat qismi yangilanadi (qidiruv maydoni fokusini yo'qotmaslik uchun) */
 function ohRefresh(){
-  const c = document.getElementById('ohChips'), s = document.getElementById('ohSummary'), l = document.getElementById('ohList');
-  if(!c || !s || !l){ renderPage(); return; }
+  const c = document.getElementById('ohChips'), sc = document.getElementById('ohSubChips'), s = document.getElementById('ohSummary'), l = document.getElementById('ohList');
+  if(!c || !sc || !s || !l){ renderPage(); return; }
   const r = ohCompute();
   c.innerHTML = ohChipsHtml(r); s.innerHTML = ohSummaryHtml(r); l.innerHTML = ohListHtml(r);
+  sc.innerHTML = ohSubChipsHtml(r); sc.style.display = ohFilter==='cash' ? 'flex' : 'none';
   lucide.createIcons();
 }
-function ohSetFilter(f){ ohFilter = f; ohLimit = OH_PAGE; ohRefresh(); }
+function ohSetFilter(f){ ohFilter = f; ohCashSub = 'all'; ohLimit = OH_PAGE; ohRefresh(); }
+function ohSetCashSub(k){ ohCashSub = k; ohLimit = OH_PAGE; ohRefresh(); }
 function ohOnSearch(v){ ohSearch = v; ohLimit = OH_PAGE; ohRefresh(); }
 function ohSetPeriod(p){ ohPeriod = p; ohLimit = OH_PAGE; ohRefresh(); }
 function ohMore(){ ohLimit += OH_PAGE; ohRefresh(); }
@@ -15834,14 +16007,23 @@ setInterval(()=>{
        haqida savol bo'lsa unga faqat o'sha tovarning DB qiymatlari beriladi (aiFocusFacts).
    ========================================================================== */
 const AI_GEMINI_MODEL = 'gemini-3.5-flash';   // 404 chiqsa: aistudio.google.com dagi model nomini yozing
-const AI_SYSTEM = "Sen \"Do'kon.UZ AI\" — oziq-ovqat do'koni egasining biznes maslahatchisisan. O'zbek tilida (lotin yozuvi) javob ber.\n" +
-  "Quyida do'konning HAQIQIY ma'lumotlari (JSON) berilgan. Raqamli javoblarni faqat shularga tayanib ber, raqam o'ylab topma. " +
-  "Kerakli ma'lumot yo'q bo'lsa, buni ochiq ayt.\n" +
-  "Oddiy savolga qisqa javob ber. Tahlil, sabab, taqqoslash yoki maslahat so'ralsa — batafsil, punktlar bilan, amaliy qadamlar bilan javob ber " +
-  "va savdo, ombor, narx belgilash bo'yicha umumiy bilimingdan ham foydalan (buni raqamlardan ajratib yoz).\n" +
-  "Summalarni so'mda, bo'shliq bilan yoz (1 250 000 so'm). Foyda = sotuv narxi − tannarx.\n" +
-  "Alohida tovarning qoldig'i/narxi/sotuvi so'ralsa, faqat \"Foydalanuvchi so'ragan tovar(lar)\" bo'limidagi qiymatlardan foydalan; u yerda bo'lmasa 'bilmayman' dema — tovar nomini aniqroq (hajmi bilan) yozishni so'ra. " +
-  "'kamQoldiq' — faqat eng kam qolgan tovarlar ro'yxati (to'liq ombor ro'yxati EMAS): tovar unda yo'q bo'lsa, uning qoldig'i yo'q degan xulosa qilma.";
+const AI_SYSTEM_RU = "Пользователь общается с тобой на узбекском языке. Всегда отвечай пользователю только на русском языке. Понимай узбекскую речь, разговорные выражения, сокращения и опечатки. Все фактические данные о магазине бери только из переданных данных Do‘kon.UZ. Никогда не придумывай цены, остатки, продажи, суммы или другие числовые данные.\n" +
+  "Ты — «Do'kon.UZ AI», бизнес-консультант владельца продуктового магазина. Не переводи и не повторяй вопрос пользователя — сразу давай итоговый ответ на русском языке.\n" +
+  "Ниже переданы РЕАЛЬНЫЕ данные магазина (JSON; ключи на узбекском: savdo — продажи, foyda — прибыль, cheklar — количество чеков, nom — название товара, miqdor — количество, birlik — единица измерения, tushum — выручка, xarajat — расходы, turlari — по видам, ombor — склад, tugagan — закончились, qoldiq — остаток, kamQoldiq — товары с низким остатком, qarzdorlar — должники, soni — количество, jami — итого, muddatiOtgan — просрочено). Числовые ответы давай только на основе этих данных, ничего не выдумывай. Если нужных данных нет — прямо скажи об этом.\n" +
+  "Названия товаров и значения из данных переноси в ответ как есть: не переводи названия товаров и не меняй числа.\n" +
+  "На простой вопрос отвечай коротко. Если просят анализ, причины, сравнение или совет — отвечай подробно, по пунктам, с практическими шагами и используй общие знания о торговле, складе и ценообразовании (отделяй это от цифр из данных).\n" +
+  "Суммы пиши в сумах с пробелом-разделителем (1 250 000 сум). Прибыль = цена продажи − себестоимость.\n" +
+  "Если спрашивают остаток, цену или продажи конкретного товара, используй только значения из раздела «Товары, о которых спросил пользователь»; если там их нет — не говори «не знаю», а попроси уточнить название товара (например, с объёмом). " +
+  "«kamQoldiq» — это только список товаров с самым низким остатком (НЕ полный список склада): если товара в нём нет, не делай вывод, что его остатка нет.";
+const AI_SYSTEM_UZ = "Foydalanuvchi siz bilan o'zbek tilida gaplashadi. Har doim FAQAT o'zbek tilida javob ber. Og'zaki nutq, so'zlashuv iboralari, qisqartmalar va imlo xatolarini tushun. Do'kon haqidagi barcha faktik ma'lumotlarni faqat sizga yuborilgan Do'kon.UZ ma'lumotlaridan ol. Narx, qoldiq, savdo, summalar yoki boshqa raqamli ma'lumotlarni hech qachon o'zingdan to'qib chiqarma.\n" +
+  "Sen — «Do'kon.UZ AI», oziq-ovqat do'koni egasining biznes-konsultantisan. Foydalanuvchi savolini tarjima qilma yoki takrorlama — darhol yakuniy javobni o'zbek tilida ber.\n" +
+  "Quyida do'konning HAQIQIY ma'lumotlari berilgan (JSON; kalitlar o'zbekcha: savdo, foyda, cheklar, nom, miqdor, birlik, tushum, xarajat, turlari, ombor, tugagan, qoldiq, kamQoldiq, qarzdorlar, soni, jami, muddatiOtgan). Raqamli javoblarni faqat shu ma'lumotlar asosida ber, hech narsani o'ylab topma. Kerakli ma'lumot bo'lmasa — buni ochiq ayt.\n" +
+  "Ma'lumotlardagi tovar nomlari va qiymatlarni o'zgartirmasdan ber: tovar nomlarini tarjima qilma va raqamlarni o'zgartirma.\n" +
+  "Oddiy savolga qisqa javob ber. Tahlil, sabab, taqqoslash yoki maslahat so'ralsa — batafsil, bandma-band, amaliy qadamlar bilan javob ber va savdo, ombor va narx belgilash bo'yicha umumiy bilimlardan foydalan (buni ma'lumotlardagi raqamlardan ajrat).\n" +
+  "Summalarni bo'shliq bilan ajratib so'mda yoz (1 250 000 so'm). Foyda = sotish narxi − tannarx.\n" +
+  "Muayyan tovarning qoldig'i, narxi yoki savdosi so'ralsa, faqat «Foydalanuvchi so'ragan tovarlar» bo'limidagi qiymatlardan foydalan; agar u yerda bo'lmasa, «bilmayman» dema, tovar nomini aniqlashtirishni so'ra (masalan, hajmi bilan). " +
+  "«kamQoldiq» — bu faqat eng kam qoldiqli tovarlar ro'yxati (ombordagi TO'LIQ ro'yxat EMAS): agar tovar unda bo'lmasa, uning qoldig'i yo'q degan xulosa chiqarma.";
+function aiSystemPrompt(){ return AI_LANG==='uz' ? AI_SYSTEM_UZ : AI_SYSTEM_RU; }
 
 let aiHistory = [];   // [{role:'user'|'model', text}]
 function aiPush(role, text){ aiHistory.push({ role, text: String(text).slice(0, 1500) }); if(aiHistory.length > 8) aiHistory = aiHistory.slice(-8); }
@@ -15915,8 +16097,8 @@ async function aiAskGemini(message, facts){
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: AI_SYSTEM }, { text: "Do'kon ma'lumotlari (JSON):\n" + JSON.stringify(aiBuildSnapshot()) }]
-          .concat(facts ? [{ text: "Foydalanuvchi so'ragan tovar(lar) — bazadan (DB.products) olingan ANIQ qiymatlar:\n" + JSON.stringify(facts) }] : []) },
+        system_instruction: { parts: [{ text: aiSystemPrompt() }, { text: (AI_LANG==='uz' ? "Do'kon.UZ do'koni ma'lumotlari (JSON):\n" : "Данные магазина Do‘kon.UZ (JSON):\n") + JSON.stringify(aiBuildSnapshot()) }]
+          .concat(facts ? [{ text: (AI_LANG==='uz' ? "Foydalanuvchi so'ragan tovarlar — bazadagi ANIQ qiymatlar (DB.products):\n" : "Товары, о которых спросил пользователь — ТОЧНЫЕ значения из базы (DB.products):\n") + JSON.stringify(facts) }] : []) },
         contents,
         generationConfig: { maxOutputTokens: 4096 },
       }),
@@ -15933,7 +16115,7 @@ async function aiAskGemini(message, facts){
     if(!text) throw new Error("bo'sh javob" + (cand && cand.finishReason ? ' (' + cand.finishReason + ')' : ''));
     aiPush('user', message); aiPush('model', text);
     let html = aiFormat(text);
-    if(cand.finishReason === 'MAX_TOKENS') html += '<br><em>(javob uzunlik chegarasida uzildi)</em>';
+    if(cand.finishReason === 'MAX_TOKENS') html += (AI_LANG==='uz' ? '<br><em>(javob uzunlik cheklovi tufayli qisqartirildi)</em>' : '<br><em>(ответ обрезан из-за ограничения длины)</em>');
     return { html: html + '<div style="font-size:10.5px;opacity:.55;margin-top:6px;">✨ Gemini</div>' };
   } finally { clearTimeout(timer); }
 }
@@ -15941,7 +16123,8 @@ async function aiAskGemini(message, facts){
 function aiLocalAnswer(text){
   const res = AIService.sendMessage(text);
   aiPush('user', text); aiPush('model', aiPlain(res.html));
-  aiAppendBotHtml(res.html + '<div style="font-size:10.5px;opacity:.55;margin-top:6px;">📊 mahalliy hisob</div>', res.chips);
+  const localTag = AI_LANG==='uz' ? "📊 mahalliy hisob-kitob" : "📊 локальный расчёт";
+  aiAppendBotHtml(res.html + `<div style="font-size:10.5px;opacity:.55;margin-top:6px;">${localTag}</div>`, res.chips);
 }
 function aiTyping(on){
   const old = document.getElementById('aiTypingRow');
@@ -15996,7 +16179,7 @@ function aiHandleUserMessage(text){
     .then(res => { aiTyping(false); aiAppendBotHtml(res.html); })
     .catch(e => {
       aiTyping(false);
-      aiAppendBotHtml('⚠️ AI ulanmadi: ' + aiEsc(e.message) + '<br><small>Mahalliy javob:</small>');
+      aiAppendBotHtml((AI_LANG==='uz' ? '⚠️ AI ulanmadi: ' : '⚠️ Ошибка подключения к AI: ') + aiEsc(e.message) + (AI_LANG==='uz' ? '<br><small>Mahalliy javob:</small>' : '<br><small>Локальный ответ:</small>'));
       aiLocalAnswer(text);
     });
 }
@@ -16010,7 +16193,10 @@ function aiHandleUserMessage(text){
    javob DOM'ini kuzatadi.
 
    Ovozli KIRISH : 🎤 → SpeechRecognition (uz-UZ, bo'lmasa ru-RU) → matn → aiHandleUserMessage(matn)
-   Ovozli CHIQISH: #aiBody ga qo'shilgan bot javobi (HTML) → tozalanadi → speechSynthesis
+   Ovozli CHIQISH: AI javobi UZ yoki RU bo'lishi mumkin (AI_LANG tugmasiga qarab) → #aiBody ga qo'shilgan
+   bot javobi (HTML) → tozalanadi → matn qaysi tilda ekani aniqlanadi (kirill/lotin nisbati bo'yicha) →
+   brauzer speechSynthesis shu tilga mos ovozda o'qiydi (o'zbekcha ovoz topilmasa — ruscha ovozga zaxiralanadi,
+   lotin harflar kirillga o'giriladi; Azure/backend KERAK EMAS)
    Toggle "Ovozli javob" → localStorage['dk_ai_voice']  ('1' yoki '0')
    Kerak bo'lsa tashqaridan: aiVoiceSpeak(matn), aiVoiceStop(), aiVoiceCleanText(html)
    ========================================================================== */
@@ -16023,7 +16209,13 @@ function aiHandleUserMessage(text){
   const CONNECT_TIMEOUT_MS = 15000;      // mikrofon ulanishi uchun maksimal vaqt (ruxsat oynasini kutish bilan)
   const REC_TIMEOUT_MS = 20000;          // tinglash uchun maksimal vaqt
   const MAX_SPEAK_CHARS = 3500;          // juda uzun javobni ovozga o'qishni cheklash (matn baribir to'liq ko'rinadi)
-  const CHUNK_LEN = 200;                 // Chrome uzun matnni o'rtasida uzib qo'ymasligi uchun bo'laklab o'qiladi
+  const CHUNK_LEN = 200;                 // (faqat brauzer zaxira ovozi) Chrome uzun matnni o'rtasida uzib qo'ymasligi uchun bo'laklab o'qiladi
+
+  /* ---- ruscha ovoz (brauzerning o'z speechSynthesis'i) ---- */
+  const TTS_TRANSLIT_LATIN = true;       // lotin harfli so'zlar (Coca-Cola, Sut, Non...) ruscha ovoz to'g'ri o'qishi uchun kirillga o'giriladi
+  const LABEL_PLAY = 'O\u2018qib berish';
+  const LABEL_LOADING = 'Tayyorlanmoqda...';
+  const LABEL_STOP = 'To\u2018xtatish';
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
   let synth = null;
@@ -16045,6 +16237,7 @@ function aiHandleUserMessage(text){
   let recIdx = 0;                        // REC_LANGS ichida hozirgi til (o'zbek ishlamasa oshadi)
   let speakToken = 0;                    // eskirgan ovoz hodisalarini e'tiborsiz qoldirish uchun
   let speakingBtn = null;                // hozir o'qilayotgan xabarning 🔊 tugmasi
+  let speechPhase = 'idle';              // idle | loading (ovoz boshlanishini kutmoqda) | playing
   let msgTimer = null;
   const shownOnce = {};
 
@@ -16056,38 +16249,35 @@ function aiHandleUserMessage(text){
     '[\\u2190-\\u21FF\\u2300-\\u23FF\\u2460-\\u27BF\\u2900-\\u297F\\u2B00-\\u2BFF\\uFE0F\\u200D\\u20E3]|[\\uD83C-\\uD83E][\\uDC00-\\uDFFF]'
   );
   const UNIT_RE = mkRe(
-    '(\\d)\\s*(kg|gr|ml|lt|g|l)(?![\\p{L}\\d])', 'giu',
-    '(\\d)\\s*(kg|gr|ml|lt|g|l)(?![A-Za-z\\u00C0-\\u024F\\u0400-\\u04FF\\d])'
+    '(\\d+(?:[.,]\\d+)?)\\s*(kg|gr|ml|lt|g|l|кг|гр|мл|г|л|шт)(?:\\.(?=\\s|$))?(?![\\p{L}\\d])', 'giu',
+    '(\\d+(?:[.,]\\d+)?)\\s*(kg|gr|ml|lt|g|l|\\u043a\\u0433|\\u0433\\u0440|\\u043c\\u043b|\\u0433|\\u043b|\\u0448\\u0442)(?:\\.(?=\\s|$))?(?![A-Za-z\\u00C0-\\u024F\\u0400-\\u04FF\\d])'
   );
-  const UNITS = { kg:'kilogramm', gr:'gramm', g:'gramm', ml:'millilitr', lt:'litr', l:'litr' };
-  const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
+  const KG = ['килограмм','килограмма','килограммов'], GR = ['грамм','грамма','граммов'], ML = ['миллилитр','миллилитра','миллилитров'], LT = ['литр','литра','литров'];
+  const VOICE_UNITS = { kg:KG, 'кг':KG, gr:GR, g:GR, 'гр':GR, 'г':GR, ml:ML, 'мл':ML, lt:LT, l:LT, 'л':LT, 'шт':['штука','штуки','штук'] };
+  const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-  /* 1 250 000 → "1 million 250 ming",  12 000 → "12 ming" */
-  function bigNumber(digits){
-    const n = Number(digits);
-    if(!isFinite(n) || n >= 1e15) return digits;
-    const bil = Math.floor(n / 1e9), mil = Math.floor(n / 1e6) % 1000, ming = Math.floor(n / 1e3) % 1000, rest = n % 1000;
-    const p = [];
-    if(bil)  p.push(bil + ' milliard');
-    if(mil)  p.push(mil + ' million');
-    if(ming) p.push(ming + ' ming');
-    if(rest) p.push(String(rest));
-    return p.join(' ');
+  function ruPlural(numStr, f){
+    if(/[.,]/.test(numStr)) return f[1];
+    const n = Math.abs(parseInt(numStr, 10)), a = n % 100, b = n % 10;
+    if(a > 10 && a < 20) return f[2];
+    if(b === 1) return f[0];
+    if(b >= 2 && b <= 4) return f[1];
+    return f[2];
   }
+  /* 1 250 000 → 1250000 ("один миллион двести пятьдесят тысяч"), 2026-09-30 → "30 сентября 2026 года", 1.5L → "1,5 литра" */
   function speakNumbers(s){
-    // sanalar: 2026-09-30 va 30.09.2026
-    s = s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m, y, mo, d) => MONTHS[+mo - 1] ? (+d) + '-' + MONTHS[+mo - 1] + ' ' + y + '-yil' : m);
-    s = s.replace(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/g, (m, d, mo, y) => MONTHS[+mo - 1] ? (+d) + '-' + MONTHS[+mo - 1] + ' ' + y + '-yil' : m);
-    // bo'shliq bilan guruhlangan summalar (fmt(): "12 000", "1 250 000")
-    s = s.replace(/(^|[^\d.,])(\d{1,3}(?: \d{3})+)(?!\d)/g, (m, pre, num) => pre + bigNumber(num.replace(/ /g, '')));
-    // guruhlanmagan katta sonlar: 12000 (5+ raqam) va "5000 so'm"
-    s = s.replace(/(^|[^\d.,])(\d{5,})(?!\d|[.,]\d)/g, (m, pre, num) => pre + bigNumber(num));
-    s = s.replace(/(^|[^\d.,])(\d{4})(?=\s*(?:so'm|so‘m|som|sum)(?![\w]))/gi, (m, pre, num) => pre + bigNumber(num));
-    // o'nlik kasrlar: 2,5 / 2.5 → "2 butun 5"
-    s = s.replace(/(^|[^\d.,])(\d+)[.,](\d{1,4})(?!\d|[.,]\d)/g, (m, pre, a, b) => pre + a + ' butun ' + b);
-    // foiz va o'lchov birliklari
-    s = s.replace(/(\d)\s*%/g, '$1 foiz').replace(/%/g, ' foiz ');
-    s = s.replace(UNIT_RE, (m, d, u) => d + ' ' + UNITS[u.toLowerCase()]);
+    s = s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m, y, mo, d) => MONTHS[+mo - 1] ? (+d) + ' ' + MONTHS[+mo - 1] + ' ' + y + ' года' : m);
+    s = s.replace(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/g, (m, d, mo, y) => MONTHS[+mo - 1] ? (+d) + ' ' + MONTHS[+mo - 1] + ' ' + y + ' года' : m);
+    // bo'shliq bilan guruhlangan summalar (aiRuMoney/fmtNum: "12 000", "1 250 000") → bitta son
+    s = s.replace(/(^|[^\d.,])(\d{1,3}(?: \d{3})+)(?!\d)/g, (m, pre, num) => pre + num.replace(/ /g, ''));
+    // o'lchov birliklari (raqamdan keyin): "500 г", "1.5L", "24 шт."
+    s = s.replace(UNIT_RE, (m, num, u) => {
+      if(/^г$/i.test(u) && /^(19|20)\d\d$/.test(num)) return m;            // "2026 г." — bu yil, gramm emas
+      const f = VOICE_UNITS[u.toLowerCase()];
+      return f ? num + ' ' + ruPlural(num, f) : m;
+    });
+    // o'nlik kasrlar: 2.5 → 2,5 (ruscha ovoz "две целых пять десятых" deb o'qiydi)
+    s = s.replace(/(\d)\.(\d)/g, '$1,$2');
     return s;
   }
 
@@ -16109,7 +16299,7 @@ function aiHandleUserMessage(text){
     t = t.replace(/```[\s\S]*?```/g, ' ')
          .replace(/\[([^\]]+)\]\(https?:[^)]*\)/g, '$1')
          .replace(/https?:\/\/\S+/g, ' ');
-    t = t.replace(/[→←⇒➜➤▶►]/g, ' ').replace(/≈/g, ' taxminan ').replace(/[×✕✖]/g, ' ');
+    t = t.replace(/[→←⇒➜➤▶►]/g, ' ').replace(/≈/g, ' примерно ').replace(/[×✕✖]/g, ' ');
     // qator boshidagi belgilar: sarlavha (#), bullet (•, -, *), raqamlash (1.)
     t = t.split('\n').map(l => l
       .replace(/^\s*#{1,6}\s*/, '')
@@ -16150,7 +16340,7 @@ function aiHandleUserMessage(text){
       // tugmalar, chiplar, manba yorlig'i ("✨ Gemini", "📊 mahalliy hisob"), "Mahalliy javob:" izohi, texnik belgilar — o'qilmaydi
       root.querySelectorAll('script,style,button,svg,small,.ai-chips,.ai-say-btn,[aria-hidden="true"],[style*="10.5px"]').forEach(n => n.remove());
       // "Raqamini yozing yoki tugmani bosing." kabi interfeys ko'rsatmasi
-      root.querySelectorAll('[style*="11px"]').forEach(n => { if(/tugma|bosing|bosib/i.test(n.textContent)) n.remove(); });
+      root.querySelectorAll('[style*="11px"]').forEach(n => { if(/tugma|bosing|bosib|кнопк|нажм|номер/i.test(n.textContent)) n.remove(); });
       text = htmlToLines(root);
     }catch(e){
       text = String(html == null ? '' : html).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ' ');
@@ -16158,27 +16348,58 @@ function aiHandleUserMessage(text){
     return speechify(text);
   }
 
-  /* ------- o'zbekcha ovoz yo'q bo'lsa: lotin → kirill (rus ovozi o'zbekcha matnni o'qiy olishi uchun) ------- */
-  const LAT2CYR = { a:'а', b:'б', c:'к', d:'д', e:'э', f:'ф', g:'г', h:'х', i:'и', j:'ж', k:'к', l:'л', m:'м', n:'н', o:'о', p:'п', q:'к', r:'р', s:'с', t:'т', u:'у', v:'в', w:'в', x:'х', y:'й', z:'з' };
-  function toCyrillic(s){
-    s = String(s).toLowerCase().replace(/[ʻʼ‘’`´]/g, "'");
-    s = s.replace(/([og])'/g, (m, c) => c === 'o' ? 'о' : 'г');   // o' → о,  g' → г
-    s = s.replace(/'/g, '');                                       // "Cola'dan" → "Coladan"
-    s = s.replace(/sh/g, 'ш').replace(/ch/g, 'ч').replace(/yo/g, 'ё').replace(/yu/g, 'ю').replace(/ya/g, 'я').replace(/ye/g, 'е');
-    return s.replace(/[a-z]/g, c => LAT2CYR[c] || c);
+  /* ------- lotin harfli so'zlar (mahsulot nomlari: Coca-Cola, Sut, Non...) → kirill: ruscha ovoz ularni to'g'ri talaffuz qilsin ------- */
+  const LAT_RU = { a:'а', b:'б', c:'к', d:'д', e:'е', f:'ф', g:'г', h:'х', i:'и', j:'дж', k:'к', l:'л', m:'м', n:'н', o:'о', p:'п', q:'к', r:'р', s:'с', t:'т', u:'у', v:'в', w:'в', x:'х', y:'й', z:'з' };
+  function translitWord(w){
+    let x = w.toLowerCase().replace(/([og])'/g, '$1').replace(/'/g, '');       // o' g' → o g ;  ma'no → mano
+    x = x.replace(/sh/g, 'ш').replace(/ch/g, 'ч').replace(/zh/g, 'ж').replace(/kh/g, 'х').replace(/ck/g, 'к').replace(/ph/g, 'ф')
+         .replace(/yo/g, 'ё').replace(/yu/g, 'ю').replace(/ya/g, 'я').replace(/ye/g, 'е')
+         .replace(/c(?=[eiy])/g, 'с').replace(/^e/, 'э');
+    return x.replace(/[a-z]/g, c => LAT_RU[c] || c);
+  }
+  function latinToRu(s){ return String(s).replace(/[A-Za-z]+(?:'[A-Za-z]+)*(?:'(?![A-Za-z]))?/g, translitWord); }   // oxiridagi apostrof ham (tog', sog')
+
+  /* TTS'ga yuboriladigan yakuniy matn (cleanText dan keyin): apostroflar birxillashtiriladi.
+     Faqat RUSCHA OVOZ bilan o'qilganda (matn ruscha bo'lsa, yoki o'zbekcha ovoz topilmay ruscha ovozga
+     zaxiralanganda) lotin harfli so'zlar kirillga o'giriladi — haqiqiy o'zbekcha ovoz o'z lotin matnini
+     to'g'ridan-to'g'ri, o'girishsiz o'qiy oladi. */
+  function prepareTts(t, useRuTranslit){
+    t = String(t).replace(/[\u02BB\u02BC\u2018\u2019\u201B\u2032`\u00B4]/g, "'");
+    return (TTS_TRANSLIT_LATIN && useRuTranslit) ? latinToRu(t) : t;
+  }
+
+  /* Matn qaysi tilda ekanini aniqlaydi: kirill harflar lotin harflardan ko'p bo'lsa — ruscha, aks holda — o'zbekcha (lotin) */
+  function detectSpeechLang(text){
+    const s = String(text || '');
+    const cyr = (s.match(/[\u0400-\u04FF]/g) || []).length;
+    const lat = (s.match(/[A-Za-z]/g) || []).length;
+    return cyr > lat ? 'ru' : 'uz';
   }
 
   /* ============================================================
      2) MATNNI OVOZGA AYLANTIRISH (speechSynthesis)
      ============================================================ */
-  function pickVoice(){
+  /* Matn tiliga mos ovoz tanlaydi: 'uz' — o'zbekcha, 'ru' — ruscha.
+     Qurilmada o'zbekcha ovoz bo'lmasa — ruscha ovozga qaytamiz (matn keyin kirillga o'giriladi). */
+  function pickVoice(lang){
     let voices = [];
     try{ voices = synth.getVoices() || []; }catch(e){}
     const L = v => String(v.lang || '').replace('_', '-').toLowerCase();
-    const uz = voices.find(v => L(v).indexOf('uz') === 0);
-    if(uz) return { voice: uz, lang: uz.lang, mode: 'uz' };
-    const ru = voices.find(v => L(v) === 'ru-ru') || voices.find(v => L(v).indexOf('ru') === 0);
-    return { voice: ru || null, lang: ru ? ru.lang : 'ru-RU', mode: 'ru' };
+    const scoreCommon = v => /natural|neural|online|google/i.test(v.name || '') ? 2 : 0;
+
+    if(lang === 'uz'){
+      const uz = voices.filter(v => L(v).indexOf('uz') === 0);
+      const scoreUz = v => scoreCommon(v) + (L(v) === 'uz-uz' ? 1 : 0);
+      uz.sort((x, y) => scoreUz(y) - scoreUz(x));
+      if(uz[0]) return { voice: uz[0], lang: uz[0].lang, mode: 'uz' };
+      // o'zbekcha ovoz topilmadi — pastda ruscha ovozga zaxiralanadi
+    }
+    const ru = voices.filter(v => L(v).indexOf('ru') === 0);
+    const scoreRu = v => scoreCommon(v) + (/milena|yuri|katya|svetlana|dmitry/i.test(v.name || '') ? 2 : 0) + (L(v) === 'ru-ru' ? 1 : 0);
+    ru.sort((x, y) => scoreRu(y) - scoreRu(x));
+    const v = ru[0] || null;
+    if(!v) return { voice: null, lang: 'ru-RU', mode: 'none' };
+    return { voice: v, lang: v.lang, mode: lang === 'uz' ? 'uz-fallback-ru' : 'ru' };
   }
 
   function chunkText(t){
@@ -16203,21 +16424,24 @@ function aiHandleUserMessage(text){
     return out;
   }
 
+  /* AI javobi o'zbekcha yoki ruscha bo'lishi mumkin — matn tiliga mos ovoz avtomatik tanlanadi.
+     Bir vaqtda faqat bitta ovoz: yangisi boshlansa oldingisi to'xtaydi. */
   function speakText(text, btn){
     if(!synth) return false;
     text = String(text || '').trim();
     if(!text) return false;
-    const cfg = pickVoice();
-    let say = text.replace(/[ʻʼ‘’`´]/g, "'");
-    if(cfg.mode === 'ru') say = toCyrillic(say);
-    const chunks = chunkText(say);
+    const lang = detectSpeechLang(text);
+    const cfg = pickVoice(lang);
+    const useRuTranslit = cfg.mode !== 'uz';   // haqiqiy o'zbekcha ovoz ishlatilmasa — lotin matn kirillga o'giriladi
+    const chunks = chunkText(prepareTts(text, useRuTranslit));
     if(!chunks.length) return false;
 
-    const token = ++speakToken;
+    const token = ++speakToken;             // eskirgan onend/onerror hodisalari e'tiborsiz qoladi
     try{ synth.cancel(); }catch(e){}
-    markPlaying(btn || null);
-    setState('speaking');
-    if(cfg.mode === 'ru') notifyOnce('ttsFallback', "O'zbekcha ovoz topilmadi — rus ovozi ishlatilmoqda, talaffuz mukammal bo'lmasligi mumkin. O'zbek ovozini telefon sozlamalaridagi «Matndan nutqqa» bo'limida yuklab olish mumkin.");
+    speechPhase = 'loading';
+    markPlaying(btn || null, 'loading');    // tugmada "Tayyorlanmoqda..." — ovoz boshlangunicha
+    if(state === 'speaking') setState('idle');
+    if(cfg.mode === 'none') notifyOnce('ttsFallback', "Qurilmada ovoz topilmadi — sozlamalardagi «Matndan nutqqa» bo'limida o'zbek yoki rus tilini yuklab oling.");
 
     let started = false;
     setTimeout(() => {                      // cancel() dan keyin darhol speak() ba'zi brauzerlarda yo'qolib qoladi
@@ -16226,7 +16450,11 @@ function aiHandleUserMessage(text){
         const u = new SpeechSynthesisUtterance(c);
         if(cfg.voice) u.voice = cfg.voice;
         u.lang = cfg.lang; u.rate = 1; u.pitch = 1; u.volume = 1;
-        u.onstart = () => { started = true; };
+        u.onstart = () => {
+          if(token !== speakToken || started) return;
+          started = true;
+          speechPhase = 'playing'; markPlaying(btn || null, 'playing'); setState('speaking');
+        };
         if(i === chunks.length - 1) u.onend = () => { if(token === speakToken) finishSpeaking(); };
         u.onerror = ev => {
           if(token !== speakToken) return;
@@ -16239,7 +16467,7 @@ function aiHandleUserMessage(text){
       });
     }, 80);
     setTimeout(() => {                      // ovoz umuman boshlanmasa — holatni tiklaymiz
-      if(token === speakToken && !started && state === 'speaking'){
+      if(token === speakToken && !started){
         finishSpeaking();
         notify("Ovoz chiqmadi. Qurilmada ovoz balandligi va «Matndan nutqqa» xizmati yoqilganini tekshiring.", 'err');
       }
@@ -16247,6 +16475,7 @@ function aiHandleUserMessage(text){
     return true;
   }
   function finishSpeaking(){
+    speechPhase = 'idle';
     markPlaying(null);
     if(state === 'speaking') setState('idle');
   }
@@ -16384,21 +16613,32 @@ function aiHandleUserMessage(text){
     if(s) s.textContent = autoVoice ? 'ON' : 'OFF';
   }
 
-  function markPlaying(btn){
-    if(speakingBtn) speakingBtn.classList.remove('playing');
-    speakingBtn = btn;
-    if(btn) btn.classList.add('playing');
+  /* tugma holati: idle → loading → playing (matn va ikonka almashadi) */
+  function paintBtn(b, phase){
+    if(!b) return;
+    b.classList.toggle('loading', phase === 'loading');
+    b.classList.toggle('playing', phase === 'playing');
+    const label = phase === 'loading' ? LABEL_LOADING : phase === 'playing' ? LABEL_STOP : LABEL_PLAY;
+    const lab = b.querySelector('.aiv-say-label'); if(lab) lab.textContent = label;
+    const tip = phase === 'loading' ? "Ovoz tayyorlanmoqda — bekor qilish uchun bosing" : phase === 'playing' ? "O'qishni to'xtatish" : "Javobni ovozda o'qib berish";
+    b.title = tip; b.setAttribute('aria-label', tip);
+    b.setAttribute('aria-busy', phase === 'loading' ? 'true' : 'false');
+  }
+  function markPlaying(btn, phase){
+    if(speakingBtn && speakingBtn !== btn) paintBtn(speakingBtn, 'idle');
+    speakingBtn = btn || null;
+    if(speakingBtn) paintBtn(speakingBtn, phase || 'playing');
   }
 
   function attachSayButton(row, msgEl){
     if(!synth) return;
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'ai-say-btn';
-    b.title = "Ovozda o'qish"; b.setAttribute('aria-label', "Javobni ovozda o'qish");
-    b.innerHTML = ICON_VOL + ICON_STOP;
+    b.innerHTML = ICON_VOL + ICON_STOP + '<span class="aiv-say-spin" aria-hidden="true"></span><span class="aiv-say-label"></span>';
+    paintBtn(b, 'idle');
     b.addEventListener('click', () => {
-      if(speakingBtn === b && state === 'speaking'){ stopSpeaking(); return; }
-      speakText(cleanText(msgEl.innerHTML), b);
+      if(speakingBtn === b && speechPhase !== 'idle'){ stopSpeaking(); return; }   // ⏹ To'xtatish
+      if(!speakText(cleanText(msgEl.innerHTML), b)) notify("O'qiladigan matn topilmadi.", 'info');
     });
     msgEl.insertAdjacentElement('afterend', b);
   }
@@ -16408,7 +16648,7 @@ function aiHandleUserMessage(text){
     const panel = $('aiPanel'), body = $('aiBody');
     if(!panel || !panel.classList.contains('ai-open')) return false;      // chat yopiq — gapirmaymiz
     if(!body.querySelector('.ai-from-user')) return false;                // salomlashish xabari — gapirmaymiz
-    if(/^AI ulanmadi/i.test(text)) return false;                          // texnik xato xabari
+    if(/^(AI ulanmadi|Ошибка подключения к AI)/i.test(text)) return false;                          // texnik xato xabari
     return true;
   }
 
