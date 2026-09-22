@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+vv<!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
@@ -1410,6 +1410,20 @@ th[data-sort=asc] .sort-ic path:nth-child(1),th[data-sort=desc] .sort-ic path:nt
 .mij-foot-actions .btn{padding:6px 11px;font-size:10.5px;gap:5px;}
 .mij-foot-actions .btn svg{width:13px;height:13px;}
 .mij-foot-actions .btn-soft{background:var(--primary-light);color:var(--primary-dark);border:1px solid rgba(var(--primary-rgb),.25);}
+/* Mijoz kartasi foni: muddati o'tgan bo'lsa och qizil, aks holda och yashil.
+   Faqat planshet/kompyuter kengligida (mobil versiyada o'zgarmaydi). */
+@media(min-width:641px){
+  .mij-card.mij-card-overdue{background:var(--danger);border-color:var(--danger-dark);}
+  .mij-card.mij-card-ok{background:var(--success);border-color:var(--success-dark);}
+  .mij-card.mij-card-overdue .mij-name,.mij-card.mij-card-overdue .mij-stat-val,
+  .mij-card.mij-card-ok .mij-name,.mij-card.mij-card-ok .mij-stat-val{color:#fff;}
+  .mij-card.mij-card-overdue .mij-line,.mij-card.mij-card-overdue .mij-line svg,.mij-card.mij-card-overdue .mij-stat-label,
+  .mij-card.mij-card-ok .mij-line,.mij-card.mij-card-ok .mij-line svg,.mij-card.mij-card-ok .mij-stat-label{color:rgba(255,255,255,.82);}
+  .mij-card.mij-card-overdue .mij-stat,.mij-card.mij-card-ok .mij-stat{background:rgba(255,255,255,.18);}
+  .mij-card.mij-card-overdue .mij-foot,.mij-card.mij-card-ok .mij-foot{border-top-color:rgba(255,255,255,.3);}
+  .mij-card.mij-card-overdue .mij-due,.mij-card.mij-card-overdue .mij-due.mij-due-red,.mij-card.mij-card-overdue .mij-due.mij-due-orange,
+  .mij-card.mij-card-ok .mij-due,.mij-card.mij-card-ok .mij-due.mij-due-red,.mij-card.mij-card-ok .mij-due.mij-due-orange{color:rgba(255,255,255,.82);}
+}
 @media (max-width:420px){
   .mij-stat-label{font-size:9px;}
   .mij-stat-val{font-size:10.5px;}
@@ -2331,6 +2345,8 @@ tbody tr.yq-row-ok td:first-child{box-shadow:inset 3px 0 0 var(--primary);}
 .pp-speed-label{font-size:12px;font-weight:700;color:var(--text-soft);}
 .pp-speed-value{font-size:24px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px;line-height:1.1;}
 .pp-speed-caption{font-size:11px;color:var(--text-faint);margin-top:2px;}
+.pp-speed-clickable{cursor:pointer;transition:box-shadow var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);}
+.pp-speed-clickable:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
 @media(max-width:900px){
   .pp-speed-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
@@ -10660,7 +10676,7 @@ function renderCustomers(){
       const soon = c.dueDate && c.debtTotal>0 && !overdue && daysBetween(todayISO(),c.dueDate)<=2;
       const dueDays = c.dueDate? Math.abs(daysBetween(todayISO(),c.dueDate)) : null;
       const badgeCls = status[1]==='red'?'badge-red':(status[1]==='yellow'?'badge-yellow':'badge-emerald');
-      return `<div class="mij-card">
+      return `<div class="mij-card ${overdue?'mij-card-overdue':'mij-card-ok'}">
         <div class="mij-card-top">
           <div class="mij-id">
             <div class="mij-avatar" style="background:${av.bg};color:${av.fg};">${initials(c.name)}</div>
@@ -14136,7 +14152,7 @@ function ppSpeedCardsHtml(){
   <div class="pp-speed-grid">
     ${cards.map(([key,label])=>{
       const meta = ppSpeedMeta(key);
-      return `<div class="card pp-speed-card">
+      return `<div class="card pp-speed-card${active?' pp-speed-clickable':''}" ${active?`onclick="ppOpenSpeedModal('${key}')"`:''}>
         <div class="pp-speed-top">
           <div class="pp-speed-icon" style="background:${meta.bg};color:${meta.color};">${icon(meta.icon)}</div>
           <div class="pp-speed-label">${label}</div>
@@ -14146,6 +14162,29 @@ function ppSpeedCardsHtml(){
       </div>`;
     }).join('')}
   </div>`;
+}
+/* Tezlik kartasi bosilganda — o'sha toifadagi mahsulotlar ro'yxatini ko'rsatadi */
+function ppOpenSpeedModal(speed){
+  const meta = ppSpeedMeta(speed);
+  const list = ppResults.filter(r=>(r.speed||'yoq')===speed).sort((a,b)=>b.avgDaily-a.avgDaily);
+  if(!list.length){ toast("Bu toifada mahsulot yo'q"); return; }
+  openModal(`
+    <div class="modal-head"><h3>${icon(meta.icon)} ${meta.label} (${list.length} ta mahsulot)</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+    <div class="modal-body">
+      <div class="table-scroll"><table>
+        <thead><tr><th>Mahsulot</th><th>Joriy qoldiq</th><th>O'rtacha savdo (1 kun)</th><th>Xarid miqdori</th></tr></thead>
+        <tbody>${list.map(r=>`<tr>
+          <td data-label="Mahsulot"><div style="display:flex;align-items:center;gap:10px;"><div class="thumb">${r.emoji||'📦'}</div><div><div class="cell-strong">${r.name}</div><div style="font-size:11px;color:var(--text-faint);">${r.category||''}</div></div></div></td>
+          <td data-label="Joriy qoldiq" class="cell-mono">${fmtQty(r.currentStock)} ${r.unit}</td>
+          <td data-label="O'rtacha savdo" class="cell-mono">${fmtQty(r.avgDaily)} ${r.unit}</td>
+          <td data-label="Xarid miqdori" class="cell-mono" style="font-weight:800;${ppEffectiveQty(r)>0?'color:var(--secondary-dark);':''}">${fmtQty(ppEffectiveQty(r))} ${r.unit}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="closeModal()">Yopish</button>
+    </div>
+  `, true);
 }
 function ppFormulaBoxHtml(){
   return `<div class="card" style="margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;">
