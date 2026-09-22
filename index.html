@@ -1,4 +1,4 @@
-vv<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
@@ -12901,6 +12901,31 @@ function renderSettings(){
         Yoqilganda: kod topilsa — qisqa "beep", topilmasa yoki mos kelmasa — pastroq xato signali chiqadi.<br>
         O'chirilganda skaner ovozsiz ishlaydi.
       </div>
+    </div>
+    <div class="card" style="max-width:520px;margin-top:16px;">
+      <div class="section-title">AI ovozi</div>
+      <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;">
+        Do'kon AI javoblarini qaysi ovoz bilan o'qib berishini tanlang. ${typeof aiTtsAzureConfigured==='function' && !aiTtsAzureConfigured() ? "Azure hali sozlanmagan — sozlangunga qadar barcha variantlar bepul brauzer ovoziga tushadi." : ''}
+      </div>
+      ${['auto','phone','azure-madina','azure-sardor'].map(v=>{
+        const labels = {auto:"Avtomatik (Azure bo'lsa — Azure, bo'lmasa — telefon ovozi)", phone:'Telefon ovozi', 'azure-madina':'Azure — Madina', 'azure-sardor':'Azure — Sardor'};
+        const checked = (typeof aiTtsGetEngine==='function' ? aiTtsGetEngine() : 'auto') === v;
+        return `<label class="check-line" style="margin-top:6px;"><input type="radio" name="aiTtsEngine" value="${v}" ${checked?'checked':''} onchange="aiTtsSetEngine(this.value)"> ${labels[v]}</label>`;
+      }).join('')}
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;max-width:360px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-soft);display:flex;justify-content:space-between;">
+            <span>Tezlik</span><span id="aiTtsRateVal">${(typeof aiTtsGetRate==='function'?aiTtsGetRate():1).toFixed(2)}</span>
+          </label>
+          <input type="range" min="0.8" max="1.2" step="0.05" value="${typeof aiTtsGetRate==='function'?aiTtsGetRate():1}" oninput="aiTtsSetRate(this.value)" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-soft);display:flex;justify-content:space-between;">
+            <span>Ovoz balandligi</span><span id="aiTtsVolVal">${Math.round(typeof aiTtsGetVolume==='function'?aiTtsGetVolume():100)}%</span>
+          </label>
+          <input type="range" min="0" max="100" step="5" value="${typeof aiTtsGetVolume==='function'?aiTtsGetVolume():100}" oninput="aiTtsSetVolume(this.value)" style="width:100%;">
+        </div>
+      </div>
     </div>` : ''}
   ${settingsTab==='categories'? `
     <div class="card" style="max-width:560px;">
@@ -16425,8 +16450,14 @@ function aiHandleUserMessage(text){
    Ovozli KIRISH : 🎤 → SpeechRecognition (uz-UZ, bo'lmasa ru-RU) → matn → aiHandleUserMessage(matn)
    Ovozli CHIQISH: AI javobi UZ yoki RU bo'lishi mumkin (AI_LANG tugmasiga qarab) → #aiBody ga qo'shilgan
    bot javobi (HTML) → tozalanadi → matn qaysi tilda ekani aniqlanadi (kirill/lotin nisbati bo'yicha) →
-   brauzer speechSynthesis shu tilga mos ovozda o'qiydi (o'zbekcha ovoz topilmasa — ruscha ovozga zaxiralanadi,
-   lotin harflar kirillga o'giriladi; Azure/backend KERAK EMAS)
+   "AI ovozi" sozlamasiga (Sozlamalar > Umumiy) qarab ikkitadan biri o'qiydi:
+     - Telefon ovozi: brauzer speechSynthesis (mavjud, o'zgartirilmagan; Azure/backend KERAK EMAS)
+     - Azure — Madina / Azure — Sardor: Azure Speech TTS (sinov rejimi, to'g'ridan-to'g'ri frontend'dan;
+       konfiguratsiya shu faylda pastroqda, AZURE_SPEECH_KEY/REGION o'zgaruvchilarida)
+     - Avtomatik: Azure sozlangan bo'lsa — Azure, aks holda — Telefon ovozi
+   Azure har qanday sababdan ishlamasa (internet yo'q, key/region noto'g'ri, quota tugagan, so'rov
+   muvaffaqiyatsiz) — sezilmasdan Telefon ovoziga (speechSynthesis) o'tadi; AI javobining o'zi hech
+   qachon shu sabab to'xtab qolmaydi.
    Toggle "Ovozli javob" → localStorage['dk_ai_voice']  ('1' yoki '0')
    Kerak bo'lsa tashqaridan: aiVoiceSpeak(matn), aiVoiceStop(), aiVoiceCleanText(html)
    ========================================================================== */
@@ -16447,9 +16478,60 @@ function aiHandleUserMessage(text){
   const LABEL_LOADING = 'Tayyorlanmoqda...';
   const LABEL_STOP = 'To\u2018xtatish';
 
+  /* ============================================================
+     AZURE SPEECH TTS — bitta joydagi konfiguratsiya (backend qo'shilganda
+     shu ikki qatorni .env'ga ko'chirish kifoya). Boshqa hech qayerda
+     API key saqlanmaydi — faqat shu yerda.
+     ============================================================ */
+  const AZURE_SPEECH_KEY    = "YOUR_AZURE_KEY";   // <-- keyin o'zingiz to'ldirasiz
+  const AZURE_SPEECH_REGION = "YOUR_REGION";      // <-- keyin o'zingiz to'ldirasiz (masalan: westeurope)
+  const AZURE_SPEECH_LANG   = "uz-UZ";
+  const AZURE_VOICES = { madina: 'uz-UZ-MadinaNeural', sardor: 'uz-UZ-SardorNeural' };
+  const AZURE_TTS_TIMEOUT_MS = 10000;
+
+  const TTS_ENGINE_KEY = 'dk_ai_tts_engine';  // 'phone' | 'azure-madina' | 'azure-sardor' | 'auto'
+  const TTS_RATE_KEY   = 'dk_ai_tts_rate';    // 0.8 - 1.2
+  const TTS_VOL_KEY    = 'dk_ai_tts_volume';  // 0 - 100
+
+  function azureConfigured(){
+    return !!(AZURE_SPEECH_KEY && AZURE_SPEECH_REGION && AZURE_SPEECH_KEY !== 'YOUR_AZURE_KEY' && AZURE_SPEECH_REGION !== 'YOUR_REGION');
+  }
+  function getTtsEngine(){
+    try{ const v = localStorage.getItem(TTS_ENGINE_KEY); if(v==='phone'||v==='azure-madina'||v==='azure-sardor'||v==='auto') return v; }catch(e){}
+    return 'auto';
+  }
+  function setTtsEngine(v){ try{ localStorage.setItem(TTS_ENGINE_KEY, v); }catch(e){} }
+  function getTtsRate(){
+    let r = 1; try{ const v = parseFloat(localStorage.getItem(TTS_RATE_KEY)); if(v>=0.8 && v<=1.2) r = v; }catch(e){}
+    return r;
+  }
+  function setTtsRate(v){ try{ localStorage.setItem(TTS_RATE_KEY, String(v)); }catch(e){} }
+  function hasStoredTtsRate(){              // foydalanuvchi Sozlamalarda tezlikni o'zi o'zgartirganmi
+    try{ const v = parseFloat(localStorage.getItem(TTS_RATE_KEY)); return v >= 0.8 && v <= 1.2; }catch(e){ return false; }
+  }
+  function getTtsVolume(){
+    let v = 100; try{ const n = parseFloat(localStorage.getItem(TTS_VOL_KEY)); if(n>=0 && n<=100) v = n; }catch(e){}
+    return v;
+  }
+  function setTtsVolume(v){ try{ localStorage.setItem(TTS_VOL_KEY, String(v)); }catch(e){} }
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
   let synth = null;
   try{ if('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) synth = window.speechSynthesis; }catch(e){}
+
+  /* Ovoz ro'yxatini keshlaymiz: ayrim brauzerlarda (ayniqsa Chrome) getVoices() sahifa
+     ochilgan zahoti bo'sh massiv qaytaradi, ovozlar birozdan keyin "voiceschanged" hodisasi
+     bilan yuklanadi. Shu sabab ro'yxatni voiceschanged'da yangilab, keshda saqlaymiz. */
+  let voicesCache = [];
+  function refreshVoicesCache(){
+    try{ voicesCache = (synth && synth.getVoices()) || []; }catch(e){ voicesCache = []; }
+    return voicesCache;
+  }
+  if(synth){
+    refreshVoicesCache();
+    try{ synth.addEventListener('voiceschanged', refreshVoicesCache); }
+    catch(e){ try{ synth.onvoiceschanged = refreshVoicesCache; }catch(e2){} }
+  }
 
   const $ = id => document.getElementById(id);
   function mkRe(src, flags, fallbackSrc){
@@ -16468,6 +16550,7 @@ function aiHandleUserMessage(text){
   let speakToken = 0;                    // eskirgan ovoz hodisalarini e'tiborsiz qoldirish uchun
   let speakingBtn = null;                // hozir o'qilayotgan xabarning 🔊 tugmasi
   let speechPhase = 'idle';              // idle | loading (ovoz boshlanishini kutmoqda) | playing
+  let azureAudio = null;                 // hozir o'qilayotgan Azure TTS <audio> obyekti (bo'lsa)
   let msgTimer = null;
   const shownOnce = {};
 
@@ -16521,7 +16604,7 @@ function aiHandleUserMessage(text){
     return s;
   }
 
-  function speechify(t){
+  function speechify(t, lang){
     t = String(t || '');
     t = t.replace(EMOJI_RE, ' ');
     t = t.replace(/[\u00a0\u202f\u2009\u200b]/g, ' ');
@@ -16541,7 +16624,8 @@ function aiHandleUserMessage(text){
     t = t.replace(/[*~`#>]+/g, '').replace(/_+/g, ' ').replace(/\|/g, ', ');
     t = t.replace(/\s[—–-]\s/g, ', ');            // "Cola — 24 dona" → "Cola, 24 dona"
     t = t.replace(/[()\[\]{}]/g, ', ');
-    t = speakNumbers(t);
+    if(lang === 'uz'){ t = applyUzDictionary(t); t = speakNumbersUz(t); }  // faqat aniqlangan o'zbekcha javob uchun
+    else t = speakNumbers(t);                                              // avvalgidek — ruscha yo'l o'zgarmagan
     const lines = t.split('\n').map(l => l
       .replace(/\s+/g, ' ')
       .replace(/\s+([,.;:!?])/g, '$1')
@@ -16575,7 +16659,7 @@ function aiHandleUserMessage(text){
     }catch(e){
       text = String(html == null ? '' : html).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ' ');
     }
-    return speechify(text);
+    return speechify(text, detectSpeechLang(text));   // til (uz/ru) shu yerda aniqlanadi va speechify'ga uzatiladi
   }
 
   /* ------- lotin harfli so'zlar (mahsulot nomlari: Coca-Cola, Sut, Non...) → kirill: ruscha ovoz ularni to'g'ri talaffuz qilsin ------- */
@@ -16607,29 +16691,131 @@ function aiHandleUserMessage(text){
   }
 
   /* ============================================================
+     1b) O'ZBEKCHA TTS QATLAMI — faqat brauzer ovozi (speechSynthesis) uchun
+     qo'shimcha qatlam. Matn haqiqiy o'zbekcha deb aniqlanganda ishlaydi.
+     Ruscha/Azure yo'llariga (speechify default tarmog'i, speakNumbers,
+     prepareTts, Azure funksiyalari) HECH QANDAY TA'SIR QILMAYDI — ular
+     avvalgidek, o'zgarishsiz ishlayveradi.
+     ============================================================ */
+  const UZ_ONES = ['', 'bir', 'ikki', 'uch', 'to\u2018rt', 'besh', 'olti', 'yetti', 'sakkiz', 'to\u2018qqiz'];
+  const UZ_TENS = ['', 'o\u2018n', 'yigirma', 'o\u2018ttiz', 'qirq', 'ellik', 'oltmish', 'yetmish', 'sakson', 'to\u2018qson'];
+  const UZ_SCALES = [[1000000000000, 'trillion'], [1000000000, 'milliard'], [1000000, 'million'], [1000, 'ming']];
+  const UZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'];
+  const UZ_UNIT_WORDS = { kg:'kilogramm', '\u043a\u0433':'kilogramm', gr:'gramm', g:'gramm', '\u0433\u0440':'gramm', '\u0433':'gramm',
+    ml:'millilitr', '\u043c\u043b':'millilitr', lt:'litr', l:'litr', '\u043b':'litr', dona:'dona', '\u0448\u0442':'dona', sht:'dona' };
+  const UZ_ORDINAL_SUFFIX = { 'bir':'birinchi','ikki':'ikkinchi','uch':'uchinchi','to\u2018rt':'to\u2018rtinchi','besh':'beshinchi',
+    'olti':'oltinchi','yetti':'yettinchi','sakkiz':'sakkizinchi','to\u2018qqiz':'to\u2018qqizinchi','o\u2018n':'o\u2018ninchi',
+    'yigirma':'yigirmanchi','o\u2018ttiz':'o\u2018ttizinchi','qirq':'qirqinchi','ellik':'ellikinchi','oltmish':'oltmishinchi',
+    'yetmish':'yetmishinchi','sakson':'saksoninchi','to\u2018qson':'to\u2018qsoninchi','yuz':'yuzinchi','ming':'minginchi' };
+  const UZBEK_TTS_DICTIONARY = { "Do\u2018kon AI":"Do\u2018kon A I", "AI":"A I", "API":"A P I", "QR":"Q R", "SKU":"S K U", "Power BI":"Power Bi" };
+
+  function uz3(n){                          // 0..999 -> so'z
+    n = Math.floor(n);
+    const out = [];
+    const h = Math.floor(n / 100), r = n % 100;
+    if(h) out.push(UZ_ONES[h], 'yuz');
+    const t = Math.floor(r / 10), o = r % 10;
+    if(t) out.push(UZ_TENS[t]);
+    if(o) out.push(UZ_ONES[o]);
+    return out.join(' ');
+  }
+  function numberToUzbekWords(n){           // butun son -> o'zbekcha so'zlar (trillionlargacha)
+    n = Math.floor(Math.abs(Number(n) || 0));
+    if(n === 0) return 'nol';
+    const parts = [];
+    let rem = n;
+    UZ_SCALES.forEach(([val, word]) => {
+      if(rem >= val){
+        parts.push(uz3(Math.floor(rem / val)) + ' ' + word);
+        rem = rem % val;
+      }
+    });
+    if(rem > 0) parts.push(uz3(rem));
+    return parts.join(' ').replace(/\s+/g, ' ').trim() || 'nol';
+  }
+  function uzDecimalWords(intPart, fracPart){   // "12", "5" -> "o'n ikki butun besh"
+    fracPart = String(fracPart).replace(/0+$/, '') || '0';
+    return numberToUzbekWords(intPart) + ' butun ' + numberToUzbekWords(fracPart);
+  }
+  function ordinalizeUz(words){             // "yigirma ikki" -> "yigirma ikkinchi"
+    const arr = String(words).trim().split(/\s+/);
+    const last = arr.pop();
+    arr.push(UZ_ORDINAL_SUFFIX[last] || (last + 'inchi'));
+    return arr.join(' ');
+  }
+  function uzDateWords(d, mo, y){
+    if(mo < 1 || mo > 12) return null;
+    return (ordinalizeUz(numberToUzbekWords(d)) + ' ' + UZ_MONTHS[mo - 1] + ' ' + numberToUzbekWords(y)).trim();
+  }
+  function uzTimeWords(h, m){
+    return 'soat ' + numberToUzbekWords(h) + (m === 0 ? '' : ' ' + numberToUzbekWords(m));
+  }
+  function uzNumWords(numStr){              // "12", "12.5", "12,5" -> so'z (butun yoki kasr)
+    numStr = String(numStr).replace(',', '.');
+    const dot = numStr.indexOf('.');
+    return dot >= 0 ? uzDecimalWords(numStr.slice(0, dot), numStr.slice(dot + 1)) : numberToUzbekWords(numStr);
+  }
+  function applyUzDictionary(t){
+    Object.keys(UZBEK_TTS_DICTIONARY).forEach(k => {
+      t = t.replace(new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g'), UZBEK_TTS_DICTIONARY[k]);
+    });
+    return t;
+  }
+  /* Ruscha speakNumbers()'ning o'zbekcha juftligi — mustaqil funksiya, mavjud speakNumbers()
+     hech narsasi o'zgartirilmagan holda qoladi. Sana, vaqt, foiz, o'lchov birliklari va
+     so'm/UZS'ni to'liq o'zbekcha so'zlarga, qolgan alohida sonlarni ham so'zga aylantiradi;
+     harflarga yopishgan yoki juda uzun (ID/kod ehtimoli bor) sonlarga tegmaydi. */
+  function speakNumbersUz(s){
+    s = s.replace(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/g, (m, d, mo, y) => uzDateWords(+d, +mo, +y) || m);
+    s = s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m, y, mo, d) => uzDateWords(+d, +mo, +y) || m);
+    s = s.replace(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g, (m, h, mi) => uzTimeWords(+h, +mi));
+    s = s.replace(/(^|[^\d.,])(\d{1,3}(?: \d{3})+)(?!\d)/g, (m, pre, num) => pre + num.replace(/ /g, ''));   // "1 250 000" -> "1250000"
+    s = s.replace(/(\d+(?:[.,]\d+)?)\s*%/g, (m, num) => uzNumWords(num) + ' foiz');
+    s = s.replace(mkRe(
+      '(\\d+(?:[.,]\\d+)?)\\s*(kg|gr|ml|lt|g|l|dona|sht|\\u043a\\u0433|\\u0433\\u0440|\\u043c\\u043b|\\u0433|\\u043b|\\u0448\\u0442)(?:\\.(?=\\s|$))?(?![\\p{L}\\d])', 'giu',
+      '(\\d+(?:[.,]\\d+)?)\\s*(kg|gr|ml|lt|g|l|dona|sht|\\u043a\\u0433|\\u0433\\u0440|\\u043c\\u043b|\\u0433|\\u043b|\\u0448\\u0442)(?:\\.(?=\\s|$))?(?![A-Za-z\\u00C0-\\u024F\\u0400-\\u04FF\\d])'
+    ), (m, num, u) => {
+      const word = UZ_UNIT_WORDS[u.toLowerCase()];
+      return word ? uzNumWords(num) + ' ' + word : m;
+    });
+    s = s.replace(/\bUZS\b/g, "so\u2018m");
+    s = s.replace(/(\d+(?:[.,]\d+)?)\s*(so\u2018m|som|so'm|\u0441\u0443\u043c)\b/gi, (m, num) => uzNumWords(num) + " so\u2018m");
+    // qolgan alohida sonlar — kod/ID bo'lishi mumkin bo'lgan uzun yoki harflarga yopishgan sonlarga tegilmaydi
+    s = s.replace(mkRe('(^|[^\\p{L}\\d.,#\u2116-])(\\d{1,9})(?:[.,](\\d+))?(?![\\p{L}\\d])', 'gu',
+      "(^|[^A-Za-z0-9\\u00C0-\\u024F\\u0400-\\u04FF.,#\u2116-])(\\d{1,9})(?:[.,](\\d+))?(?![A-Za-z0-9\\u00C0-\\u024F\\u0400-\\u04FF])"
+    ), (m, pre, ip, fp) => pre + (fp ? uzDecimalWords(ip, fp) : numberToUzbekWords(ip)));
+    return s;
+  }
+
+  /* ============================================================
      2) MATNNI OVOZGA AYLANTIRISH (speechSynthesis)
      ============================================================ */
   /* Matn tiliga mos ovoz tanlaydi: 'uz' — o'zbekcha, 'ru' — ruscha.
-     Qurilmada o'zbekcha ovoz bo'lmasa — ruscha ovozga qaytamiz (matn keyin kirillga o'giriladi). */
+     Tanlashda nafaqat nom, balki voice.lang qiymati tekshiriladi.
+     Zanjir: uz-UZ/uz (lang bo'yicha) -> nomida "uzbek/o'zbek" bor ovoz -> ru -> qurilmadagi
+     har qanday boshqa ovoz -> hech narsa topilmasa 'none' (ekrandagi javob baribir saqlanib qoladi). */
   function pickVoice(lang){
-    let voices = [];
-    try{ voices = synth.getVoices() || []; }catch(e){}
+    let voices = voicesCache.length ? voicesCache : refreshVoicesCache();
     const L = v => String(v.lang || '').replace('_', '-').toLowerCase();
     const scoreCommon = v => /natural|neural|online|google/i.test(v.name || '') ? 2 : 0;
 
     if(lang === 'uz'){
-      const uz = voices.filter(v => L(v).indexOf('uz') === 0);
+      let uz = voices.filter(v => L(v).indexOf('uz') === 0);
+      if(!uz.length) uz = voices.filter(v => /uzbek|o\u2018zbek|o'zbek/i.test(v.name || ''));
       const scoreUz = v => scoreCommon(v) + (L(v) === 'uz-uz' ? 1 : 0);
       uz.sort((x, y) => scoreUz(y) - scoreUz(x));
-      if(uz[0]) return { voice: uz[0], lang: uz[0].lang, mode: 'uz' };
-      // o'zbekcha ovoz topilmadi — pastda ruscha ovozga zaxiralanadi
+      if(uz[0]) return { voice: uz[0], lang: uz[0].lang || 'uz-UZ', mode: 'uz' };
+      // o'zbekcha ovoz topilmadi — pastda ruscha ovozga, keyin har qanday mavjud ovozga zaxiralanadi
     }
     const ru = voices.filter(v => L(v).indexOf('ru') === 0);
     const scoreRu = v => scoreCommon(v) + (/milena|yuri|katya|svetlana|dmitry/i.test(v.name || '') ? 2 : 0) + (L(v) === 'ru-ru' ? 1 : 0);
     ru.sort((x, y) => scoreRu(y) - scoreRu(x));
-    const v = ru[0] || null;
-    if(!v) return { voice: null, lang: 'ru-RU', mode: 'none' };
-    return { voice: v, lang: v.lang, mode: lang === 'uz' ? 'uz-fallback-ru' : 'ru' };
+    if(ru[0]) return { voice: ru[0], lang: ru[0].lang, mode: lang === 'uz' ? 'uz-fallback-ru' : 'ru' };
+    if(voices.length){                      // ru ham yo'q — qurilmadagi ixtiyoriy mavjud ovozdan foydalanamiz
+      const any = voices[0];
+      return { voice: any, lang: any.lang || 'en-US', mode: 'uz-fallback-any' };
+    }
+    return { voice: null, lang: 'ru-RU', mode: 'none' };
   }
 
   function chunkText(t){
@@ -16655,31 +16841,37 @@ function aiHandleUserMessage(text){
   }
 
   /* AI javobi o'zbekcha yoki ruscha bo'lishi mumkin — matn tiliga mos ovoz avtomatik tanlanadi.
-     Bir vaqtda faqat bitta ovoz: yangisi boshlansa oldingisi to'xtaydi. */
-  function speakText(text, btn){
+     Bir vaqtda faqat bitta ovoz: yangisi boshlansa oldingisi to'xtaydi.
+     Bu — MAVJUD, o'zgartirilmagan bepul brauzer ovozi (speechSynthesis). U doim ZAXIRA (fallback)
+     sifatida ishlaydi: Azure ishlamasa yoki tanlanmagan bo'lsa, aynan shu funksiya chaqiriladi. */
+  function speakWithBrowserTTS(text, btn, token){
     if(!synth) return false;
     text = String(text || '').trim();
     if(!text) return false;
     const lang = detectSpeechLang(text);
     const cfg = pickVoice(lang);
-    const useRuTranslit = cfg.mode !== 'uz';   // haqiqiy o'zbekcha ovoz ishlatilmasa — lotin matn kirillga o'giriladi
+    // haqiqiy o'zbekcha yoki qurilmadagi boshqa (uz/ru bo'lmagan) ovoz ishlatilganda lotin matn o'girilmaydi;
+    // faqat ruscha ovozga zaxiralanganda (yoki hech qanday ovoz topilmaganda) kirillga o'giriladi
+    const useRuTranslit = cfg.mode === 'ru' || cfg.mode === 'uz-fallback-ru' || cfg.mode === 'none';
     const chunks = chunkText(prepareTts(text, useRuTranslit));
     if(!chunks.length) return false;
 
-    const token = ++speakToken;             // eskirgan onend/onerror hodisalari e'tiborsiz qoladi
     try{ synth.cancel(); }catch(e){}
     speechPhase = 'loading';
     markPlaying(btn || null, 'loading');    // tugmada "Tayyorlanmoqda..." — ovoz boshlangunicha
     if(state === 'speaking') setState('idle');
     if(cfg.mode === 'none') notifyOnce('ttsFallback', "Qurilmada ovoz topilmadi — sozlamalardagi «Matndan nutqqa» bo'limida o'zbek yoki rus tilini yuklab oling.");
 
+    // o'zbekcha nutq uchun boshlang'ich tezlik 0.9 (foydalanuvchi Sozlamalarda buni o'zi o'zgartirmagan bo'lsa)
+    const rate = hasStoredTtsRate() ? getTtsRate() : (cfg.mode === 'uz' ? 0.9 : getTtsRate());
+    const volume = getTtsVolume() / 100;
     let started = false;
     setTimeout(() => {                      // cancel() dan keyin darhol speak() ba'zi brauzerlarda yo'qolib qoladi
       if(token !== speakToken) return;
       chunks.forEach((c, i) => {
         const u = new SpeechSynthesisUtterance(c);
         if(cfg.voice) u.voice = cfg.voice;
-        u.lang = cfg.lang; u.rate = 1; u.pitch = 1; u.volume = 1;
+        u.lang = cfg.lang; u.rate = rate; u.pitch = 1; u.volume = volume;
         u.onstart = () => {
           if(token !== speakToken || started) return;
           started = true;
@@ -16704,14 +16896,117 @@ function aiHandleUserMessage(text){
     }, 7000);
     return true;
   }
+
+  /* ============================================================
+     AZURE SPEECH TTS (sinov rejimi — to'g'ridan-to'g'ri frontend'dan).
+     Faqat "AI ovozi" sozlamasida Azure tanlanganda chaqiriladi.
+     Har qanday xatolikda (internet yo'q, key/region noto'g'ri, quota
+     tugagan, so'rov muvaffaqiyatsiz) — jim ravishda speakWithBrowserTTS'ga
+     o'tadi, AI javobining o'zi hech qachon to'xtab qolmaydi.
+     ============================================================ */
+  function azureSsmlEscape(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  function buildAzureSsml(text, voiceName){
+    const rate = getTtsRate(), vol = getTtsVolume();
+    const ratePct = Math.round((rate - 1) * 100);
+    const rateAttr = (ratePct >= 0 ? '+' : '') + ratePct + '%';
+    const volAttr = Math.max(0, Math.min(100, Math.round(vol))) + '%';
+    return '<speak version="1.0" xml:lang="' + AZURE_SPEECH_LANG + '"><voice name="' + voiceName + '">'
+      + '<prosody rate="' + rateAttr + '" volume="' + volAttr + '">' + azureSsmlEscape(text) + '</prosody></voice></speak>';
+  }
+  function speakWithAzureTTS(text, btn, voiceName, token){
+    if(!azureConfigured()) return Promise.reject(new Error('azure-not-configured'));
+    const ssml = buildAzureSsml(prepareTts(text, false), voiceName);   // haqiqiy uz-UZ neural ovoz — lotin matnni o'girishsiz o'qiydi
+    const url = 'https://' + AZURE_SPEECH_REGION + '.tts.speech.microsoft.com/cognitiveservices/v1';
+    let ctrl = null, to = null;
+    try{ ctrl = new AbortController(); to = setTimeout(() => ctrl.abort(), AZURE_TTS_TIMEOUT_MS); }catch(e){}
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-64kbitrate-mono-mp3'
+      },
+      body: ssml,
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(res => {
+      clearTimeout(to);
+      if(!res.ok) throw new Error('azure-http-' + res.status);
+      return res.blob();
+    }).then(blob => {
+      if(token !== speakToken) return;      // eskirgan so'rov — chiqargan ovozi kerak emas
+      return new Promise((resolve, reject) => {
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        azureAudio = audio;
+        audio.onplay = () => {
+          if(token !== speakToken) return;
+          speechPhase = 'playing'; markPlaying(btn || null, 'playing'); setState('speaking');
+        };
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          if(azureAudio === audio) azureAudio = null;
+          if(token === speakToken) finishSpeaking();
+          resolve();
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          if(azureAudio === audio) azureAudio = null;
+          reject(new Error('azure-audio-play-error'));
+        };
+        audio.play().catch(reject);
+      });
+    });
+  }
+
+  /* Yagona kirish nuqtasi: sozlamadagi "AI ovozi" tanloviga qarab
+     Azure yoki brauzer ovozini tanlaydi. Azure muvaffaqiyatsiz bo'lsa —
+     avtomatik va sezilarsiz ravishda brauzer ovoziga o'tadi. */
+  function speakText(text, btn){
+    text = String(text || '').trim();
+    if(!text) return false;
+    if(!synth && !azureConfigured()) return false;
+
+    const token = ++speakToken;              // eskirgan onend/onerror/audio hodisalari e'tiborsiz qoladi
+    try{ if(synth) synth.cancel(); }catch(e){}
+    if(azureAudio){ try{ azureAudio.pause(); }catch(e){} azureAudio = null; }
+    speechPhase = 'loading';
+    markPlaying(btn || null, 'loading');
+    if(state === 'speaking') setState('idle');
+
+    const engine = getTtsEngine();
+    const toBrowser = () => speakWithBrowserTTS(text, btn, token);
+    const toAzure = voiceName => speakWithAzureTTS(text, btn, voiceName, token).catch(() => {
+      if(token !== speakToken) return;        // shu orada foydalanuvchi to'xtatgan/yangi savol yuborgan
+      notifyOnce('azureFail', "Azure ovozi ishlamadi — brauzer ovoziga avtomatik o'tildi.");
+      toBrowser();
+    });
+
+    if(engine === 'azure-madina' || engine === 'azure-sardor'){
+      const voiceName = engine === 'azure-madina' ? AZURE_VOICES.madina : AZURE_VOICES.sardor;
+      if(!azureConfigured()){
+        notifyOnce('azureNotConfigured', "Azure ovoz hali sozlanmagan — brauzer ovoziga o'tildi.");
+        return toBrowser();
+      }
+      toAzure(voiceName);
+      return true;
+    }
+    if(engine === 'auto' && azureConfigured()){
+      toAzure(AZURE_VOICES.madina);
+      return true;
+    }
+    return toBrowser();                       // engine === 'phone', yoki 'auto' + Azure sozlanmagan
+  }
   function finishSpeaking(){
     speechPhase = 'idle';
     markPlaying(null);
     if(state === 'speaking') setState('idle');
   }
   function stopSpeaking(){
-    speakToken++;                           // eskirgan onend/onerror hodisalari e'tiborsiz qoladi
+    speakToken++;                           // eskirgan onend/onerror/audio hodisalari e'tiborsiz qoladi
     if(synth){ try{ synth.cancel(); }catch(e){} }
+    if(azureAudio){ try{ azureAudio.pause(); azureAudio.src = ''; }catch(e){} azureAudio = null; }
     finishSpeaking();
   }
 
@@ -16917,13 +17212,21 @@ function aiHandleUserMessage(text){
   window.aiVoiceStop = function(){ cancelRec(); stopSpeaking(); };
   window.aiVoiceSpeak = function(text){ return speakText(text, null); };
   window.aiVoiceCleanText = cleanText;
+  /* ---- "AI ovozi" sozlamalari (Sozlamalar > Umumiy) uchun ---- */
+  window.aiTtsGetEngine = getTtsEngine;
+  window.aiTtsGetRate = getTtsRate;
+  window.aiTtsGetVolume = getTtsVolume;
+  window.aiTtsAzureConfigured = azureConfigured;
+  window.aiTtsSetEngine = function(v){ setTtsEngine(v); if(state==='speaking') stopSpeaking(); if(typeof renderPage==='function') renderPage(); };
+  window.aiTtsSetRate = function(v){ setTtsRate(parseFloat(v)); const el=$('aiTtsRateVal'); if(el) el.textContent = parseFloat(v).toFixed(2); };
+  window.aiTtsSetVolume = function(v){ setTtsVolume(parseFloat(v)); const el=$('aiTtsVolVal'); if(el) el.textContent = Math.round(parseFloat(v))+'%'; };
 
   function init(){
     const body = $('aiBody'), panel = $('aiPanel');
     if(!body || !panel) return;
     paintToggle();
-    if(!synth){ const bar = $('aiVoiceBar'); if(bar) bar.style.display = 'none'; }
-    else{ try{ synth.getVoices(); }catch(e){} }         // ovozlar ro'yxatini oldindan yuklatish
+    if(!synth && !azureConfigured()){ const bar = $('aiVoiceBar'); if(bar) bar.style.display = 'none'; }
+    if(synth){ try{ synth.getVoices(); }catch(e){} }         // ovozlar ro'yxatini oldindan yuklatish
     if(!SR){ const mic = $('aiMicBtn'); if(mic) mic.classList.add('unsupported'); }
 
     new MutationObserver(onBodyMutations).observe(body, { childList: true });
@@ -16975,7 +17278,7 @@ const BK_VERSION   = 1;
 const BK_APP_NAME  = 'Do‘kon.UZ';
 const APP_KEY      = 'dokonuz';
 const DB_KEY       = 'dokonuz_db';
-const LS_KEYS      = ['scannerAutoEnter','optomhub_ui_theme','optomhub_ui_sidebar','dk_ai_lang','dk_ai_voice'];
+const LS_KEYS      = ['scannerAutoEnter','optomhub_ui_theme','optomhub_ui_sidebar','dk_ai_lang','dk_ai_voice','dk_ai_tts_engine','dk_ai_tts_rate','dk_ai_tts_volume'];
 const CFG_KEY      = 'dokonuz_backup_cfg';
 const IDB_NAME     = 'dokonuz_backups';
 const REQ_ARR      = ['products','categories','sales','customers','expenses','returns','employees'];
