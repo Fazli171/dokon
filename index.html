@@ -18009,7 +18009,7 @@ function drawAnalyticsCharts(){
 let saTab='general', saSort='revenue';
 const SA_TABS=[['general','Umumiy ko\'rinish'],['overview','Xulosa'],['time','Vaqt tahlili'],['abc','Mahsulot ABC'],['rfm','Mijoz segmentlari'],['team',"Xodim va to'lov"],['wh','📦 Ombor tahlili']];
 function anSectionTabs(){
-  return `<div class="tabs" style="margin-bottom:16px;">${SA_TABS.map(([k,l])=>`<div class="tab ${saTab===k?'active':''}" onclick="saSetTab('${k}')">${l}</div>`).join('')}</div>`;
+  return `<div class="tabs" style="margin-bottom:16px;">${SA_TABS.map(([k,l])=>`<div class="tab ${saTab===k?'active':''}" onclick="saSetTab('${k}')">${l}</div>`).join('')}<div class="tab" onclick="saGlossary()" title="Barcha ko'rsatkichlar ma'nosi">❓ Ko'rsatkichlar izohi</div></div>`;
 }
 function saSetTab(t){saTab=t;renderPage();}
 function saSetSort(v){saSort=v;renderPage();}
@@ -18575,33 +18575,44 @@ function saWhDate(d){return d&&d.length>=10?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d
 function saWhBase(){return saM('whBase',()=>{
   const today=todayISO(),wh=saWhF.wh,dw=defaultWarehouseId();
   const prods=anFltProducts(saFlt).filter(p=>p.isForSale||(p.qty||0)>0);
-  const ids=new Set(prods.map(p=>p.id)),lastSale={},soldQ={},ev={},lastIn={};
+  const ids=new Set(prods.map(p=>p.id)),lastSale={},firstSale={},soldQ={},retQ={},ev={},lastIn={};
   const addEv=(pid,d,v)=>{(ev[pid]||(ev[pid]=[])).push({d,v});};
   const useSales=!wh||wh===dw;
   activeSales().forEach(s=>{const d=(s.date||'').slice(0,10),inR=anInRange(s.date,anFrom,anTo);
     s.items.forEach(it=>{const pid=it.productId;if(!ids.has(pid))return;
       if(!lastSale[pid]||d>lastSale[pid])lastSale[pid]=d;
+      if(!firstSale[pid]||d<firstSale[pid])firstSale[pid]=d;
       if(inR)soldQ[pid]=(soldQ[pid]||0)+(it.qty||0);
       if(useSales)addEv(pid,d,-(it.qty||0));});});
+  confirmedReturns().forEach(r=>{if(!anInRange(r.date,anFrom,anTo))return;(r.items||[]).forEach(it=>{if(ids.has(it.productId))retQ[it.productId]=(retQ[it.productId]||0)+(it.qty||0);});});
   (DB.stockMoves||[]).forEach(m=>{const pid=m.productId;if(!ids.has(pid))return;
     if(wh&&(m.warehouseId||dw)!==wh)return;
     const d=(m.date||'').slice(0,10);
     addEv(pid,d,(m.dir==='in'?1:-1)*(m.qty||0));
     if(m.dir==='in'&&m.reason==='Kirim'&&(!lastIn[pid]||d>lastIn[pid]))lastIn[pid]=d;});
-  const days=saDays();
+  const endD=anTo>today?today:anTo,days=saDays();
   const rows=prods.map(p=>{
-    const qty=wh?productQtyInWh(p,wh):(p.qty||0),min=p.minQty||0,cost=p.cost||0,price=p.price||0;
+    const bs=(p.batches||[]).filter(b=>!wh||(b.warehouseId||dw)===wh);
+    const qty=wh?productQtyInWh(p,wh):(p.qty||0),min=p.minQty||0,price=p.price||0;
+    /* Tannarx qiymati: har bir PARTIYA qoldig'i × o'z tannarxi (partiyada tannarx yo'q bo'lsa — mahsulotning joriy tannarxi) */
+    let bq=0,bv=0;bs.forEach(b=>{const q=b.qty||0;if(q>0){bq+=q;bv+=q*(b.cost>0?b.cost:(p.cost||0));}});
+    const costVal=qty>0?(Math.abs(bq-qty)<=1e-6*Math.max(1,qty)?bv:qty*(p.cost||0)):0;
+    const cost=qty>0?costVal/qty:(p.cost||0),saleVal=qty>0?qty*price:0;
     const status=qty<=0?'out':(qty<=min?'low':'ok');
-    const bd=(p.batches||[]).filter(b=>!wh||(b.warehouseId||dw)===wh).map(b=>String(b.date||'').slice(0,10)).filter(Boolean).sort();
+    const bd=bs.map(b=>String(b.date||'').slice(0,10)).filter(Boolean).sort();
     const li=lastIn[p.id]||(bd.length?bd[bd.length-1]:null),fi=bd.length?bd[0]:null,ls=lastSale[p.id]||null;
     const ref=ls||fi,idle=ref?Math.max(0,daysBetween(ref,today)):null;
     const evs=ev[p.id]||[];let aft=0,fromOn=0;evs.forEach(e=>{if(e.d>anTo)aft+=e.v;if(e.d>=anFrom)fromOn+=e.v;});
     const close=qty-aft,open=qty-fromOn,okAvg=open>=-1e-9&&close>=-1e-9,avg=okAvg?(open+close)/2:null;
-    const sold=soldQ[p.id]||0;
-    const turns=avg!=null&&avg>0?sold/avg:null,cover=sold>0&&qty>0?qty/(sold/days):null;
+    /* Sotilgan = davrdagi sotuv − tasdiqlangan qaytarishlar */
+    const sold=Math.max(0,(soldQ[p.id]||0)-(retQ[p.id]||0));
+    /* Kunlik sotuv: mahsulot davr o'rtasida paydo bo'lgan bo'lsa — faqat paydo bo'lgandan beri o'tgan kunlarga bo'linadi */
+    const seen=[fi,firstSale[p.id]].filter(Boolean).sort()[0]||null,st0=seen&&seen>anFrom?seen:anFrom;
+    const eff=Math.max(1,Math.min(days,daysBetween(st0,endD)+1)),perDay=sold>0?sold/eff:0;
+    const turns=avg!=null&&avg>0?sold/avg:null,cover=perDay>0&&qty>0?qty/perDay:null;
     return {p,id:p.id,name:p.name||'—',sku:p.sku||'',barcode:p.barcode||'',cat:p.category||'Boshqa',unit:p.unit||'',
-      qty,min,cost,price,costVal:qty*cost,saleVal:qty*price,profit:qty*(price-cost),status,
-      lastSale:ls,lastIn:li,idle,neverSold:!ls,sold,avg,turns,cover,abc:'—'};
+      qty,min,cost,price,costVal,saleVal,profit:saleVal-costVal,noCost:qty>0&&costVal<=0,status,
+      lastSale:ls,lastIn:li,idle,neverSold:!ls,sold,perDay,avg,turns,cover,abc:'—'};
   });
   /* ABC: "Ombor qiymati" asosida — mavjud Product ABC bilan bir xil chegaralar (80% / 95%); "Sotuv" asosida — mavjud saProdM() sinflari */
   if(saWhF.basis==='sales'){
@@ -18618,16 +18629,17 @@ function saWhTot(rows){
   let qty=0,cv=0,sv=0;rows.forEach(r=>{qty+=r.qty>0?r.qty:0;cv+=r.costVal>0?r.costVal:0;sv+=r.saleVal>0?r.saleVal:0;});
   return {n:rows.length,qty,cv,sv,gp:sv-cv};
 }
-const saWhDead=()=>saM('whDead',()=>saWhRows().filter(r=>r.qty>0&&r.idle!=null&&r.idle>=saWhF.dead));
+const saWhDead=()=>saM('whDead',()=>saWhRows(true,true).filter(r=>r.qty>0&&r.idle!=null&&r.idle>=saWhF.dead));
 function saWhExpiry(){return saM('whExp',()=>{
   const today=todayISO(),dw=defaultWarehouseId(),b={exp:[],d7:[],d30:[],d60:[]};let has=0;
-  saWhRows().forEach(r=>(r.p.batches||[]).forEach(bt=>{
+  saWhRows(true,true).forEach(r=>(r.p.batches||[]).forEach(bt=>{
     if(saWhF.wh&&(bt.warehouseId||dw)!==saWhF.wh)return;
     if(!bt.expiry||!(bt.qty>0))return;has++;
     const d=daysBetween(today,String(bt.expiry).slice(0,10)),it={r,bt,d};
     if(d<0)b.exp.push(it);else if(d<=7)b.d7.push(it);else if(d<=30)b.d30.push(it);else if(d<=60)b.d60.push(it);}));
   const near=new Set();b.d7.concat(b.d30).forEach(x=>near.add(x.r.id));
-  return {b,has,near:near.size};
+  const eps=new Set();b.exp.forEach(x=>eps.add(x.r.id));
+  return {b,has,near:near.size,expN:eps.size};
 });}
 function saWhInv(){return saM('whInv',()=>{
   const m=anFltMatcher(saFlt);let n=0,items=0,over=0,under=0,match=0,dq=0,dm=0,om=0,um=0;
@@ -18710,16 +18722,28 @@ function saWhTblRows(){
   const q=(saWhF.q||'').trim().toLowerCase(),sk=saWhF.sort;
   let r=saWhRows();
   if(q)r=r.filter(x=>(x.name+' '+x.sku+' '+x.barcode+' '+x.cat).toLowerCase().indexOf(q)>=0);
+  if(sk==='coverAsc'||sk==='coverDesc'){
+    /* Necha kunga yetishi: Asc — avval tugaganlar, keyin tez tugaydiganlar, oxirida "sotuv yo'q"; Desc — uzoq yetadiganlar birinchi */
+    const rk=x=>x.qty<=0?0:(x.cover!=null?1:2);
+    return r.slice().sort(sk==='coverAsc'?(a,b)=>(rk(a)-rk(b))||(rk(a)===1?a.cover-b.cover:b.costVal-a.costVal)
+      :(a,b)=>{const ra=rk(a)===0?3:rk(a),rb=rk(b)===0?3:rk(b);return (ra-rb)||(ra===1?b.cover-a.cover:b.costVal-a.costVal);});
+  }
   const so={out:0,low:1,ok:2};
   r=r.slice().sort((a,b)=>sk==='qtyAsc'?a.qty-b.qty:sk==='qtyDesc'?b.qty-a.qty:sk==='name'?String(a.name).localeCompare(String(b.name)):sk==='status'?(so[a.status]-so[b.status])||(a.qty-b.qty):b.costVal-a.costVal);
   return r;
+}
+function saWhCoverHtml(r){
+  if(r.qty<=0)return '<span class="badge badge-red">Tugagan</span>';
+  if(r.cover==null)return '<span class="t-caption" title="Tanlangan davrda sotuv bo\'lmagan">Sotuv yo\'q</span>';
+  const d=Math.round(r.cover),c=d<=7?'badge-red':(d<=14?'badge-yellow':'badge-green');
+  return `<span class="badge ${c}" title="O'rtacha kunlik sotuv: ${fmtQty(Math.round(r.perDay*100)/100)} ${saWhEsc(r.unit)}">${d<1?'< 1 kun':d+' kun'}</span>`;
 }
 function saWhTableHtml(){
   const all=saWhTblRows(),pages=Math.max(1,Math.ceil(all.length/SA_WH_PS));
   if(saWhF.page>=pages)saWhF.page=pages-1;
   const rows=all.slice(saWhF.page*SA_WH_PS,(saWhF.page+1)*SA_WH_PS);
-  return `<div class="table-scroll"><table><thead><tr><th>Mahsulot</th><th>SKU / Barcode</th><th>Kategoriya</th><th>Qoldiq</th><th>Minimal</th><th>Tannarx</th><th>Sotuv narxi</th><th>Ombor qiymati</th><th>Holat</th></tr></thead><tbody>
-  ${rows.length?rows.map(r=>`<tr style="cursor:pointer;" onclick="saWhDetail('${saWhEsc(r.id)}')"><td class="cell-strong">${saWhEsc(r.name)}</td><td class="cell-mono">${saWhEsc(r.sku||r.barcode||'—')}</td><td>${saWhEsc(r.cat)}</td><td>${fmtQty(r.qty)} ${saWhEsc(r.unit)}</td><td>${fmtQty(r.min)}</td><td class="cell-mono">${fmtNum(r.cost)}</td><td class="cell-mono">${fmtNum(r.price)}</td><td class="cell-mono">${fmtNum(r.costVal)}</td><td><span class="badge ${SA_WH_ST[r.status][1]}">${SA_WH_ST[r.status][0]}</span></td></tr>`).join(''):`<tr><td colspan="9">${saEmptyBox('Filtrga mos mahsulot topilmadi')}</td></tr>`}
+  return `<div class="table-scroll"><table><thead><tr><th>Mahsulot</th><th>SKU / Barcode</th><th>Kategoriya</th><th>Qoldiq</th><th>Minimal</th><th>Tannarx</th><th>Sotuv narxi</th><th>Ombor qiymati</th><th>Necha kunga yetadi</th><th>Holat</th></tr></thead><tbody>
+  ${rows.length?rows.map(r=>`<tr style="cursor:pointer;" onclick="saWhDetail('${saWhEsc(r.id)}')"><td class="cell-strong">${saWhEsc(r.name)}</td><td class="cell-mono">${saWhEsc(r.sku||r.barcode||'—')}</td><td>${saWhEsc(r.cat)}</td><td>${fmtQty(r.qty)} ${saWhEsc(r.unit)}</td><td>${fmtQty(r.min)}</td><td class="cell-mono">${fmtNum(r.cost)}</td><td class="cell-mono">${fmtNum(r.price)}</td><td class="cell-mono">${fmtNum(r.costVal)}</td><td>${saWhCoverHtml(r)}</td><td><span class="badge ${SA_WH_ST[r.status][1]}">${SA_WH_ST[r.status][0]}</span></td></tr>`).join(''):`<tr><td colspan="10">${saEmptyBox('Filtrga mos mahsulot topilmadi')}</td></tr>`}
   </tbody></table></div>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap;"><span class="t-caption">${fmtNum(all.length)} ta mahsulot · ${saWhF.page+1} / ${pages} sahifa</span>
   <span style="display:flex;gap:8px;"><button class="btn btn-secondary" ${saWhF.page<=0?'disabled':''} onclick="saWhPage(-1)">‹ Oldingi</button><button class="btn btn-secondary" ${saWhF.page>=pages-1?'disabled':''} onclick="saWhPage(1)">Keyingi ›</button></span></div>`;
@@ -18750,11 +18774,99 @@ function saWhDetail(id){
       ${box('Oxirgi kirim',saWhDate(r.lastIn),'download','var(--info)','var(--info-light)')}
       ${box('Oxirgi sotuv',r.lastSale?saWhDate(r.lastSale):'Hali sotilmagan','shopping-cart','var(--success)','var(--success-light)')}
       ${box('Sotilgan miqdor (davr)',fmtQty(r.sold)+' '+u,'bar-chart-3','var(--warning)','var(--warning-light)')}
-      ${box('Qolgan miqdor',fmtQty(r.qty)+' '+u,'layers','var(--primary)','var(--primary-light)')}
+      ${box('Kunlik o\'rtacha sotuv',r.perDay>0?fmtQty(Math.round(r.perDay*100)/100)+' '+u:'—','trending-up','var(--success)','var(--success-light)')}
+      ${box('Necha kunga yetadi',r.qty<=0?'Tugagan':(r.cover!=null?(r.cover<1?'< 1 kun':Math.round(r.cover)+' kun'):'Sotuv yo\'q'),'layers','var(--primary)','var(--primary-light)')}
       ${box('Sotilmay turgan kunlar',r.idle!=null?r.idle+' kun':'—','clock','var(--text-faint)','var(--surface-2)')}
     </div>
     <div style="margin-top:14px;"><button class="btn btn-secondary" onclick="closeModal();dkOpenProductDetail('${saWhEsc(r.id)}')">Mahsulot kartochkasi</button></div>
   </div>`);
+}
+/* ---------- Ko'rsatkichlar izohi (lug'at): butun Analitika sahifasi uchun ---------- */
+const SA_GLOSS=[
+['Savdo ko\'rsatkichlari',[
+['Tushum / Savdo aylanmasi','Tanlangan davrda sotuvlardan tushgan jami summa (qaytarilgan tovarlar ayirilgan). Bu hali foyda emas — xarajat va tannarx ayirilmagan pul.'],
+['Yalpi foyda','Tushum − sotilgan tovarlar tannarxi. Do\'kon xarajatlari (ijara, maosh va h.k.) hisobga olinmaydi.'],
+['Sof foyda','Yalpi foyda − xarajatlar. Manfiy bo\'lsa — davrda xarajat yalpi foydadan ko\'p bo\'lgan (zarar).'],
+['Marja %','Foydaning tushumga nisbati: foyda ÷ tushum × 100. 100 so\'m savdodan necha so\'m foyda qolganini ko\'rsatadi.'],
+['Sotuvlar soni','Davrdagi cheklar (savdolar) soni.'],
+['O\'rtacha chek','Tushum ÷ sotuvlar soni — bitta mijoz o\'rtacha qancha summaga xarid qiladi.'],
+['Sotilgan mahsulotlar','Davrda sotilgan jami miqdor (turli birliklar yig\'indisi).'],
+['+ / − foiz (o\'zgarish)','Tanlangan davr undan oldingi, xuddi shuncha kunlik davr bilan solishtiriladi: (hozir − oldin) ÷ oldin × 100. "+" — oshgan, "−" — kamaygan, "yangi" — oldingi davrda 0 bo\'lgan.'],
+['Prognoz','Oxirgi kunlar sotuv tendensiyasiga qarab kelgusi davr uchun taxminiy qiymat. Aniq kafolat emas.']]],
+['Mahsulot ABC tahlili',[
+['Ulush %','Mahsulot tushumining do\'kon umumiy tushumidagi ulushi.'],
+['Yig\'indi ulush','Mahsulotlar tushumi bo\'yicha kattadan kichikka tartiblanib, ulushlar ketma-ket qo\'shib boriladi. Masalan: 1-mahsulot 30%, 2-si 20% bo\'lsa, 2-qatorda yig\'indi ulush 50%.'],
+['A-sinf','Eng muhim mahsulotlar: yig\'indi ulush 80% gacha. Odatda mahsulotlarning oz qismi, lekin tushumning asosiy qismini beradi. Doim omborda bo\'lishi kerak.'],
+['B-sinf','O\'rtacha ahamiyatli mahsulotlar: yig\'indi ulush 80% dan 95% gacha.'],
+['C-sinf','Qolgan 5% tushumni beradigan ko\'p sonli kichik mahsulotlar. Ko\'p joy va pul band qilsa, buyurtmani kamaytirish yoki assortimentdan chiqarish mumkin.'],
+['Pareto grafigi','Ustunlar — mahsulot tushumi, chiziq — yig\'indi ulush. "20% mahsulot 80% tushum beradi" qoidasini ko\'rsatadi.']]],
+['Mijoz segmentlari (RFM)',[
+['RFM','Mijozni 3 belgi bo\'yicha baholash: Recency — oxirgi xarid qachon, Frequency — necha marta xarid qilgan, Monetary — qancha summaga. Butun tarix bo\'yicha hisoblanadi.'],
+['Chempion','5 va undan ko\'p xarid qilgan va oxirgi xaridi 30 kun ichida. Eng yaxshi mijozlar.'],
+['Sodiq','3 va undan ko\'p xarid qilgan, oxirgi xaridi 60 kun ichida.'],
+['Yangi','Faqat 1 marta xarid qilgan va 30 kun ichida.'],
+['Xavf ostida','Oxirgi xaridi 45–90 kun oldin — qaytarish uchun aloqaga chiqish vaqti.'],
+['Yo\'qolgan','90 kundan ortiq xarid qilmagan.'],
+['Oddiy','Yuqoridagi guruhlarga kirmagan mijozlar.']]],
+['Ombor tahlili',[
+['SKU','Bitta mahsulot turi (alohida pozitsiya).'],
+['Tannarx qiymati','Qoldiq × tannarx (partiyalar bo\'yicha) — omborga bog\'langan pul.'],
+['Sotuv qiymati','Qoldiq × sotuv narxi — hammasi sotilsa tushadigan summa.'],
+['Kutilayotgan yalpi foyda','Sotuv qiymati − tannarx qiymati (chegirma va xarajatsiz).'],
+['Kam qolgan','Qoldiq minimal qoldiqqa teng yoki undan kam (lekin 0 emas).'],
+['Tugagan','Qoldiq 0 yoki manfiy.'],
+['Necha kunga yetadi','Qoldiq ÷ kunlik o\'rtacha sotuv. Kichik son — tez tugaydi, buyurtma kerak. "Sotuv yo\'q" — davrda sotilmagan, hisoblab bo\'lmaydi.'],
+['Aylanish','Davrda sotilgan miqdor ÷ o\'rtacha qoldiq. Qancha katta bo\'lsa, tovar shuncha tez sotiladi.'],
+['Dead Stock','Belgilangan kunlardan beri sotilmagan, lekin omborda yotgan tovar — bog\'langan pul "o\'lik".'],
+['Muddati yaqin','Yaroqlilik muddati 30 kun ichida tugaydigan yoki o\'tib ketgan partiyalar.'],
+['ABC asosi','Ombor ABC sinfi qaysi qiymat bo\'yicha hisoblanishi: ombor qiymati yoki sotuv qiymati.']]]
+];
+function saGlossary(){
+  openModal(`<div class="modal-head"><h3>❓ Ko'rsatkichlar izohi</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+  <div class="modal-body"><input type="search" class="wh-search" style="width:100%;margin-bottom:12px;" placeholder="Qidirish: tushum, A-sinf, yig'indi ulush..." oninput="saGlossFind(this.value)">
+  <div id="saGlossBox" style="max-height:60vh;overflow:auto;">${saGlossHtml('')}</div></div>`);
+}
+function saGlossHtml(q){
+  q=(q||'').trim().toLowerCase();let out='';
+  SA_GLOSS.forEach(([g,items])=>{
+    const it=items.filter(([t,d])=>!q||(t+' '+d).toLowerCase().indexOf(q)>=0);
+    if(it.length)out+=`<h4 style="margin:14px 0 6px;font-size:14px;">${g}</h4>`+it.map(([t,d])=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-weight:600;">${t}</div><div class="t-caption" style="white-space:normal;">${d}</div></div>`).join('');
+  });
+  return out||saEmptyBox("Bunday atama topilmadi");
+}
+function saGlossFind(v){const b=document.getElementById('saGlossBox');if(b)b.innerHTML=saGlossHtml(v);}
+/* ---------- Karta tafsiloti: hisob-kitob + mahsulotlar ro'yxati ---------- */
+function saWhCard(key){
+  const all=saWhRows(true,true),T=saWhTot(all),ex=saWhExpiry(),dead=saWhDead(),pos=all.filter(r=>r.qty>0),E=saWhEsc;
+  const cov=r=>r.qty<=0?'Tugagan':(r.cover!=null?(r.cover<1?'< 1 kun':Math.round(r.cover)+' kun'):'Sotuv yo\'q');
+  const pct=(a,b)=>b>0?(a/b*100).toFixed(1)+'%':'—',stb=r=>`<span class="badge ${SA_WH_ST[r.status][1]}">${SA_WH_ST[r.status][0]}</span>`;
+  const idl=r=>r.idle==null?'—':(r.neverSold?'Hech sotilmagan · '+r.idle+' kun':r.idle+' kun');
+  const q=r=>fmtQty(r.qty)+' '+E(r.unit),by=(a,f)=>a.slice().sort((x,y)=>f(y)-f(x));
+  let t='',how='',rows=[],cols=[],emp="Ma'lumot yo'q",flt='';
+  if(key==='sku'){t='Mahsulot turlari (SKU)';how=`Tanlangan kategoriya/ombor bo'yicha sotuvda turgan yoki omborda qoldig'i bor mahsulotlar. Jami: <b>${fmtNum(T.n)} ta</b>.`;
+    rows=all.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name)));cols=[['Mahsulot',r=>E(r.name)],['Kategoriya',r=>E(r.cat)],['Qoldiq',q],['Holat',stb]];}
+  else if(key==='qty'){t='Ombordagi jami miqdor';const um={};pos.forEach(r=>{const u=r.unit||'dona';um[u]=(um[u]||0)+r.qty;});
+    how='Har bir o\'lchov birligi alohida jamlanadi: '+(Object.keys(um).map(u=>`<b>${fmtQty(Math.round(um[u]*100)/100)} ${E(u)}</b>`).join(' · ')||'—');
+    rows=by(pos,r=>r.qty);cols=[['Mahsulot',r=>E(r.name)],['Qoldiq',q],['Ombor qiymati',r=>fmtNum(r.costVal)]];}
+  else if(key==='cost'){t='Ombor tannarx qiymati';how=`Hisob: har bir <b>partiya</b> qoldig'i × shu partiya tannarxi, hammasi qo'shiladi = <b>${fmt(T.cv)}</b>. Partiyada tannarx bo'lmasa — mahsulotning joriy tannarxi olinadi.`+(all.some(r=>r.noCost)?` <b style="color:var(--danger)">⚠ Tannarxi kiritilmagan mahsulotlar qiymati 0 hisoblanadi — foyda oshib ko'rinishi mumkin.</b>`:'');
+    rows=by(pos,r=>r.costVal);cols=[['Mahsulot',r=>E(r.name)],['Qoldiq',q],["O'rtacha tannarx",r=>r.noCost?'⚠ yo\'q':fmtNum(r.cost)],['Qiymat',r=>fmtNum(r.costVal)],['Ulush',r=>pct(r.costVal,T.cv)]];}
+  else if(key==='sale'){t='Omborning sotuv qiymati';how=`Hisob: qoldiq × joriy sotuv narxi = <b>${fmt(T.sv)}</b>.`;
+    rows=by(pos,r=>r.saleVal);cols=[['Mahsulot',r=>E(r.name)],['Qoldiq',q],['Sotuv narxi',r=>fmtNum(r.price)],['Qiymat',r=>fmtNum(r.saleVal)]];}
+  else if(key==='profit'){t='Kutilayotgan yalpi foyda';how=`Hisob: sotuv qiymati ${fmtNum(T.sv)} − tannarx qiymati ${fmtNum(T.cv)} = <b>${fmt(T.gp)}</b>. Bu — barcha qoldiq to'liq narxda sotilsa chiqadigan foyda (chegirma va xarajatlarsiz).`;
+    rows=by(pos,r=>r.profit);cols=[['Mahsulot',r=>E(r.name)],['Tannarx qiymati',r=>r.noCost?'⚠ yo\'q':fmtNum(r.costVal)],['Sotuv qiymati',r=>fmtNum(r.saleVal)],['Foyda',r=>fmtNum(r.profit)],['Marja',r=>pct(r.profit,r.saleVal)]];}
+  else if(key==='low'){t='Kam qolgan tovarlar';how="Qoldiq <b>minimal qoldiqqa teng yoki undan kam</b>, lekin 0 dan ko'p. Minimal qoldiq mahsulot kartochkasida belgilanadi.";
+    rows=all.filter(r=>r.status==='low').sort((a,b)=>(a.min?a.qty/a.min:0)-(b.min?b.qty/b.min:0));flt='low';
+    cols=[['Mahsulot',r=>E(r.name)],['Qoldiq',q],['Minimal',r=>fmtQty(r.min)],["To'ldirish kerak",r=>fmtQty(Math.max(0,r.min-r.qty))+' '+E(r.unit)],['Yetadi',cov]];}
+  else if(key==='out'){t='Tugagan tovarlar';how="Sotuvda turgan, lekin qoldig'i 0 (yoki manfiy) mahsulotlar.";
+    rows=all.filter(r=>r.status==='out');flt='out';cols=[['Mahsulot',r=>E(r.name)],['Kategoriya',r=>E(r.cat)],['Minimal',r=>fmtQty(r.min)],['Oxirgi sotuv',r=>r.lastSale?saWhDate(r.lastSale):'—']];emp="Tugagan mahsulot yo'q";}
+  else if(key==='exp'){t='Muddati yaqin tovarlar';how=ex.has?`Yaroqlilik muddati kiritilgan va qoldig'i bor <b>partiyalar</b>: muddati o'tgan (<b>${ex.b.exp.length}</b>) va 30 kun ichida tugaydigan (<b>${ex.b.d7.length+ex.b.d30.length}</b>). Karta — shu partiyalardagi mahsulotlar soni (${ex.near} ta).`:"Mahsulotlarga yaroqlilik muddati kiritilmagan (Ombor → Kirim).";
+    rows=ex.b.exp.concat(ex.b.d7,ex.b.d30);cols=[['Mahsulot',x=>E(x.r.name)],['Partiya',x=>E(x.bt.lot||'—')],['Yaroqlilik',x=>saWhDate(String(x.bt.expiry).slice(0,10))],['Qoldi',x=>x.d<0?Math.abs(x.d)+' kun oldin tugagan':x.d+' kun'],['Miqdor',x=>fmtQty(x.bt.qty)]];emp="Muddati yaqin partiya yo'q";}
+  else{t='Uzoq vaqt sotilmagan';how=`Oxirgi ${saWhF.dead} kun ichida sotilmagan va qoldig'i bor mahsulotlar (hech sotilmagan bo'lsa — omborga kirganidan beri). Bog'langan pul: <b>${fmt(dead.reduce((a,r)=>a+r.costVal,0))}</b>. Muddatni filtrdagi "Dead Stock"dan o'zgartiring.`;
+    rows=by(dead,r=>r.costVal);cols=[['Mahsulot',r=>E(r.name)],['Qoldiq',q],['Sotilmagan',idl],["Bog'langan pul",r=>fmtNum(r.costVal)]];emp="Uzoq sotilmagan mahsulot yo'q";}
+  openModal(`<div class="modal-head"><h3>${t} · ${fmtNum(rows.length)} ta</h3><button class="btn-ghost" onclick="closeModal()">${icon('x')}</button></div>
+  <div class="modal-body"><div class="t-caption" style="margin-bottom:12px;white-space:normal;">${how}</div>
+  ${saWhList(rows.slice(0,300),cols,emp)}${rows.length>300?`<div class="t-caption" style="margin-top:8px;">Dastlabki 300 ta ko'rsatildi (jami ${fmtNum(rows.length)})</div>`:''}
+  ${flt?`<div style="margin-top:12px;"><button class="btn btn-secondary" onclick="closeModal();saWhSet('st','${flt}')">Jadvalda filtrlash</button></div>`:''}</div>`);
 }
 /* ---------- Ko'rinish ---------- */
 function saWhFltHtml(){
@@ -18782,10 +18894,14 @@ function saWhList(rows,cols,empty){
 function saWh(){
   const base=saWhBase().rows;
   if(!base.length)return `${saWhFltHtml()}<div class="card">${saEmptyBox("Omborda mahsulot yo'q")}</div>`;
-  const rows=saWhRows(),T=saWhTot(rows),ex=saWhExpiry(),inv=saWhInv(),mv=saWhMoves(),cats=saWhByCat(),ab=saWhAbcSum(),dead=saWhDead();
-  const low=rows.filter(r=>r.status==='low'),out=rows.filter(r=>r.status==='out');
-  const vlow=rows.filter(r=>r.status==='low'&&r.min>0&&r.qty<=r.min/2);
-  const deadV=dead.reduce((a,r)=>a+r.costVal,0),big=rows.filter(r=>T.cv>0&&r.costVal/T.cv>=0.1);
+  /* Kartalar va ogohlantirishlar Holat/ABC filtridan MUSTAQIL (all) — aks holda "Kam qolgan"ni bossangiz boshqa kartalar 0 bo'lib qolardi */
+  const rows=saWhRows(),all=saWhRows(true,true),T=saWhTot(rows),TA=saWhTot(all),ex=saWhExpiry(),inv=saWhInv(),mv=saWhMoves(),cats=saWhByCat(),ab=saWhAbcSum(),dead=saWhDead();
+  const low=all.filter(r=>r.status==='low'),out=all.filter(r=>r.status==='out');
+  const vlow=all.filter(r=>r.status==='low'&&r.min>0&&r.qty<=r.min/2);
+  const deadV=dead.reduce((a,r)=>a+r.costVal,0),big=all.filter(r=>TA.cv>0&&r.costVal/TA.cv>=0.1);
+  const um={};all.forEach(r=>{if(r.qty>0){const u=r.unit||'dona';um[u]=(um[u]||0)+r.qty;}});
+  const uTxt=Object.keys(um).sort((a,b)=>um[b]-um[a]).map(u=>fmtQty(Math.round(um[u]*100)/100)+' '+saWhEsc(u)),noC=all.filter(r=>r.noCost).length;
+  const cc=(k,l,v,ic,col,bg,d)=>statCard(l,v,ic,col,bg,d,'tag',`saWhCard('${k}')`);
   const alerts=[['🔴',`Tugagan: <b>${out.length} ta</b> mahsulot`,out.length],['🟠',`Juda kam qolgan (minimalning yarmidan kam): <b>${vlow.length} ta</b>`,vlow.length],
     ['🟡',`Muddati yaqin (30 kun ichida): <b>${ex.near} ta</b> mahsulot${ex.b.exp.length?`, muddati o'tgan partiya: <b>${ex.b.exp.length} ta</b>`:''}`,ex.near+ex.b.exp.length],
     ['🔵',`${saWhF.dead} kundan beri sotilmagan: <b>${dead.length} ta</b> mahsulot (${saMoney(deadV)})`,dead.length],
@@ -18802,17 +18918,18 @@ function saWh(){
   return `${saWhFltHtml()}
   <div class="card" style="margin-bottom:16px;"><div class="dx-card-head"><div><h2>Ogohlantirishlar</h2><p>Joriy ombor holati bo'yicha</p></div></div>
     ${alerts.length?alerts.map(a=>`<div class="dx-op"><span class="dx-op-ic">${a[0]}</span><div class="dx-op-main"><div class="dx-op-title" style="white-space:normal;font-weight:500;">${a[1]}</div></div></div>`).join(''):saEmptyBox("Muhim ogohlantirishlar yo'q")}</div>
-  <div class="grid grid-3" style="margin-bottom:16px;">
-    ${s('Jami SKU',fmtNum(T.n)+' ta','package','var(--primary)','var(--primary-light)')}
-    ${s('Ombordagi jami dona',fmtQty(T.qty),'layers','var(--info)','var(--info-light)')}
-    ${s('Ombor tannarx qiymati',saMoney(T.cv),'warehouse','var(--primary)','var(--primary-light)')}
-    ${s('Omborning sotuv qiymati',saMoney(T.sv),'tag','var(--success)','var(--success-light)')}
-    ${s('Kutilayotgan yalpi foyda',saMoney(T.gp),'wallet','var(--success)','var(--success-light)')}
-    ${s('Kam qolgan tovarlar',fmtNum(low.length)+' ta','alert-triangle','var(--warning)','var(--warning-light)','Filtrlash uchun bosing',"saWhSet('st','low')")}
-    ${s('Tugagan tovarlar',fmtNum(out.length)+' ta','circle-x','var(--danger)','var(--danger-light)','Filtrlash uchun bosing',"saWhSet('st','out')")}
-    ${s('Muddati yaqin tovarlar',ex.has?fmtNum(ex.near)+' ta':'—','clock','var(--warning)','var(--warning-light)',ex.has?'30 kun ichida':"Yaroqlilik muddati kiritilmagan")}
-    ${s('Uzoq vaqt sotilmagan',fmtNum(dead.length)+' ta','package-x','var(--text-faint)','var(--surface-2)',saWhF.dead+' kundan ortiq')}
+  <div class="grid grid-3" style="margin-bottom:6px;">
+    ${cc('sku','Mahsulot turlari (SKU)',fmtNum(TA.n)+' ta','package','var(--primary)','var(--primary-light)','Sotuvda yoki omborda bor')}
+    ${cc('qty','Ombordagi jami miqdor',fmtQty(Math.round(Object.values(um).reduce((a,b)=>a+b,0)*100)/100),'layers','var(--info)','var(--info-light)','Barcha mahsulotlar yig\'indisi · birliklar bo\'yicha — kartani bosing')}
+    ${cc('cost','Ombor tannarx qiymati',saMoney(TA.cv),'warehouse','var(--primary)','var(--primary-light)',noC?'⚠ '+noC+' ta mahsulotda tannarx yo\'q':'Partiya tannarxi × qoldiq')}
+    ${cc('sale','Omborning sotuv qiymati',saMoney(TA.sv),'tag','var(--success)','var(--success-light)','Sotuv narxi × qoldiq')}
+    ${cc('profit','Kutilayotgan yalpi foyda',saMoney(TA.gp),'wallet','var(--success)','var(--success-light)',TA.sv>0?'Marja: '+(TA.gp/TA.sv*100).toFixed(1)+'%':'Sotuv − tannarx')}
+    ${cc('low','Kam qolgan tovarlar',fmtNum(low.length)+' ta','alert-triangle','var(--warning)','var(--warning-light)','Minimal qoldiqqa yetgan')}
+    ${cc('out','Tugagan tovarlar',fmtNum(out.length)+' ta','circle-x','var(--danger)','var(--danger-light)','Qoldiq 0')}
+    ${cc('exp','Muddati yaqin tovarlar',ex.has?fmtNum(ex.near)+' ta':'—','clock',ex.b.exp.length?'var(--danger)':'var(--warning)',ex.b.exp.length?'var(--danger-light)':'var(--warning-light)',ex.has?'30 kun ichida'+(ex.b.exp.length?' · muddati o\'tgan: '+ex.expN+' ta':''):'Yaroqlilik muddati kiritilmagan')}
+    ${cc('dead','Uzoq vaqt sotilmagan',fmtNum(dead.length)+' ta','package-x','var(--text-faint)','var(--surface-2)',saWhF.dead+' kundan ortiq · '+saMoney(deadV))}
   </div>
+  <div class="t-caption" style="margin:0 0 16px;">Kartani bossangiz — hisob-kitob va mahsulotlar ro'yxati ochiladi. Kartalar "Holat" va "ABC" filtrlariga bog'liq emas.</div>
   ${sec('Ombor puli')}
   <div class="dx-row r-analytics" style="margin-bottom:16px;">
     <div class="card"><div class="d2-detail-grid">
@@ -18824,7 +18941,7 @@ function saWh(){
   </div>
   <div class="card" style="margin-bottom:16px;"><div class="dx-card-head"><div><h2>Ombor qoldig'i</h2><p>Barcha mahsulotlar — qatorni bossangiz tafsilot ochiladi</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;"><input type="search" class="wh-search" placeholder="Nomi, SKU, barcode..." value="${saWhEsc(saWhF.q)}" oninput="saWhSearch(this.value)">
-    <select class="dx-select" onchange="saWhSortTbl(this.value)">${[['value','Qiymat bo\'yicha'],['qtyAsc','Qoldiq: kamdan ko\'pga'],['qtyDesc','Qoldiq: ko\'pdan kamga'],['status','Holat bo\'yicha'],['name','Nomi bo\'yicha']].map(([k,l])=>`<option value="${k}" ${saWhF.sort===k?'selected':''}>${l}</option>`).join('')}</select></div></div>
+    <select class="dx-select" onchange="saWhSortTbl(this.value)">${[['value','Qiymat bo\'yicha'],['qtyAsc','Qoldiq: kamdan ko\'pga'],['qtyDesc','Qoldiq: ko\'pdan kamga'],['coverAsc','Necha kunga yetadi: tez tugaydigan birinchi'],['coverDesc','Necha kunga yetadi: uzoq yetadigan birinchi'],['status','Holat bo\'yicha'],['name','Nomi bo\'yicha']].map(([k,l])=>`<option value="${k}" ${saWhF.sort===k?'selected':''}>${l}</option>`).join('')}</select></div></div>
     <div id="saWhTblBox">${saWhTableHtml()}</div></div>
   ${sec("Kategoriya bo'yicha ombor")}
   <div class="dx-row r-analytics" style="margin-bottom:16px;">
