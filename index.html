@@ -1273,9 +1273,9 @@ th[data-sort=asc] .sort-ic path:nth-child(1),th[data-sort=desc] .sort-ic path:nt
 .scan-frame{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#0F2418,#1B3B27);border-radius:var(--radius-l);display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-md);}
 .scan-frame svg{width:44%;height:44%;color:rgba(255,255,255,.32);}
 /* Skanerlash hududi — kamera tasvirining markazidagi "oyna". Bu faqat vizual
-   yo'l-yo'riq: haqiqiy barcode detection ButUN kadr bo'yicha ishlaydi (hech
-   qanday crop qilinmaydi), shuning uchun ramka tashqarisidagi kod ham
-   aniqlanaveradi — foydalanuvchiga faqat markazga mo'ljal ko'rsatiladi. */
+   yo'l-yo'riq: barcode detection kadrning markaziy ~70% qismi bo'yicha ishlaydi
+   (captureScannerFrame), shuning uchun ramka yaqinidagi kod ham aniqlanadi —
+   foydalanuvchiga faqat markazga mo'ljal ko'rsatiladi. */
 .scan-frame::after{
   content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:82%;height:60%;border-radius:16px;
@@ -4826,7 +4826,22 @@ let scannerLoopTimer = null;     // throttled frame-loop uchun setTimeout handle
 let scannerLoopToken = 0;        // har startScanEngine() chaqiruvida oshadi — eski loop o'z-o'zini to'xtatadi
 let scannerLastCode = null;      // duplicate-protection: oxirgi aniqlangan kod
 let scannerLastTime = 0;         // duplicate-protection: oxirgi aniqlangan vaqt
-const SCAN_INTERVAL_MS = 180;    // frame'lar orasidagi taxminiy interval (100-200ms oralig'ida, CPU tejash uchun)
+const SCAN_INTERVAL_MS = 120;    // frame'lar orasidagi maqsadli interval (decode vaqti shundan ayiriladi; oldingi decode tugamasdan yangisi boshlanmaydi)
+const SCAN_MIN_GAP_MS = 24;      // decode sekin bo'lsa ham keyingi frame'dan oldin UI'ga nafas beradigan minimal pauza
+const SCAN_CROP_W = 0.70;        // tahlil qilinadigan kadr: video kengligining markaziy ulushi
+const SCAN_CROP_H = 0.70;        // ... va balandligining markaziy ulushi
+const SCAN_CROP_MIN_SIDE = 0.90; // portret oqimda (balandlik>kenglik) ramka teshigi kesilib qolmasligi uchun: qisqa tomonning kamida shu ulushi
+const SCAN_MAX_W = 1000;         // tahlil canvasining maksimal eni (px)
+/* Fokus / chiroq (torch) holati — hammasi qo'llab-quvvatlanmasa jim o'tkazib yuboriladi */
+let scannerTrack = null;
+let scannerTorchOn = false;
+let scannerTorchBtn = null;
+let scannerFocusTarget = null;   // tap-to-focus listener o'rnatilgan element
+let scannerFocusHandler = null;
+let scannerFocusHoldUntil = 0;   // tap-fokusdan keyin 'continuous'ga qaytishni kechiktiradi
+let scannerFocusTimer = null;
+let scannerRetuneTimers = [];
+let scannerPosHost = null;       // position:relative'ni biz o'zimiz qo'ygan host (stop'da qaytariladi)
 const DEBUG_SCANNER = false;     // true qilsangiz konsolda scanner lifecycle loglari chiqadi
 let scannerNativeConsecutiveErrors = 0; // native BarcodeDetector.detect() ketma-ket xatolar hisoblagichi
 const SCANNER_NATIVE_ERROR_THRESHOLD = 4; // shuncha ketma-ket xatodan keyin ZXing fallbackga avtomatik o'tamiz
@@ -7866,17 +7881,16 @@ function renderScanner(){
   </div>`;
 }
 
-/* Shared camera decode engine — ZXing (QR, EAN-13, EAN-8, UPC-A, UPC-E, Code128, Code39, ITF)
-   TRY_HARDER + explicit format hints so 1D barcodes (EAN-13 va h.k.) yo'nalishidan
-   qat'i nazar (vertikal/gorizontal/qiya) avtomatik aniqlanadi. */
+/* Shared camera decode engine — ZXing (QR, EAN-13, EAN-8, Code128)
+   TRY_HARDER + explicit format hints: 1D barcodelarni (EAN-13 va h.k.) ZXing o'zi
+   aylantirib sinaydi, shuning uchun qo'shimcha kadr burilishi kerak emas. */
 function buildZxingHints(){
   if(typeof ZXing==='undefined' || !ZXing.DecodeHintType) return undefined;
   try{
     const hints = new Map();
     const F = ZXing.BarcodeFormat;
     const formats = [
-      F.QR_CODE, F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E,
-      F.CODE_128, F.CODE_39, F.ITF
+      F.EAN_13, F.EAN_8, F.QR_CODE, F.CODE_128
     ].filter(f=>f!==undefined);
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
     hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
@@ -7888,9 +7902,9 @@ function buildZxingHints(){
 // getUserMedia OverconstrainedError tashlaydi — shunda keyingi, soddaroq
 // variantga o'tamiz, scanner butunlay to'xtab qolmaydi.
 const CAMERA_CONSTRAINT_LADDER = [
-  {video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}, advanced:[{focusMode:'continuous'}]}},
-  {video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}},
-  {video:{facingMode:'environment'}},
+  {video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30}, advanced:[{focusMode:'continuous'}]}},
+  {video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:30}}},
+  {video:{facingMode:'environment', frameRate:{ideal:30}}},
   {video:true}
 ];
 
@@ -7907,18 +7921,171 @@ async function acquireCameraStream(){
 }
 
 /* Qurilma qo'llasa autofocus/continuous-focus yoqishga urinamiz. Qo'llamasa
-   sekundiga ham error bermaydi — scanner oddiy default fokus bilan davom etadi. */
+   hech qanday xato bermaydi — scanner oddiy default fokus bilan davom etadi.
+   Kamera boshlanganidan keyin ham bir necha marta qayta chaqiriladi (startScanEngine),
+   chunki ba'zi qurilmalar birinchi soniyalarda constraint'ni qabul qilmaydi.
+   Shu bilan birga chiroq (torch) tugmasi va ekranga bosib fokuslash ham shu yerdan ulanadi. */
+function scannerTrackCaps(track){
+  try{ return (track && typeof track.getCapabilities==='function' && track.getCapabilities()) || {}; }
+  catch(e){ return {}; }
+}
+/* applyConstraints har safar oldingi advanced to'plamni almashtiradi, shuning uchun
+   fokus va torch holatini doim birga yuboramiz — biri ikkinchisini o'chirib qo'ymasin. */
+function scannerApplyAdvanced(entries){
+  const track = scannerTrack;
+  if(!track || typeof track.applyConstraints!=='function') return Promise.resolve(false);
+  try{
+    const caps = scannerTrackCaps(track);
+    const adv = (entries||[]).slice();
+    const hasFocus = adv.some(e=>e && e.focusMode!==undefined);
+    if(!hasFocus && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous') && Date.now()>=scannerFocusHoldUntil){
+      adv.push({focusMode:'continuous'});
+    }
+    if(scannerTorchOn && caps.torch) adv.push({torch:true});
+    if(!adv.length) return Promise.resolve(false);
+    return track.applyConstraints({advanced:adv}).then(()=>true).catch(()=>false);
+  }catch(e){ return Promise.resolve(false); }
+}
 function tuneCameraTrack(stream){
   try{
-    const track = stream.getVideoTracks && stream.getVideoTracks()[0];
-    if(!track || typeof track.getCapabilities!=='function') return;
-    const caps = track.getCapabilities();
-    const advanced=[];
-    if(caps.focusMode && caps.focusMode.includes('continuous')) advanced.push({focusMode:'continuous'});
-    if(advanced.length && typeof track.applyConstraints==='function'){
-      track.applyConstraints({advanced}).then(()=>scanDebug('continuous focus yoqildi')).catch(()=>{});
-    }
+    const track = stream && stream.getVideoTracks && stream.getVideoTracks()[0];
+    if(!track) return;
+    scannerTrack = track;
+    scannerApplyAdvanced([]).then(ok=>{ if(ok) scanDebug('continuous focus qo\'llandi'); });
+    scannerSetupTorchButton();
+    scannerSetupTapFocus();
   }catch(e){ scanDebug('capability tuning imkonsiz, o\'tkazib yuborildi', e); }
+}
+
+/* Overlay (chiroq tugmasi, fokus halqasi) video'ning ota-elementiga qo'yiladi. */
+function scannerEnsureHostPositioned(host){
+  try{
+    if(getComputedStyle(host).position==='static'){ host.style.position='relative'; scannerPosHost = host; }
+  }catch(e){}
+}
+function scannerSetupTorchButton(){
+  try{
+    if(scannerTorchBtn || !scannerTrack || !scannerVideoEl) return;
+    const caps = scannerTrackCaps(scannerTrack);
+    if(!caps.torch) return; // qo'llab-quvvatlanmaydi — tugma ko'rsatilmaydi
+    const host = scannerVideoEl.parentElement;
+    if(!host) return;
+    scannerEnsureHostPositioned(host);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('data-scan-torch','1');
+    b.setAttribute('aria-label','Chiroq');
+    b.setAttribute('aria-pressed','false');
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z"/><line x1="6" x2="18" y1="6" y2="6"/></svg>';
+    const v = scannerVideoEl;
+    b.style.cssText = 'position:absolute;z-index:6;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;'
+      + 'top:'+(v.offsetTop+8)+'px;left:'+(v.offsetLeft+v.offsetWidth-48)+'px;';
+    b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); scannerToggleTorch(); });
+    host.appendChild(b);
+    scannerTorchBtn = b;
+  }catch(e){ scanDebug('torch tugmasi qo\'yilmadi', e); }
+}
+function scannerPaintTorch(){
+  if(!scannerTorchBtn) return;
+  scannerTorchBtn.setAttribute('aria-pressed', scannerTorchOn?'true':'false');
+  scannerTorchBtn.style.background = scannerTorchOn ? 'var(--primary,#16a34a)' : 'rgba(0,0,0,.45)';
+}
+function scannerToggleTorch(){
+  if(!scannerTrack) return;
+  const prev = scannerTorchOn;
+  scannerTorchOn = !prev;
+  scannerPaintTorch();
+  const want = scannerTorchOn;
+  const entries = want ? [] : [{torch:false}];
+  scannerApplyAdvanced(entries).then(ok=>{
+    let actual = want;
+    try{ const st = scannerTrack && scannerTrack.getSettings && scannerTrack.getSettings(); if(st && typeof st.torch==='boolean') actual = st.torch; }catch(e){}
+    if(!ok || actual!==want){ scannerTorchOn = actual===want ? prev : !!actual; scannerPaintTorch(); }
+  });
+}
+
+function scannerSetupTapFocus(){
+  try{
+    if(scannerFocusHandler || !scannerVideoEl) return;
+    const parent = scannerVideoEl.parentElement;
+    // .scan-frame ichida overlay elementlar (burchaklar, chiziq) video ustida turadi — shuning uchun butun ramkaga ulaymiz
+    const target = (parent && parent.classList && parent.classList.contains('scan-frame')) ? parent : scannerVideoEl;
+    scannerFocusHandler = function(e){
+      if(e.target && e.target.closest && e.target.closest('[data-scan-torch]')) return;
+      scannerFocusAt(e.clientX, e.clientY);
+    };
+    target.addEventListener('click', scannerFocusHandler);
+    scannerFocusTarget = target;
+  }catch(e){ scanDebug('tap-fokus ulanmadi', e); }
+}
+function scannerFocusAt(clientX, clientY){
+  try{
+    const v = scannerVideoEl, track = scannerTrack;
+    if(!v || !track || !v.videoWidth || !v.videoHeight) return;
+    const caps = scannerTrackCaps(track);
+    const modes = Array.isArray(caps.focusMode) ? caps.focusMode : [];
+    const mode = modes.includes('single-shot') ? 'single-shot' : (modes.includes('continuous') ? 'continuous' : null);
+    let sc = {};
+    try{ sc = (navigator.mediaDevices && navigator.mediaDevices.getSupportedConstraints && navigator.mediaDevices.getSupportedConstraints()) || {}; }catch(e){}
+    const poiOk = !!sc.pointsOfInterest || ('pointsOfInterest' in caps);
+    if(!mode && !poiOk) return; // qurilma fokus boshqaruvini bermaydi — jim o'tkazib yuboramiz
+
+    // Ekran koordinatasi -> video kadr koordinatasi (object-fit:cover bo'yicha)
+    const r = v.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    let fx = (clientX - r.left)/r.width, fy = (clientY - r.top)/r.height;
+    const va = v.videoWidth/v.videoHeight, ea = r.width/r.height;
+    let fit = 'cover';
+    try{ fit = getComputedStyle(v).objectFit || 'cover'; }catch(e){}
+    if(fit==='cover'){
+      if(va>ea){ const vis = ea/va; fx = (1-vis)/2 + fx*vis; }
+      else { const vis = va/ea; fy = (1-vis)/2 + fy*vis; }
+    }
+    const x = Math.min(1, Math.max(0, fx)), y = Math.min(1, Math.max(0, fy));
+
+    scannerShowFocusRing(clientX, clientY);
+    const entry = {};
+    if(mode) entry.focusMode = mode;
+    if(poiOk) entry.pointsOfInterest = [{x:x, y:y}];
+    scannerFocusHoldUntil = Date.now() + 1600;
+    if(scannerFocusTimer) clearTimeout(scannerFocusTimer);
+    scannerApplyAdvanced([entry]);
+    // single-shot fokusni qulflab qo'yadi — biroz keyin uzluksiz fokusga qaytamiz
+    scannerFocusTimer = setTimeout(function(){
+      scannerFocusTimer = null;
+      scannerFocusHoldUntil = 0;
+      scannerApplyAdvanced([]);
+    }, 1700);
+  }catch(e){ scanDebug('tap-fokus xatosi (o\'tkazib yuborildi)', e); }
+}
+function scannerShowFocusRing(clientX, clientY){
+  try{
+    const host = scannerVideoEl && scannerVideoEl.parentElement;
+    if(!host) return;
+    scannerEnsureHostPositioned(host);
+    const hr = host.getBoundingClientRect();
+    const ring = document.createElement('div');
+    ring.setAttribute('data-scan-ring','1');
+    ring.style.cssText = 'position:absolute;z-index:5;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #fff;border-radius:50%;pointer-events:none;box-shadow:0 0 6px rgba(0,0,0,.5);'
+      + 'left:'+(clientX-hr.left-host.clientLeft+host.scrollLeft)+'px;top:'+(clientY-hr.top-host.clientTop+host.scrollTop)+'px;';
+    host.appendChild(ring);
+    if(ring.animate){
+      const a = ring.animate([{transform:'scale(1.5)',opacity:1},{transform:'scale(1)',opacity:1,offset:.6},{transform:'scale(1)',opacity:0}],{duration:800,easing:'ease-out'});
+      a.onfinish = ()=>{ try{ ring.remove(); }catch(e){} };
+    } else setTimeout(()=>{ try{ ring.remove(); }catch(e){} }, 800);
+  }catch(e){}
+}
+function scannerTeardownControls(){
+  scannerRetuneTimers.forEach(t=>clearTimeout(t)); scannerRetuneTimers = [];
+  if(scannerFocusTimer){ clearTimeout(scannerFocusTimer); scannerFocusTimer = null; }
+  scannerFocusHoldUntil = 0;
+  if(scannerFocusTarget && scannerFocusHandler){ try{ scannerFocusTarget.removeEventListener('click', scannerFocusHandler); }catch(e){} }
+  scannerFocusTarget = null; scannerFocusHandler = null;
+  if(scannerTorchBtn){ try{ scannerTorchBtn.remove(); }catch(e){} scannerTorchBtn = null; }
+  try{ const h = scannerVideoEl && scannerVideoEl.parentElement; if(h) h.querySelectorAll('[data-scan-ring]').forEach(n=>n.remove()); }catch(e){}
+  if(scannerPosHost){ try{ scannerPosHost.style.position = ''; }catch(e){} scannerPosHost = null; }
+  scannerTorchOn = false;
+  scannerTrack = null;
 }
 
 /* Har frame uchun bitta canvasni qayta ishlatamiz (item 16: performance —
@@ -7928,13 +8095,23 @@ function ensureScannerCanvases(){
   if(!scannerRotateCanvas){ scannerRotateCanvas = document.createElement('canvas'); scannerRotateCtx = scannerRotateCanvas.getContext('2d',{willReadFrequently:true}); }
 }
 
-/* Butun video kadrni (markaziy crop qilmasdan) canvasga chizamiz — shu sababli
-   barcode markazda, chetda, yuqorida, pastda — qayerda bo'lmasin aniqlanadi. */
+/* Video kadrning MARKAZIY qismini (SCAN_CROP_W x SCAN_CROP_H) kesib, eni SCAN_MAX_W dan
+   oshmaydigan qilib canvasga chizamiz — decode ancha kam piksel bilan ishlaydi. Canvas
+   qayta ishlatiladi (o'lcham o'zgargandagina qayta o'rnatiladi).
+   Portret oqimda (balandlik > kenglik) ramka teshigi (kenglikning ~82%) kesilib qolmasligi
+   uchun crop eni kamida qisqa tomonning SCAN_CROP_MIN_SIDE ulushiga teng bo'ladi. */
 function captureScannerFrame(videoEl){
   const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
   if(!vw || !vh) return null;
-  if(scannerCanvas.width!==vw || scannerCanvas.height!==vh){ scannerCanvas.width=vw; scannerCanvas.height=vh; }
-  scannerCanvasCtx.drawImage(videoEl, 0, 0, vw, vh);
+  if(!scannerCanvas) ensureScannerCanvases();
+  const minSide = Math.min(vw, vh);
+  const sw = Math.min(vw, Math.round(Math.max(vw*SCAN_CROP_W, minSide*SCAN_CROP_MIN_SIDE)));
+  const sh = Math.min(vh, Math.round(vh*SCAN_CROP_H));
+  const sx = Math.round((vw - sw)/2), sy = Math.round((vh - sh)/2);
+  const scale = sw > SCAN_MAX_W ? SCAN_MAX_W/sw : 1;
+  const cw = Math.round(sw*scale), ch = Math.round(sh*scale);
+  if(scannerCanvas.width!==cw || scannerCanvas.height!==ch){ scannerCanvas.width=cw; scannerCanvas.height=ch; }
+  scannerCanvasCtx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, cw, ch);
   return scannerCanvas;
 }
 
@@ -7962,7 +8139,7 @@ function getRotatedScannerCanvas(srcCanvas, angleDeg){
    1) window.BarcodeDetector mavjud bo'lsa — shu (tezroq, native, batareyaga yengil)
    2) bo'lmasa yoki yaratishda xato bo'lsa — ZXing fallback (canvas orqali) */
 async function pickScannerEngine(){
-  const desiredFormats = ['qr_code','ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf'];
+  const desiredFormats = ['ean_13','ean_8','qr_code','code_128'];
   // QR va EAN-13 eng muhim formatlar (talab: 7-band) — native detector aynan
   // shularni real qo'llab-quvvatlamasa, uni primary sifatida ishonib bo'lmaydi.
   const criticalFormats = ['qr_code','ean_13'];
@@ -8073,12 +8250,16 @@ function startScanEngine(videoEl, onDecode, onError){
   }
 
   let rotationIndex = 0;
-  const ZXING_ROTATIONS = [0, 90, 180, 270];
+  const ZXING_ROTATIONS = [0];
+  let decoding = false; // oldingi decode tugamasdan yangisi boshlanmasin
 
-  function runLoop(){
+  function runLoop(delay){
     if(token!==scannerLoopToken || !scanEngineActive) return;
     scannerLoopTimer = setTimeout(async ()=>{
       if(token!==scannerLoopToken || !scanEngineActive) return;
+      if(decoding){ runLoop(); return; }
+      decoding = true;
+      const t0 = (typeof performance!=='undefined' && performance.now) ? performance.now() : Date.now();
       try{
         const frame = captureScannerFrame(videoEl);
         if(frame){
@@ -8100,8 +8281,7 @@ function startScanEngine(videoEl, onDecode, onError){
               }
             }
           } else if(scannerEngineType==='zxing' && zxingReader){
-            // CPU tejash uchun har loop iteratsiyasida bitta burchak sinaladi,
-            // navbat bilan 0/90/180/270 — shu bilan barcha yo'nalishlar qamrab olinadi.
+            // Faqat 0° — TRY_HARDER 1D kodlarni o'zi aylantirib sinaydi, QR esa yo'nalishga bog'liq emas.
             const angle = ZXING_ROTATIONS[rotationIndex % ZXING_ROTATIONS.length];
             rotationIndex++;
             try{
@@ -8116,9 +8296,12 @@ function startScanEngine(videoEl, onDecode, onError){
         }
       }catch(err){
         scanDebug('frame processing xatosi (davom etamiz)', err);
+      }finally{
+        decoding = false;
       }
-      runLoop();
-    }, SCAN_INTERVAL_MS);
+      const spent = ((typeof performance!=='undefined' && performance.now) ? performance.now() : Date.now()) - t0;
+      runLoop(Math.max(SCAN_MIN_GAP_MS, SCAN_INTERVAL_MS - spent));
+    }, delay==null ? SCAN_INTERVAL_MS : delay);
   }
 
   (async ()=>{
@@ -8135,6 +8318,13 @@ function startScanEngine(videoEl, onDecode, onError){
       });
       if(token!==scannerLoopToken) return;
       tuneCameraTrack(stream);
+      // Ba'zi qurilmalar birinchi soniyalarda fokus/torch constraint'ini qabul qilmaydi — qayta qo'llaymiz
+      [500, 1500, 3000].forEach(ms=>{
+        scannerRetuneTimers.push(setTimeout(()=>{
+          if(token!==scannerLoopToken || !scannerStream) return;
+          tuneCameraTrack(stream);
+        }, ms));
+      });
       scanDebug('camera started');
 
       const engine = await pickScannerEngine();
@@ -8161,6 +8351,7 @@ function stopScanEngine(){
   if(zxingReader){ try{ zxingReader.reset(); }catch(e){} zxingReader=null; }
   scannerDetector = null;
   scannerEngineType = null;
+  scannerTeardownControls();
   if(scannerStream){ try{ scannerStream.getTracks().forEach(t=>t.stop()); }catch(e){} scannerStream=null; }
   if(scannerVideoEl){
     try{
@@ -20281,7 +20472,8 @@ function validate(text){
   if(!b.createdAt || isNaN(new Date(b.createdAt).getTime())) return fail("Backup yaratilgan sana yo'q yoki noto'g'ri.");
   const d = b.data;
   if(!d || typeof d!=='object' || Array.isArray(d)) return fail("Backup ichida 'data' bo'limi topilmadi.");
-  if(b.checksum!==undefined && hash(JSON.stringify(d))!==b.checksum) return fail("Fayl butunligi buzilgan (nazorat summasi mos kelmadi). Fayl tahrirlangan yoki to'liq yuklanmagan bo'lishi mumkin.");
+  /* Tashqi/oldingi generatorlar checksumni boshqa JSON serializatsiya qoidasi bilan yaratishi mumkin. Strukturasi to'g'ri backupni checksum farqi sabab rad etmaymiz; tiklash paytida ma'lumotning o'zi validate qilinadi. */
+  const checksumMismatch = b.checksum!==undefined && hash(JSON.stringify(d))!==String(b.checksum);
   for(let v=b.backupVersion; v<BK_VERSION; v++){
     if(!MIGRATIONS[v]) return fail(`v${v} backupni v${BK_VERSION} ga moslashtirib bo'lmadi.`);
     MIGRATIONS[v](b);
@@ -20297,7 +20489,9 @@ function validate(text){
   if(db.schemaV2Migrated!==true) return fail("Backup tuzilmasi bu ilova versiyasiga mos emas (schemaV2Migrated yo'q) — tiklash xavfli, shuning uchun to'xtatildi.");
   const ls = d.localSettings;
   if(ls!==undefined && (!ls || typeof ls!=='object' || Array.isArray(ls))) return fail("Backup sozlamalari bo'limi buzilgan.");
-  return {ok:true, backup:b, counts:countsOf(db)};
+  const realCounts = countsOf(db);
+  const countsMismatch = !!b.counts && typeof b.counts==='object' && Object.keys(realCounts).some(k=>b.counts[k]!==undefined && Number(b.counts[k])!==Number(realCounts[k]));
+  return {ok:true, backup:b, counts:realCounts, checksumMismatch, countsMismatch};
 }
 
 function collect(kind){
@@ -20405,6 +20599,7 @@ function previewModal(){
           ${row('Qaytarishlar', c.returns, cur&&cur.returns)}
         </tbody>
       </table>
+      ${(pending.checksumMismatch||pending.countsMismatch)?`<div class="alert alert-warning">${icon('alert-triangle')}<span>Fayl yaratilgandan keyin qo'lda o'zgartirilgan bo'lishi mumkin (nazorat summasi yoki yozuvlar soni mos emas). Jadvaldagi sonlar faylning haqiqiy ma'lumotidan olingan.</span></div>`:''}
       ${less?`<div class="alert alert-warning">${icon('alert-triangle')}<span>Diqqat: backupda hozirgidan kamroq yozuv bor. Tiklasangiz, backupdan keyin qo'shilgan yangi ma'lumotlar almashtiriladi.</span></div>`:''}
       <div class="bk-meta">Fayl: ${esc(pending.name)} · ${fmtSize(pending.size)} · backupVersion ${b.backupVersion}</div>
     </div>
@@ -20432,7 +20627,7 @@ function beginPreview(text, name){
   pending = null;
   const v = validate(text);
   if(!v.ok){ errorModal("Backup fayli yaroqsiz", v.error, "Tiklash boshlanmadi. Mavjud ma'lumotlar o'zgartirilmadi."); return; }
-  pending = {text, backup:v.backup, counts:v.counts, name:name||'backup.json', size:new Blob([text]).size};
+  pending = {text, backup:v.backup, counts:v.counts, checksumMismatch:v.checksumMismatch, countsMismatch:v.countsMismatch, name:name||'backup.json', size:new Blob([text]).size};
   previewModal();
 }
 function readFile(f){
